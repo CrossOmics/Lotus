@@ -11,10 +11,17 @@ The goals of clustering analysis are:
 - Identify different cell types or states
 - Provide basis for subsequent differential expression analysis
 
-Lotus uses the cplearn algorithm for clustering, which can:
+Lotus supports multiple clustering methods and allows you to freely switch between them:
+
+**Lotus cplearn** (default method):
 - Auto-detect the best data representation (X_latent, X_pca, or X)
 - Handle large-scale datasets
 - Generate stable clustering results
+
+**scanpy** (alternative method):
+- Use scanpy's proven clustering algorithms (Leiden or Louvain)
+- Fully compatible with Lotus workflow
+- Easy to switch between methods
 
 Basic Usage
 -----------
@@ -34,6 +41,26 @@ Basic Usage
     
     # View clustering results
     print(adata.obs["cplearn_labels"].value_counts())
+
+Switching to scanpy
+-------------------
+
+If you prefer to use scanpy's clustering algorithms instead, you can easily switch:
+
+.. code-block:: python
+
+    import scanpy as sc
+    
+    # Option 1: Use scanpy Leiden algorithm
+    sc.tl.leiden(adata, resolution=0.5, key_added="leiden")
+    
+    # Option 2: Use scanpy Louvain algorithm
+    sc.tl.louvain(adata, resolution=0.5, key_added="louvain")
+    
+    # The cluster labels will be stored in adata.obs["leiden"] or adata.obs["louvain"]
+    # You can use these keys in subsequent Lotus functions (e.g., marker_genes, umap)
+
+Both methods are fully compatible with Lotus workflow. Simply use the appropriate cluster key (``"cplearn_labels"``, ``"leiden"``, or ``"louvain"``) in subsequent analysis steps.
 
 Parameter Description
 ---------------------
@@ -121,5 +148,6 @@ Next Steps
 ----------
 
 After completing clustering, you can:
+- Perform core selection (for cplearn workflow): :doc:`core_selection`
 - Perform differential expression analysis: :doc:`deg`
 - Perform visualization: :doc:`visualization`

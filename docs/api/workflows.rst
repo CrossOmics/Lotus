@@ -9,10 +9,12 @@ Overview
 The Workflows module includes the following submodules:
 
 - **Preprocessing**: Data quality control, filtering, normalization, and dimensionality reduction
+- **CoreSelection**: Core map embedding (typically before clustering)
 - **Clustering**: Cell clustering analysis
+  - Supports multiple methods: Lotus cplearn (default) or scanpy (Leiden/Louvain)
+  - Easy to switch between methods
 - **Visualization**: Result visualization
 - **DEG (Differential Expression Analysis)**: Marker gene identification
-- **CoreSelection**: Core map embedding
 
 All Functions
 -------------
@@ -26,6 +28,14 @@ Preprocessing Functions
 -----------------------
 
 .. automodule:: lotus.workflows.preprocess.preprocess
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Core Selection Functions
+------------------------
+
+.. automodule:: lotus.workflows.core_selection.core_selection
    :members:
    :undoc-members:
    :show-inheritance:
@@ -50,14 +60,6 @@ Differential Expression Analysis Functions
 ------------------------------------------
 
 .. automodule:: lotus.workflows.deg.deg
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Core Selection Functions
-------------------------
-
-.. automodule:: lotus.workflows.core_selection.core_selection
    :members:
    :undoc-members:
    :show-inheritance:

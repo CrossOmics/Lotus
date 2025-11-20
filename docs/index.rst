@@ -20,9 +20,25 @@ Key Features
 ------------
 
 * **Complete Analysis Pipeline**: Full pipeline from data preprocessing to visualization
+* **Method Flexibility**: Support multiple clustering methods (cplearn or scanpy), easy to switch between them
 * **scanpy Compatible**: Fully compatible with the scanpy ecosystem
 * **Easy to Use**: Clear API design suitable for biologists
 * **Automated Processing**: Smart parameter defaults and auto-detection features
+
+Acknowledgments
+---------------
+
+Lotus is built on top of excellent open-source packages in the single-cell analysis ecosystem:
+
+* **scanpy** - Single-cell analysis in Python
+* **anndata** - Annotated data objects for single-cell omics
+* **cplearn** - Core-periphery learning for single-cell analysis
+* **pandas** - Data manipulation and analysis
+* **numpy** - Numerical computing
+* **scikit-learn** - Machine learning tools
+* **umap-learn** - Uniform Manifold Approximation and Projection
+
+We thank all the developers and contributors of these packages for their excellent work.
 
 Quick Start
 -----------

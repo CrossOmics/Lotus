@@ -27,6 +27,10 @@ Marker Gene Identification
    - Upregulated genes: Highly expressed in the target population
    - Downregulated genes: Lowly expressed in the target population
    - Significance: Determined through statistical tests
+   
+   **Compatibility:**
+   - Works with cluster labels from both Lotus cplearn (``"cplearn_labels"``) and scanpy (``"leiden"``, ``"louvain"``)
+   - Auto-detects cluster keys if not specified
 
    **Usage Example:**
 

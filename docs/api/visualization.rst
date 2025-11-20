@@ -34,14 +34,18 @@ UMAP Visualization
 
       from lotus.workflows import umap
       
-      # Basic usage
+      # Basic usage (with Lotus cplearn clustering)
       umap(
           adata,
-          cluster_key="cplearn_labels",
+          cluster_key="cplearn_labels",  # Can also use "leiden" or "louvain" if using scanpy
           truth_key="truth",
           output_dir="./results",
           save="_clusters.png",
       )
+      
+      # If using scanpy clustering, use the corresponding cluster key:
+      # cluster_key="leiden"  # if using sc.tl.leiden()
+      # cluster_key="louvain"  # if using sc.tl.louvain()
 
 Marker Gene Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,5 +76,5 @@ Marker Gene Visualization
           adata,
           marker_genes=marker_genes,
           output_dir="./results",
-          cluster_key="cplearn_labels",
+          cluster_key="cplearn_labels",  # Can also use "leiden" or "louvain" if using scanpy
       )

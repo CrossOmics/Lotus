@@ -8,10 +8,10 @@ Complete API reference documentation for Lotus. All functions and classes are or
 
    workflows
    preprocess
+   core_selection
    clustering
    visualization
    deg
-   core_selection
 
 Overview
 --------
@@ -30,10 +30,10 @@ The Workflows module is the core of Lotus, providing a complete single-cell anal
 
 - :doc:`workflows` - Overview of all workflows functions
 - :doc:`preprocess` - Preprocessing related functions
+- :doc:`core_selection` - Core selection functions (typically before clustering)
 - :doc:`clustering` - Clustering analysis functions
 - :doc:`visualization` - Visualization functions
 - :doc:`deg` - Differential expression analysis functions
-- :doc:`core_selection` - Core selection functions
 
 Compatibility API
 -----------------

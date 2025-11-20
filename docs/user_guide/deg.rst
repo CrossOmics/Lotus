@@ -15,6 +15,7 @@ Lotus differential expression analysis features:
 - Auto-detect cluster keys and data layers to use
 - Support automatic selection of comparison groups
 - Output results in scanpy-compatible format
+- Works with cluster labels from both Lotus cplearn and scanpy (Leiden/Louvain)
 
 Basic Usage
 -----------

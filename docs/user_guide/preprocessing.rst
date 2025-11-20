@@ -146,5 +146,6 @@ Next Steps
 ----------
 
 After completing preprocessing, you can:
+- Perform core selection (optional): :doc:`core_selection`
 - Perform clustering analysis: :doc:`clustering`
 - Perform visualization: :doc:`visualization`

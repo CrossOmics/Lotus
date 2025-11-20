@@ -24,12 +24,16 @@ Basic Usage
     
     umap(
         adata,
-        cluster_key="cplearn_labels",  # Cluster key for coloring
+        cluster_key="cplearn_labels",  # Cluster key for coloring (can be "cplearn_labels", "leiden", or "louvain")
         truth_key="truth",            # Truth labels (optional)
         output_dir="./results",       # Output directory
         save="_clusters.png",         # Save filename
         show=False,                   # Whether to show
     )
+    
+    # Note: If you used scanpy for clustering, use the corresponding cluster key:
+    # cluster_key="leiden"  # if using sc.tl.leiden()
+    # cluster_key="louvain"  # if using sc.tl.louvain()
 
 Parameter Description
 ~~~~~~~~~~~~~~~~~~~~

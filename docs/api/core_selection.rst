@@ -8,6 +8,8 @@ Overview
 
 Core selection is used to compute core map embedding, a special dimensionality reduction representation that can be used for further analysis and visualization.
 
+**Note on workflow order:** Core selection can be performed before clustering (to identify core cells) or after clustering (using the clustering model). In the cplearn workflow, it is typically performed after clustering as it requires the clustering model.
+
 Main Functions
 --------------
 
