@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import importlib
+import sys
+from types import ModuleType
+from typing import Any
+
+from ...methods.deg import find_markers as _scRNA_seq_find_markers
+from ...methods.deg.find_markers import DEAnalyzer, DEOptions, de_from_model, de_from_adata
+
+__all__ = [
+    "coremap",
+    "corespect",
+    "utils",
+    "anchored_map",
+    "Coremap",
+    "CorespectModel",
+    "FlowRankConfig",
+    "StableCoreConfig",
+    "FineGrainedConfig",
+    "ClusterConfig",
+    "PropagationConfig",
+    "find_anchors",
+    "cluster_core",
+    "stable_core",
+    "fine_grained_core",
+    "propagate_from_core",
+    "FlowRank",
+    "find_markers",
+    "DEAnalyzer",
+    "DEOptions",
+    "de_from_model",
+    "de_from_adata",
+]
+
+_IMPORT_ERROR: ModuleNotFoundError | None = None
+_MODULE_CACHE: dict[str, ModuleType] = {}
+
+_ATTR_SOURCES = {
+    "anchored_map": "cplearn.coremap.coremap",
+    "Coremap": "cplearn.coremap.coremap",
+    "CorespectModel": "cplearn.corespect.corespect",
+    "FlowRankConfig": "cplearn.corespect.config",
+    "StableCoreConfig": "cplearn.corespect.config",
+    "FineGrainedConfig": "cplearn.corespect.config",
+    "ClusterConfig": "cplearn.corespect.config",
+    "PropagationConfig": "cplearn.corespect.config",
+    "find_anchors": "cplearn.coremap.find_anchors",
+    "cluster_core": "cplearn.corespect.corespect",
+    "stable_core": "cplearn.corespect.corespect",
+    "fine_grained_core": "cplearn.corespect.corespect",
+    "propagate_from_core": "cplearn.corespect.corespect",
+    "FlowRank": "cplearn.corespect.corespect",
+}
+
+_SUBPACKAGES = ("coremap", "corespect", "utils")
+
+find_markers = _scRNA_seq_find_markers
+
+
+def _import_module(name: str) -> ModuleType:
+    global _IMPORT_ERROR
+    if name in _MODULE_CACHE:
+        return _MODULE_CACHE[name]
+    try:
+        module = importlib.import_module(name)
+    except ModuleNotFoundError as exc:  # pragma: no cover - optional dependency
+        _IMPORT_ERROR = exc
+        raise ModuleNotFoundError(
+            "cplearn is not available. Install it in the current environment to "
+            "use lotus.cplearn."
+        ) from exc
+    _MODULE_CACHE[name] = module
+    return module
+
+
+def _ensure_subpackage(name: str) -> ModuleType:
+    full_name = f"{__name__}.{name}"
+    if full_name in sys.modules:
+        return sys.modules[full_name]
+    module = _import_module(f"cplearn.{name}")
+    sys.modules[full_name] = module
+    return module
+
+
+def __getattr__(name: str) -> Any:
+    if name in _SUBPACKAGES:
+        return _ensure_subpackage(name)
+
+    module_name = _ATTR_SOURCES.get(name)
+    if module_name is None:
+        raise AttributeError(f"cplearn has no attribute {name!r}") from None
+    module = _import_module(module_name)
+    return getattr(module, name)
+
+
+def __dir__() -> list[str]:
+    return sorted(set(__all__) | set(_SUBPACKAGES))

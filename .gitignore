@@ -1,0 +1,60 @@
+# Scanpy outfiles
+/data/
+/write/
+
+# Docs - only ignore build output, not source files
+/docs/_build/
+/docs/.doctrees/
+
+# tests
+/*cache/
+/tests/
+
+# write
+/write/
+
+# scripts
+/scripts/
+
+# figures
+/figures/
+
+# data
+/data/
+
+# Environment management
+/Pipfile
+/Pipfile.lock
+/requirements*.lock
+
+# always-ignore extensions
+*~
+
+# Python build files
+__pycache__/
+/ci/lotus-low-vers.txt
+/dist/
+/*-env/
+/env-*/
+/environment.yml
+/.pytest_cache/
+
+# OS stuff
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+.directory
+
+# IDEs and editors
+/.idea/
+
+# asv benchmark files
+/benchmarks/.asv
+/benchmarks/data/
+
+#docstring
+docstrings_paraphrased.jsonl
+docstrings_to_paraphrase.jsonl
+
+#result
+/result_*/
