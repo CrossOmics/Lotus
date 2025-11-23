@@ -8,22 +8,22 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
    <div class="lotus-cards">
        <a href="getting_started.html" class="lotus-card">
            <div class="lotus-card-title">
-               <span class="lotus-card-icon">🔌</span>
-               <span>Installation</span>
-           </div>
-           <p class="lotus-card-description">New to Lotus? Check out the installation guide.</p>
-       </a>
-       <a href="getting_started.html" class="lotus-card">
-           <div class="lotus-card-title">
                <span class="lotus-card-icon">▶</span>
-               <span>Tutorials</span>
+               <span>Quick Start</span>
            </div>
            <p class="lotus-card-description">The tutorials walk you through real-world applications of Lotus.</p>
+       </a>
+       <a href="user_guide/index.html" class="lotus-card">
+           <div class="lotus-card-title">
+               <span class="lotus-card-icon">📚</span>
+               <span>User Guide</span>
+           </div>
+           <p class="lotus-card-description">Detailed explanations of Lotus's functional modules and workflows.</p>
        </a>
        <a href="api/index.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">📖</span>
-               <span>API reference</span>
+               <span>API Reference</span>
            </div>
            <p class="lotus-card-description">The API reference contains a detailed description of the Lotus API.</p>
        </a>
@@ -58,11 +58,3 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
            <li>and other packages including pandas, numpy, scikit-learn, and umap-learn as appropriate</li>
        </ul>
    </div>
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   getting_started
-   user_guide/index
-   api/index
