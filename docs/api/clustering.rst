@@ -83,4 +83,3 @@ Helper Functions
 
 .. autofunction:: lotus.workflows.clustering.clustering.summarize_clusters
 
-   Summarize cluster label statistics.

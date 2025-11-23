@@ -445,7 +445,6 @@ After running the complete workflow, you'll find the following output files in t
 Next Steps
 ----------
 
-* Check out :doc:`user_guide/index` for detailed explanations of each step
 * See :doc:`api/index` for the complete API reference
 * Run the example script: ``examples/lotus_workflow.py`` for a more detailed example with logging
 * View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_
