@@ -83,12 +83,10 @@ Example output (from running ``examples/lotus_workflow.py``):
       - Raw counts saved in: `adata.layers['raw_counts']`
       - Neighbors graph constructed: True
 
-3. Core Selection (optional, before clustering)
-----------------------------------------------
+3. Core Selection (before clustering)
+-------------------------------------
 
-Core selection can be performed before clustering to identify core cells for stable clustering. However, note that the full core map embedding computation typically requires the clustering model (see step 4 after clustering).
-
-For now, you can prepare for core selection by ensuring the neighbors graph is constructed (done in preprocessing):
+Core selection is performed before clustering to identify core cells for stable clustering. The neighbors graph is already constructed in the preprocessing step:
 
 .. code-block:: python
 
@@ -103,7 +101,7 @@ Example output:
     Neighbors graph ready: True
     Using representation: adata.obsm['X_latent'] (shape: (180, 12))
 
-Note: The full core map embedding computation will be done after clustering (see step 4).
+This step prepares the data for stable clustering by identifying core cells.
 
 4. Clustering
 -----------
@@ -163,51 +161,7 @@ Example output:
 
 scanpy methods are directly compatible with Lotus workflow.
 
-5. Core Selection (compute embedding after clustering)
-------------------------------------------------------
-
-After clustering with cplearn, compute the full core map embedding:
-
-.. code-block:: python
-
-    core_selection(
-        adata,
-        model=model,
-        use_rep="X_latent",
-        key_added="X_cplearn_coremap",
-        print_summary=True,
-    )
-
-This step:
-- Computes core map embedding using the clustering model
-- Identifies core cells for stable clustering
-- Used for further analysis and visualization
-
-Example output (from running ``examples/lotus_workflow.py``):
-
-.. code-block:: text
-
-    Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-
-You can check the embedding:
-
-.. code-block:: python
-
-    print(f"✓ CoreSelection complete")
-    embedding = adata.obsm["X_cplearn_coremap"]
-    assigned = np.sum(~np.isnan(embedding).any(axis=1))
-    print(f"  - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: {embedding.shape})")
-    print(f"  - Assigned points: {assigned}/{adata.n_obs} ({100*assigned/adata.n_obs:.1f}%)")
-
-Example output:
-
-.. code-block:: text
-
-    ✓ CoreSelection complete
-      - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 2))
-      - Assigned points: 180/180 (100.0%)
-
-6. Visualization
+5. Visualization
 --------------
 
 Generate UMAP visualization of clustering results:
@@ -272,7 +226,7 @@ Example UMAP visualization:
    
    The generated PNG file (``./results/umap_clusters.png``) can be opened in any image viewer to see the visualization.
 
-7. Differential Expression Analysis
+6. Differential Expression Analysis
 -----------------------------------
 
 Find marker genes between clusters:
@@ -345,22 +299,19 @@ Here's a complete workflow example that you can run. For the full example script
     preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
     print(f"Preprocessing complete. Data shape: {adata.shape}")
     
-    # 2. Core Selection (preparation - neighbors graph is ready)
+    # 2. Core Selection (before clustering)
     print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
+    print("Core selection preparation complete")
     
     # 3. Clustering
     model = clustering(adata, use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
     print(f"Clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
     
-    # 4. Core Selection (compute embedding after clustering)
-    core_selection(adata, model=model, use_rep="X_latent", key_added="X_cplearn_coremap")
-    print("Core selection complete")
-    
-    # 5. Visualization
+    # 4. Visualization
     umap(adata, cluster_key="cplearn_labels", output_dir="./results", save="_clusters.png")
     print("UMAP visualization saved to ./results/umap_clusters.png")
     
-    # 6. Differential Expression
+    # 5. Differential Expression
     de_result = marker_genes(adata, cluster_key="cplearn_labels", layer="raw_counts", auto_pick_groups=True)
     print(f"DEG analysis complete. Found {len(de_result)} differentially expressed genes")
     print(f"Top 5 marker genes: {de_result['gene'].head(5).tolist()}")
@@ -404,15 +355,6 @@ Example output (from running ``examples/lotus_workflow.py``):
     ✓ UMAP visualization complete
       - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: (180, 2))
       - Visualization saved to: ./results/umap_clusters.png
-    
-    ============================================================
-    CoreSelection: Neighbors → CoreSelection
-    ============================================================
-    Computing core map embedding...
-    Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-    ✓ CoreSelection complete
-      - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 2))
-      - Assigned points: 180/180 (100.0%)
     
     ============================================================
     DEG: Marker Genes
