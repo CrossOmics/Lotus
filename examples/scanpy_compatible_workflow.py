@@ -25,7 +25,7 @@ if str(_project_root) not in sys.path:
 import scanpy as sc
 from lotus.workflows import (
     clustering,
-    core_selection,
+    core_analysis,
     marker_genes,
     preprocess,
     render_visualizations,
@@ -268,28 +268,28 @@ def main() -> None:
     logger.info(f"  - Visualization saved to: {output_dir / 'umap_clusters.png'}")
     
     # ============================================
-    # CoreSelection: Test compatibility
+    # CoreAnalysis: Test compatibility
     # ============================================
     logger.info("\n" + "=" * 60)
-    logger.info("CoreSelection (Lotus with scanpy neighbors graph)")
+    logger.info("CoreAnalysis (Lotus with scanpy neighbors graph)")
     logger.info("=" * 60)
     logger.info("Testing compatibility with scanpy neighbors graph...")
     
     try:
-        core_selection(
+        core_analysis(
             adata,
             model=model,
             use_rep=None,  # Auto-detect: will use X_pca
             key_added="X_cplearn_coremap",
             print_summary=True,
         )
-        logger.info("✓ CoreSelection complete")
+        logger.info("✓ CoreAnalysis complete")
         embedding = adata.obsm["X_cplearn_coremap"]
         assigned = np.sum(~np.isnan(embedding).any(axis=1))
         logger.info(f"  - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']`")
         logger.info(f"  - Assigned points: {assigned}/{adata.n_obs} ({100*assigned/adata.n_obs:.1f}%)")
     except Exception as e:
-        logger.warning(f"  - CoreSelection skipped due to: {type(e).__name__}: {str(e)[:100]}")
+        logger.warning(f"  - CoreAnalysis skipped due to: {type(e).__name__}: {str(e)[:100]}")
         logger.info("  - This is expected for small datasets or when propagate=False")
     
     # ============================================

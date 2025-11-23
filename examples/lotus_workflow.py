@@ -27,8 +27,8 @@ from lotus.workflows import (
     clustering,
     # DEG
     marker_genes,
-    # CoreSelection
-    core_selection,
+    # CoreAnalysis
+    core_analysis,
 )
 
 
@@ -230,20 +230,20 @@ def main() -> None:
     logger.info(f"  - Visualization saved to: {output_dir / 'umap_clusters.png'}")
 
     # ============================================
-    # CoreSelection: Neighbors → CoreSelection
+    # CoreAnalysis: Core map embedding and core layer extraction
     # ============================================
     logger.info("\n" + "=" * 60)
-    logger.info("CoreSelection: Neighbors → CoreSelection")
+    logger.info("CoreAnalysis: Core map embedding and core layer extraction")
     logger.info("=" * 60)
     logger.info("Computing core map embedding...")
-    core_selection(
+    core_analysis(
         adata,
         model=model,
         use_rep="X_latent",
         key_added="X_cplearn_coremap",
         print_summary=True,
     )
-    logger.info("✓ CoreSelection complete")
+    logger.info("✓ CoreAnalysis complete")
     embedding = adata.obsm["X_cplearn_coremap"]
     assigned = np.sum(~np.isnan(embedding).any(axis=1))
     logger.info(f"  - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: {embedding.shape})")

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Iterable, Literal
 
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 
@@ -20,11 +21,11 @@ def summarize_clusters(labels: Iterable[int]) -> str:
 def clustering(
     adata: AnnData,
     *,
-    method: Literal["cplearn", "leiden", "louvain"] = "cplearn",
+    method: Literal["cplearn", "leiden", "louvain"] = "leiden",
     use_rep: str | None = None,
     key_added: str | None = None,
     cluster_resolution: float = 1.2,
-    # cplearn-specific parameters
+    # cplearn-specific parameters (deprecated, use cplearn API directly)
     stable_core_frac: float = 0.25,
     stable_ng_num: int = 8,
     fine_grained: bool = False,
@@ -37,12 +38,20 @@ def clustering(
     print_summary: bool = True,
 ) -> cplearn.CorespectModel | None:
     """
-    Clustering step: Perform clustering analysis using cplearn, leiden, or louvain
+    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain)
     
-    Supports multiple clustering methods:
-    - "cplearn" (default): Lotus cplearn clustering algorithm
-    - "leiden": Scanpy Leiden algorithm
+    This function primarily implements scanpy clustering methods.
+    For cplearn clustering, please use the cplearn API directly:
+    
+    .. code-block:: python
+    
+        from lotus.methods.cplearn.external import cplearn
+        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn_labels")
+    
+    Supports clustering methods:
+    - "leiden" (default): Scanpy Leiden algorithm
     - "louvain": Scanpy Louvain algorithm
+    - "cplearn": Deprecated - use cplearn API directly (see above)
     
     Compatible with scanpy workflow:
     - Accepts scanpy standard representations (X_pca, X_umap, etc.)
@@ -51,24 +60,22 @@ def clustering(
     
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
-        method: Clustering method to use. Options: "cplearn" (default), "leiden", "louvain"
-        use_rep: Representation to use for clustering (cplearn only).
-                 If None, auto-detects: "X_latent" > "X_pca" > "X"
-                 Default is None (auto-detect)
+        method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
+        use_rep: Representation to use for clustering (deprecated for cplearn, use cplearn API directly)
         key_added: Key name for cluster labels in adata.obs.
-                   If None, uses method-specific default: "cplearn_labels", "leiden", or "louvain"
+                   If None, uses method-specific default: "leiden", "louvain", or "cplearn_labels"
         cluster_resolution: Clustering resolution (applies to all methods)
-        stable_core_frac: Stable core fraction (cplearn only)
-        stable_ng_num: Number of neighbors for stable core (cplearn only)
-        fine_grained: Whether to use fine-grained clustering (cplearn only)
-        propagate: Whether to propagate labels (cplearn only)
+        stable_core_frac: Stable core fraction (deprecated, use cplearn API directly)
+        stable_ng_num: Number of neighbors for stable core (deprecated, use cplearn API directly)
+        fine_grained: Whether to use fine-grained clustering (deprecated, use cplearn API directly)
+        propagate: Whether to propagate labels (deprecated, use cplearn API directly)
         random_state: Random seed for reproducibility (scanpy methods only)
         neighbors_key: Key in adata.uns where neighbors are stored (scanpy methods only)
         obsp: Key in adata.obsp to use as adjacency matrix (scanpy methods only)
         print_summary: Whether to print cluster summary
     
     Returns:
-        CorespectModel object (for cplearn) or None (for scanpy methods)
+        None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
     """
     # Set default key_added based on method
     if key_added is None:
@@ -79,7 +86,82 @@ def clustering(
         elif method == "louvain":
             key_added = "louvain"
     
-    # Handle scanpy methods (leiden, louvain)
+    # Handle cplearn method - redirect to cplearn API
+    if method == "cplearn":
+        import warnings
+        warnings.warn(
+            "Using method='cplearn' in clustering() is deprecated. "
+            "Please use cplearn API directly:\n"
+            "  from lotus.methods.cplearn.external import cplearn\n"
+            "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn_labels')\n"
+            "For core layer analysis, use:\n"
+            "  from lotus.workflows import core_analysis\n"
+            "  core_analysis(adata, model=model)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        # Still support it for backward compatibility, but warn
+        # Auto-detect representation if not specified
+        if use_rep is None:
+            if "X_latent" in adata.obsm:
+                use_rep = "X_latent"
+            elif "X_pca" in adata.obsm:
+                use_rep = "X_pca"
+            else:
+                use_rep = "X"
+        
+        # Ensure neighbors graph exists (required for cplearn)
+        if "neighbors" not in adata.uns:
+            warnings.warn(
+                "Neighbors graph not found. Please run preprocessing with neighbors() first, "
+                "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
+                UserWarning,
+            )
+        
+        model = cplearn.corespect(
+            adata,
+            use_rep=use_rep,
+            stable={
+                "auto_select_core_frac": False,
+                "core_frac": stable_core_frac,
+                "ng_num": stable_ng_num,
+                "densification": "k-nn",
+            },
+            cluster={
+                "resolution": cluster_resolution,
+                "auto_select_resolution": False,
+                "densification": False,
+            },
+            fine_grained=fine_grained,
+            propagate=propagate,
+            key_added=key_added,
+        )
+        
+        # Ensure output is compatible with scanpy format (categorical)
+        cplearn_key = "cplearn_labels"
+        if cplearn_key in adata.obs:
+            if not isinstance(adata.obs[cplearn_key].dtype, pd.CategoricalDtype):
+                adata.obs[cplearn_key] = adata.obs[cplearn_key].astype("category")
+        
+        # Set clustering_labels: copy cplearn_labels to clustering_labels
+        clustering_key = "clustering_labels"
+        if cplearn_key in adata.obs:
+            # Copy cplearn_labels to clustering_labels (ensure categorical dtype)
+            labels = np.asarray(adata.obs[cplearn_key].values, dtype=int)
+            adata.obs[clustering_key] = pd.Categorical(labels)
+        
+        if print_summary:
+            if cplearn_key in adata.obs:
+                print(
+                    "Cluster summary:",
+                    summarize_clusters(adata.obs[cplearn_key]),
+                )
+                if clustering_key in adata.obs:
+                    print(f"Stored clustering labels: `adata.obs['{clustering_key}']`")
+        
+        return model
+    
+    # Handle scanpy methods (leiden, louvain) - primary implementation
     if method in ("leiden", "louvain"):
         # Ensure neighbors graph exists (required for scanpy clustering)
         if "neighbors" not in adata.uns and neighbors_key is None:
@@ -115,64 +197,25 @@ def clustering(
             if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
                 adata.obs[key_added] = adata.obs[key_added].astype("category")
         
+        # Set clustering_labels: copy scanpy clustering result to clustering_labels
+        clustering_key = "clustering_labels"
+        if key_added in adata.obs:
+            # Copy scanpy labels to clustering_labels (ensure categorical dtype)
+            labels = np.asarray(adata.obs[key_added].values, dtype=int)
+            adata.obs[clustering_key] = pd.Categorical(labels)
+        
         if print_summary:
             print(
                 "Cluster summary:",
                 summarize_clusters(adata.obs[key_added]),
             )
+            if clustering_key in adata.obs:
+                print(f"Stored clustering labels: `adata.obs['{clustering_key}']`")
         
         return None
     
-    # Handle cplearn method (default)
-    # Auto-detect representation if not specified
-    if use_rep is None:
-        if "X_latent" in adata.obsm:
-            use_rep = "X_latent"
-        elif "X_pca" in adata.obsm:
-            use_rep = "X_pca"
-        else:
-            use_rep = "X"
-    
-    # Ensure neighbors graph exists (required for cplearn)
-    if "neighbors" not in adata.uns:
-        import warnings
-        warnings.warn(
-            "Neighbors graph not found. Please run preprocessing with neighbors() first, "
-            "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
-            UserWarning,
-        )
-    
-    model = cplearn.corespect(
-        adata,
-        use_rep=use_rep,
-        stable={
-            "auto_select_core_frac": False,
-            "core_frac": stable_core_frac,
-            "ng_num": stable_ng_num,
-            "densification": "k-nn",
-        },
-        cluster={
-            "resolution": cluster_resolution,
-            "auto_select_resolution": False,
-            "densification": False,
-        },
-        fine_grained=fine_grained,
-        propagate=propagate,
-        key_added=key_added,
-    )
-    
-    # Ensure output is compatible with scanpy format (categorical)
-    if key_added in adata.obs:
-        if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
-            adata.obs[key_added] = adata.obs[key_added].astype("category")
-    
-    if print_summary:
-        print(
-            "Cluster summary:",
-            summarize_clusters(adata.obs[key_added]),
-        )
-    
-    return model
+    # Should not reach here, but handle unknown method
+    raise ValueError(f"Unknown clustering method: {method}. Supported methods: 'leiden', 'louvain', 'cplearn'")
 
 
 # Alias for backward compatibility

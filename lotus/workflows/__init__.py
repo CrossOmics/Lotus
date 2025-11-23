@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .clustering import clustering, run_clustering
-from .core_selection import compute_coremap_embedding, core_selection
+from .core_analysis import compute_coremap_embedding, core_analysis
 from .deg import marker_genes, run_differential_expression
 from .preprocess import (
     filtering,
@@ -13,7 +13,7 @@ from .preprocess import (
     qc,
     scaling,
 )
-from .visualization import render_visualizations, umap
+from .visualization import coremap, render_visualizations, umap
 
 __all__ = [
     # Preprocess steps
@@ -27,6 +27,7 @@ __all__ = [
     "preprocess",
     # Visualization
     "umap",
+    "coremap",
     "render_visualizations",
     # Clustering
     "clustering",
@@ -34,7 +35,7 @@ __all__ = [
     # DEG
     "marker_genes",
     "run_differential_expression",
-    # CoreSelection
-    "core_selection",
-    "compute_coremap_embedding",
+    # CoreAnalysis
+    "core_analysis",
+    "compute_coremap_embedding",  # Backward compatibility alias
 ]

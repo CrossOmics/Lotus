@@ -138,7 +138,7 @@ def corespect(
     labels = np.asarray(model.labels_, dtype=int)
     target.obs[key_added] = pd.Categorical(labels)
 
-    target.uns[f"{key_added}_cplearn"] = {
+    cplearn_info = {
         "layers": [np.array(layer).astype(int).tolist() for layer in (model.layers_ or [])],
         "flowrank_score": dict(model.flowrank_score_) if model.flowrank_score_ is not None else None,
         "config": {
@@ -151,6 +151,28 @@ def corespect(
             "propagate": propagate,
         },
     }
+    
+    # Save core_layers_ information if available
+    if hasattr(model, "core_layers_") and model.core_layers_ is not None:
+        core_layers = model.core_layers_
+        cplearn_info["core_layers"] = [
+            np.array(layer).astype(int).tolist() 
+            for layer in core_layers
+        ]
+        # Flatten all core layer indices
+        core_indices = set()
+        for core_layer in core_layers:
+            core_layer_arr = np.array(core_layer).flatten()
+            core_indices.update(core_layer_arr.astype(int))
+        cplearn_info["core_indices"] = sorted(list(core_indices))
+        cplearn_info["n_core_cells"] = len(core_indices)
+        
+        # Create is_core marker in obs for easy visualization
+        is_core = np.zeros(target.n_obs, dtype=bool)
+        is_core[list(core_indices)] = True
+        target.obs[f"{key_added}_is_core"] = pd.Categorical(is_core)
+    
+    target.uns[f"{key_added}_cplearn"] = cplearn_info
 
     if copy:
         return target, model
