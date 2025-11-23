@@ -108,7 +108,7 @@ This step prepares the data for stable clustering by ensuring the neighbors grap
 4. Clustering
 -----------
 
-Lotus supports two clustering methods:
+Lotus supports multiple clustering methods through a unified interface:
 
 **Option A: Using Lotus cplearn (default)**
 
@@ -116,6 +116,7 @@ Lotus supports two clustering methods:
 
     model = clustering(
         adata,
+        method="cplearn",  # or omit for default
         use_rep="X_latent",
         key_added="cplearn_labels",
         cluster_resolution=1.2,
@@ -139,16 +140,29 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:47,577 - INFO -   - Number of clusters: 3
     2025-11-23 00:13:47,577 - INFO -   - Cluster IDs: [0, 1, 2]
 
-**Option B: Using scanpy (alternative)**
+**Option B: Using scanpy Leiden algorithm**
 
 .. code-block:: python
 
-    import scanpy as sc
-    sc.tl.leiden(adata, resolution=0.5, key_added="leiden")
-    # Or use louvain:
-    # sc.tl.louvain(adata, resolution=0.5, key_added="louvain")
+    clustering(
+        adata,
+        method="leiden",
+        cluster_resolution=0.5,
+        key_added="leiden",  # auto-set if None
+    )
 
-scanpy methods are directly compatible with Lotus workflow.
+**Option C: Using scanpy Louvain algorithm**
+
+.. code-block:: python
+
+    clustering(
+        adata,
+        method="louvain",
+        cluster_resolution=0.5,
+        key_added="louvain",  # auto-set if None
+    )
+
+All methods output cluster labels in scanpy-compatible format and can be used with subsequent Lotus functions.
 
 5. Visualization
 --------------
@@ -310,7 +324,11 @@ Here's a complete workflow example that you can run. For the full example script
     print("Core selection preparation complete")
     
     # 3. Clustering
-    model = clustering(adata, use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
+    # Using cplearn (default)
+    model = clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
+    # Or use scanpy methods:
+    # clustering(adata, method="leiden", cluster_resolution=0.5)
+    # clustering(adata, method="louvain", cluster_resolution=0.5)
     print(f"Clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
     
     # 4. Visualization
