@@ -22,57 +22,81 @@ Main Functions
    
    **Lotus supports multiple clustering methods:**
    
-   - **Lotus cplearn** (default): Auto-detect the best data representation, handle large-scale datasets, generate stable clustering results
-   - **scanpy** (alternative): Use proven scanpy algorithms (Leiden or Louvain), fully compatible with Lotus workflow
+   - **cplearn** (default): Lotus cplearn clustering algorithm - auto-detect the best data representation, handle large-scale datasets, generate stable clustering results
+   - **leiden**: Scanpy Leiden algorithm - fast and scalable community detection
+   - **louvain**: Scanpy Louvain algorithm - classic community detection method
    
-   You can freely switch between methods based on your needs.
+   You can switch between methods using the ``method`` parameter. All methods output cluster labels in scanpy-compatible format.
 
-   **Usage Example:**
+   **Usage Examples:**
 
    .. code-block:: python
 
       from lotus.workflows import clustering
       
-      # Basic usage
+      # Option 1: Use cplearn (default)
       model = clustering(
           adata,
+          method="cplearn",  # or omit for default
           use_rep="X_latent",
           key_added="cplearn_labels",
           cluster_resolution=1.2,
       )
       
-      # View clustering results
+      # Option 2: Use scanpy Leiden algorithm
+      clustering(
+          adata,
+          method="leiden",
+          cluster_resolution=0.5,
+          key_added="leiden",  # auto-set if None
+      )
+      
+      # Option 3: Use scanpy Louvain algorithm
+      clustering(
+          adata,
+          method="louvain",
+          cluster_resolution=0.5,
+          key_added="louvain",  # auto-set if None
+      )
+      
+      # View clustering results (works for all methods)
       print(adata.obs["cplearn_labels"].value_counts())
-
-   **Switching to scanpy:**
-   
-   If you prefer to use scanpy's clustering algorithms, you can easily switch:
-   
-   .. code-block:: python
-   
-      import scanpy as sc
-      
-      # Option 1: Use scanpy Leiden algorithm
-      sc.tl.leiden(adata, resolution=0.5, key_added="leiden")
-      
-      # Option 2: Use scanpy Louvain algorithm
-      sc.tl.louvain(adata, resolution=0.5, key_added="louvain")
-      
-      # Use the cluster key in subsequent Lotus functions
-      # e.g., marker_genes(adata, cluster_key="leiden")
+      print(adata.obs["leiden"].value_counts())
+      print(adata.obs["louvain"].value_counts())
 
    **Parameter Description:**
 
-   - ``use_rep``: Data representation to use
+   - ``method``: Clustering method to use. Options: ``"cplearn"`` (default), ``"leiden"``, ``"louvain"``
+   
+   - ``use_rep``: Data representation to use (cplearn only)
      - ``"X_latent"``: Latent representation (recommended)
      - ``"X_pca"``: PCA representation
      - ``"X"``: Raw data
-     - ``None``: Auto-detect
+     - ``None``: Auto-detect (default)
    
-   - ``cluster_resolution``: Clustering resolution
+   - ``key_added``: Key name for cluster labels in ``adata.obs``
+     - If ``None``, uses method-specific default: ``"cplearn_labels"``, ``"leiden"``, or ``"louvain"``
+   
+   - ``cluster_resolution``: Clustering resolution (applies to all methods)
      - Smaller values (0.5-1.0): Fewer, larger clusters
      - Larger values (1.5-2.0): More, smaller clusters
      - Default: 1.2
+   
+   - ``stable_core_frac``: Stable core fraction (cplearn only), default 0.25
+   
+   - ``stable_ng_num``: Number of neighbors for stable core (cplearn only), default 8
+   
+   - ``fine_grained``: Whether to use fine-grained clustering (cplearn only), default False
+   
+   - ``propagate``: Whether to propagate labels (cplearn only), default True
+   
+   - ``random_state``: Random seed for reproducibility (scanpy methods only), default 0
+   
+   - ``neighbors_key``: Key in ``adata.uns`` where neighbors are stored (scanpy methods only)
+   
+   - ``obsp``: Key in ``adata.obsp`` to use as adjacency matrix (scanpy methods only)
+   
+   - ``print_summary``: Whether to print cluster summary, default True
 
 .. autofunction:: lotus.workflows.clustering.clustering.run_clustering
 
