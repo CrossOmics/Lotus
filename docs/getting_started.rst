@@ -249,7 +249,7 @@ The visualization shows:
 - **Color coding**: Each cluster is colored differently
 - **Cell distribution**: Shows how cells are grouped and separated by cell type
 
-Example visualization (saved as PNG):
+Example visualization output:
 
 .. code-block:: text
 
@@ -261,6 +261,16 @@ Example visualization (saved as PNG):
     - Well-separated clusters indicate distinct cell types
 
 The generated PNG file (``./results/umap_clusters.png``) can be opened in any image viewer to see the visualization.
+
+.. note::
+
+   To generate the visualization images, run the example script:
+   
+   .. code-block:: bash
+   
+      python examples/lotus_workflow.py --clusters 3 --cells-per-cluster 60
+   
+   This will create the UMAP plot (``umap_clusters.png``) and marker gene violin plot (``violin_markers.png``) in the output directory.
 
 7. Differential Expression Analysis
 -----------------------------------
