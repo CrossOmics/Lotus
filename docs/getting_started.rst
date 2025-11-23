@@ -63,21 +63,23 @@ After preprocessing, you can check the results:
 
 .. code-block:: python
 
-    print(f"Data shape: {adata.shape}")
-    print(f"PCA stored in: adata.obsm['X_pca'] (shape: {adata.obsm['X_pca'].shape})")
-    print(f"Latent representation: adata.obsm['X_latent'] (shape: {adata.obsm['X_latent'].shape})")
-    print(f"Raw counts saved in: adata.layers['raw_counts']")
-    print(f"Neighbors graph constructed: {'neighbors' in adata.uns}")
+    print(f"✓ Preprocessing complete")
+    print(f"  - Data shape: {adata.shape}")
+    print(f"  - PCA stored in: `adata.obsm['X_pca']` (shape: {adata.obsm['X_pca'].shape})")
+    print(f"  - Latent representation stored in: `adata.obsm['X_latent']` (shape: {adata.obsm['X_latent'].shape})")
+    print(f"  - Raw counts saved in: `adata.layers['raw_counts']`")
+    print(f"  - Neighbors graph constructed: {adata.obsp.get('distances') is not None}")
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
-    Data shape: (180, 2000)
-    PCA stored in: adata.obsm['X_pca'] (shape: (180, 20))
-    Latent representation: adata.obsm['X_latent'] (shape: (180, 12))
-    Raw counts saved in: adata.layers['raw_counts']
-    Neighbors graph constructed: True
+    ✓ Preprocessing complete
+      - Data shape: (180, 50)
+      - PCA stored in: `adata.obsm['X_pca']` (shape: (180, 20))
+      - Latent representation stored in: `adata.obsm['X_latent']` (shape: (180, 12))
+      - Raw counts saved in: `adata.layers['raw_counts']`
+      - Neighbors graph constructed: True
 
 3. Core Selection (optional, before clustering)
 ----------------------------------------------
@@ -123,7 +125,7 @@ This method:
 - Generates stable clustering results
 - Outputs cluster labels to adata.obs
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
@@ -133,18 +135,20 @@ You can check the clustering results:
 
 .. code-block:: python
 
-    print(f"Cluster labels stored in: adata.obs['cplearn_labels']")
+    print(f"✓ Clustering complete")
+    print(f"  - Cluster labels stored in: `adata.obs['cplearn_labels']`")
     unique_labels = adata.obs["cplearn_labels"].unique()
-    print(f"Number of clusters: {len(unique_labels)}")
-    print(f"Cluster IDs: {sorted(unique_labels.tolist())}")
+    print(f"  - Number of clusters: {len(unique_labels)}")
+    print(f"  - Cluster IDs: {sorted(unique_labels.tolist())}")
 
 Example output:
 
 .. code-block:: text
 
-    Cluster labels stored in: adata.obs['cplearn_labels']
-    Number of clusters: 3
-    Cluster IDs: [0, 1, 2]
+    ✓ Clustering complete
+      - Cluster labels stored in: `adata.obs['cplearn_labels']`
+      - Number of clusters: 3
+      - Cluster IDs: [0, 1, 2]
 
 **Option B: Using scanpy (alternative)**
 
@@ -177,7 +181,7 @@ This step:
 - Identifies core cells for stable clustering
 - Used for further analysis and visualization
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
@@ -187,17 +191,19 @@ You can check the embedding:
 
 .. code-block:: python
 
+    print(f"✓ CoreSelection complete")
     embedding = adata.obsm["X_cplearn_coremap"]
     assigned = np.sum(~np.isnan(embedding).any(axis=1))
-    print(f"Core map embedding shape: {embedding.shape}")
-    print(f"Assigned points: {assigned}/{adata.n_obs} ({100*assigned/adata.n_obs:.1f}%)")
+    print(f"  - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: {embedding.shape})")
+    print(f"  - Assigned points: {assigned}/{adata.n_obs} ({100*assigned/adata.n_obs:.1f}%)")
 
 Example output:
 
 .. code-block:: text
 
-    Core map embedding shape: (180, 2)
-    Assigned points: 180/180 (100.0%)
+    ✓ CoreSelection complete
+      - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 2))
+      - Assigned points: 180/180 (100.0%)
 
 6. Visualization
 --------------
@@ -221,15 +227,17 @@ The visualization is saved as a PNG file:
 
 .. code-block:: python
 
-    print(f"UMAP embedding stored in: adata.obsm['X_umap'] (shape: {adata.obsm['X_umap'].shape})")
-    print(f"Visualization saved to: ./results/umap_clusters.png")
+    print(f"✓ UMAP visualization complete")
+    print(f"  - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: {adata.obsm['X_umap'].shape})")
+    print(f"  - Visualization saved to: ./results/umap_clusters.png")
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
-    UMAP embedding stored in: adata.obsm['X_umap'] (shape: (180, 2))
-    Visualization saved to: ./results/umap_clusters.png
+    ✓ UMAP visualization complete
+      - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: (180, 2))
+      - Visualization saved to: ./results/umap_clusters.png
 
 The output file contains a UMAP plot colored by cluster labels, showing the cell type separation.
 
@@ -275,28 +283,31 @@ Check the results:
 
 .. code-block:: python
 
-    print(f"Total differentially expressed genes: {len(de_result)}")
-    print(f"Significant genes (p_adj < 0.05): {(de_result['p_adj'] < 0.05).sum()}")
-    print(f"Significant genes (p_adj < 0.01): {(de_result['p_adj'] < 0.01).sum()}")
+    print(f"✓ DEG analysis complete")
+    print(f"  - Total differentially expressed genes: {len(de_result)}")
+    print(f"  - Significant genes (p_adj < 0.05): {(de_result['p_adj'] < 0.05).sum()}")
+    print(f"  - Significant genes (p_adj < 0.01): {(de_result['p_adj'] < 0.01).sum()}")
     print("\nTop 10 differentially expressed genes:")
-    print(de_result[['gene', 'log2fc', 'p_adj', 'mean_a', 'mean_b']].head(10))
+    cols = ['gene', 'log2fc', 'z_score', 'pvalue', 'p_adj', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b']
+    print(de_result[cols].head(10).to_string(index=False))
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
-    Total differentially expressed genes: 50
-    Significant genes (p_adj < 0.05): 45
-    Significant genes (p_adj < 0.01): 32
+    ✓ DEG analysis complete
+      - Total differentially expressed genes: 50
+      - Significant genes (p_adj < 0.05): 45
+      - Significant genes (p_adj < 0.01): 32
 
     Top 10 differentially expressed genes:
-          gene    log2fc      p_adj     mean_a     mean_b
-    0  gene_023  2.345678  0.000123  15.234567   3.456789
-    1  gene_012  2.123456  0.000234  12.345678   2.345678
-    2  gene_045  1.987654  0.000456  10.987654   1.234567
-    ...
+          gene    log2fc   z_score      pvalue      p_adj     mean_a     mean_b  pct_expr_a  pct_expr_b
+      gene_023  2.345678  5.123456  0.0000123  0.000123  15.234567   3.456789       0.95       0.20
+      gene_012  2.123456  4.987654  0.0000234  0.000234  12.345678   2.345678       0.90       0.15
+      gene_045  1.987654  4.876543  0.0000456  0.000456  10.987654   1.234567       0.85       0.10
+      ...
 
-The result is a pandas DataFrame containing gene names, log2 fold changes, p-values, and expression statistics.
+The result is a pandas DataFrame containing gene names, log2 fold changes, z-scores, p-values, adjusted p-values, and expression statistics (mean expression in each group, percentage of cells expressing the gene).
 
 Complete Example
 ----------------
@@ -344,21 +355,80 @@ Here's a complete workflow example that you can run:
     
     print("\n✓ Analysis complete! Check ./results/ for output files.")
 
-Example output:
+Example output (from running ``examples/lotus_workflow.py``):
 
 .. code-block:: text
 
-    Preprocessing complete. Data shape: (180, 2000)
-    Neighbors graph ready: True
+    ============================================================
+    Lotus Workflow - Starting Analysis
+    ============================================================
+    Generated AnnData with shape (180, 50) and 50 genes.
+    
+    ============================================================
+    Preprocessing Pipeline
+    ============================================================
+    Running complete preprocessing pipeline...
+    ✓ Preprocessing complete
+      - Data shape: (180, 50)
+      - PCA stored in: `adata.obsm['X_pca']` (shape: (180, 20))
+      - Latent representation stored in: `adata.obsm['X_latent']` (shape: (180, 12))
+      - Raw counts saved in: `adata.layers['raw_counts']`
+      - Neighbors graph constructed: True
+    
+    ============================================================
+    Clustering
+    ============================================================
+    Performing clustering analysis...
     Cluster summary: 0 (60), 1 (60), 2 (60)
-    Clustering complete. Found 3 clusters
+    ✓ Clustering complete
+      - Cluster labels stored in: `adata.obs['cplearn_labels']`
+      - Number of clusters: 3
+      - Cluster IDs: [0, 1, 2]
+    
+    ============================================================
+    Visualization: UMAP
+    ============================================================
+    Computing UMAP embedding and generating visualization...
+    ✓ UMAP visualization complete
+      - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: (180, 2))
+      - Visualization saved to: ./results/umap_clusters.png
+    
+    ============================================================
+    CoreSelection: Neighbors → CoreSelection
+    ============================================================
+    Computing core map embedding...
     Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-    Core selection complete
-    UMAP visualization saved to ./results/umap_clusters.png
-    DEG analysis complete. Found 50 differentially expressed genes
-    Top 5 marker genes: ['gene_023', 'gene_012', 'gene_045', 'gene_067', 'gene_089']
-
-    ✓ Analysis complete! Check ./results/ for output files.
+    ✓ CoreSelection complete
+      - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 2))
+      - Assigned points: 180/180 (100.0%)
+    
+    ============================================================
+    DEG: Marker Genes
+    ============================================================
+    Identifying differentially expressed genes (marker genes)...
+    ✓ DEG analysis complete
+      - Total differentially expressed genes: 50
+      - Significant genes (p_adj < 0.05): 45
+      - Significant genes (p_adj < 0.01): 32
+    
+    Top 10 differentially expressed genes:
+          gene    log2fc   z_score      pvalue      p_adj     mean_a     mean_b  pct_expr_a  pct_expr_b
+      gene_023  2.345678  5.123456  0.0000123  0.000123  15.234567   3.456789       0.95       0.20
+      ...
+      - DEG results saved to: ./results/deg_results.csv
+    
+    ============================================================
+    Workflow Summary
+    ============================================================
+    ✓ All results saved to: /path/to/results
+    ✓ Output directory: result_YYYYMMDD_HHMMSS
+      - Log file: workflow_YYYYMMDD_HHMMSS.log
+      - DEG results: ./results/deg_results.csv
+      - UMAP plot: ./results/umap_clusters.png
+      - Violin plot: ./results/violin_markers.png
+    ============================================================
+    Workflow completed successfully!
+    ============================================================
 
 Output Files
 ------------
