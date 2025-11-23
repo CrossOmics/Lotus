@@ -3,6 +3,8 @@ Quick Start
 
 This guide will walk you through a complete single-cell RNA sequencing data analysis workflow, from data loading to final visualization results.
 
+For a complete runnable example, see the `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_ script in the examples directory.
+
 First, import the necessary modules:
 
 .. code-block:: python
@@ -312,7 +314,7 @@ The result is a pandas DataFrame containing gene names, log2 fold changes, z-sco
 Complete Example
 ----------------
 
-Here's a complete workflow example that you can run:
+Here's a complete workflow example that you can run. For the full example script with logging and error handling, see `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_:
 
 .. code-block:: python
 
@@ -444,3 +446,4 @@ Next Steps
 * Check out :doc:`user_guide/index` for detailed explanations of each step
 * See :doc:`api/index` for the complete API reference
 * Run the example script: ``examples/lotus_workflow.py`` for a more detailed example with logging
+* View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_
