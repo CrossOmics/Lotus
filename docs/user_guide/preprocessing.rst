@@ -130,18 +130,6 @@ Parameter Description
 - ``min_genes``: Threshold for filtering low-quality cells
 - ``min_cells``: Threshold for filtering low-expression genes
 
-Frequently Asked Questions
----------------------------
-
-**Q: How to choose appropriate filtering thresholds?**
-A: Usually determined by viewing the distribution plots of QC metrics. You can use scanpy's plotting functions to visualize these metrics.
-
-**Q: How many principal components should be selected?**
-A: Usually 20-50 principal components are sufficient. This can be determined by viewing the variance explained ratio of PCA.
-
-**Q: How to choose the number of highly variable genes?**
-A: Usually 2000-3000 highly variable genes. If the dataset is very large, this can be increased to 4000-5000.
-
 Next Steps
 ----------
 

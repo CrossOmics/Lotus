@@ -132,18 +132,6 @@ Lotus clustering results are fully compatible with scanpy:
     import scanpy as sc
     sc.pl.umap(adata, color="cplearn_labels")
 
-Frequently Asked Questions
----------------------------
-
-**Q: How to choose appropriate clustering resolution?**
-A: Usually start with 1.0-1.5, adjust based on biological knowledge and clustering results. You can cluster with different resolutions and compare through visualization.
-
-**Q: What if clustering results are unstable?**
-A: You can adjust the ``stable_core_frac`` and ``stable_ng_num`` parameters, or set ``fine_grained=True``.
-
-**Q: How to know if clustering is reasonable?**
-A: View cluster distribution in reduced-dimensional space through UMAP visualization, and validate biological differences between clusters through differential expression analysis.
-
 Next Steps
 ----------
 

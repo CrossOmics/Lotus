@@ -83,18 +83,6 @@ Core selection results are fully compatible with scanpy:
     import scanpy as sc
     sc.pl.umap(adata, color="cplearn_labels", obsm="X_cplearn_coremap")
 
-Frequently Asked Questions
----------------------------
-
-**Q: When should I perform core selection?**
-A: For cplearn workflow, typically after clustering. Core selection uses the clustering model to compute embeddings.
-
-**Q: Can I skip core selection?**
-A: Yes, core selection is optional. It provides additional insights but is not required for basic analysis.
-
-**Q: Does core selection work with scanpy clustering?**
-A: Core selection in Lotus is designed for cplearn workflow. If using scanpy clustering, core selection may not be applicable.
-
 Next Steps
 ----------
 

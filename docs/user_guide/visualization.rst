@@ -127,30 +127,6 @@ If UMAP plot quality is not ideal, you can adjust parameters:
     # More dispersed clusters (larger min_dist)
     umap(adata, min_dist=1.0, spread=2.0)
 
-Frequently Asked Questions
----------------------------
-
-**Q: What if the UMAP plot looks wrong?**
-A: You can try adjusting the ``min_dist`` and ``spread`` parameters, or recompute the neighbor graph.
-
-**Q: How to save high-quality images?**
-A: You can use matplotlib's save function after calling the function, or set scanpy's image resolution:
-
-.. code-block:: python
-
-    import scanpy as sc
-    sc.settings.set_figure_params(dpi=300, figsize=(8, 8))
-
-**Q: How to display expression of multiple genes simultaneously?**
-A: Use scanpy's ``sc.pl.umap()`` function, passing a list of genes:
-
-.. code-block:: python
-
-    sc.pl.umap(adata, color=["Gene1", "Gene2", "Gene3"], ncols=3)
-
-**Q: How to compare clustering results with truth labels?**
-A: Set the ``truth_key`` parameter, and the function will display both cluster labels and truth labels.
-
 Next Steps
 ----------
 

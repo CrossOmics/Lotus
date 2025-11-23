@@ -113,21 +113,6 @@ Compatibility with scanpy
 
 Result format is compatible with scanpy's ``rank_genes_groups`` and can be used for subsequent analysis.
 
-Frequently Asked Questions
----------------------------
-
-**Q: Which data layer should be used for analysis?**
-A: Usually use raw count data (``"raw_counts"`` or ``"raw"``), because differential expression analysis requires unnormalized data.
-
-**Q: How to interpret log2fc?**
-A: log2fc > 0 means upregulated in group A, log2fc < 0 means downregulated in group A. |log2fc| > 1 is usually considered a significant fold change.
-
-**Q: What's the difference between p_adj and pvalue?**
-A: p_adj is the p value after multiple testing correction (FDR), which is more reliable. Usually use p_adj < 0.05 as the significance threshold.
-
-**Q: How to find marker genes for each cluster?**
-A: You can compare each cluster with all other clusters separately, or use scanpy's ``sc.tl.rank_genes_groups()`` function.
-
 Next Steps
 ----------
 
