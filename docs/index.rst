@@ -48,18 +48,15 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
    <div class="lotus-citation">
        <h3 class="lotus-citation-title">Citation</h3>
        <p class="lotus-citation-content">
-           <strong>Lotus</strong> is built upon excellent open-source packages in the single-cell analysis ecosystem:
-           <strong>anndata</strong> for annotated data objects,
-           <strong>scanpy</strong> for single-cell analysis,
-           <strong>cplearn</strong> for core-periphery learning,
-           and many others including pandas, numpy, scikit-learn, and umap-learn.
+           <strong>Lotus</strong> is built upon excellent open-source packages in the single-cell analysis ecosystem.
+           If you use Lotus in your research, please cite the underlying packages that Lotus depends on:
        </p>
-       <p class="lotus-citation-content">
-           <strong>If you use Lotus in your research, please cite:</strong>
-       </p>
-       <code class="lotus-citation-content" style="display: block; font-family: var(--font-stack--monospace, 'Consolas', 'Monaco', monospace); background: var(--color-background, #ffffff); padding: 0.75rem; border-radius: 4px; margin-top: 0.5rem; border: 1px solid var(--color-background-border, #e1e4e8);">
-           [Lotus citation will be added here]
-       </code>
+       <ul class="lotus-citation-content" style="margin: 0.5rem 0; padding-left: 1.5rem;">
+           <li><strong>anndata</strong> for annotated data objects</li>
+           <li><strong>scanpy</strong> for single-cell analysis</li>
+           <li><strong>cplearn</strong> for core-periphery learning</li>
+           <li>and other packages including pandas, numpy, scikit-learn, and umap-learn as appropriate</li>
+       </ul>
    </div>
 
 .. toctree::
