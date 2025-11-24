@@ -3,7 +3,7 @@ services:
     name: lotus-api
     env: python
     buildCommand: pip install -r requirements.txt && pip install -e .
-    startCommand: gunicorn lotus.api.app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn lotus.api.app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 600
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
