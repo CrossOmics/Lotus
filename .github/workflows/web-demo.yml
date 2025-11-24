@@ -1,0 +1,79 @@
+name: Deploy Web Demo to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Lotus-Web-Demo/**'
+      - '.github/workflows/web-demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare web demo files
+        run: |
+          mkdir -p _web_demo_build
+          cp -r Lotus-Web-Demo/* _web_demo_build/ || true
+          
+          # Create config.js with API endpoint
+          # IMPORTANT: Update this URL after deploying backend to Render
+          # Replace 'your-render-app' with your actual Render app name
+          cat > _web_demo_build/config.js << 'EOF'
+          // API Configuration for Lotus Web Demo
+          // Update this URL after deploying backend to Render
+          // Example: https://lotus-api.onrender.com
+          window.API_BASE_URL = window.API_BASE_URL || 'https://your-render-app.onrender.com';
+          
+          // Override API_BASE in app.js if it exists
+          if (typeof API_BASE !== 'undefined') {
+            // If app.js uses relative path, we need to patch it
+            console.log('API Base URL configured:', window.API_BASE_URL);
+          }
+          EOF
+          
+          # Inject config.js into index.html if not present
+          if [ -f "_web_demo_build/index.html" ]; then
+            if ! grep -q "config.js" _web_demo_build/index.html; then
+              # Add config.js before app.js
+              sed -i.bak 's|<script src="app.js|<script src="config.js"></script>\n    <script src="app.js|' _web_demo_build/index.html
+              rm -f _web_demo_build/index.html.bak
+            fi
+          fi
+          
+          # Create a README for the deployed site
+          cat > _web_demo_build/README.md << 'EOF'
+          # Lotus Web Demo
+          
+          This is the deployed frontend for Lotus Web Demo.
+          
+          **Important**: Make sure to update `config.js` with your Render backend URL.
+          
+          The backend API should be deployed separately on Render.
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _web_demo_build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

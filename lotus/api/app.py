@@ -114,6 +114,18 @@ def main():
     app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
 
 
+# Create app instance for Gunicorn production deployment
+# Gunicorn will use this app object directly: gunicorn lotus.api.app:app
+import os
+
+# Check if running in production (Render sets PORT, Gunicorn sets GUNICORN)
+# In production, don't serve static files (frontend is on GitHub Pages)
+if os.environ.get('PORT') or os.environ.get('GUNICORN'):
+    app = create_app(static_folder=None)
+else:
+    # For development or when imported as module
+    app = None
+
 if __name__ == '__main__':
     main()
 

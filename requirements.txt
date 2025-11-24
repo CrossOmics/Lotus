@@ -48,4 +48,7 @@ tqdm==4.67.1
 tuna==0.5.11
 tzdata==2025.2
 umap-learn==0.5.9.post2
+flask>=2.3.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
 
