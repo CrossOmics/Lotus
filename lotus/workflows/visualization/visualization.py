@@ -15,7 +15,7 @@ from lotus.methods.cplearn.external import cplearn
 def umap(
     adata: AnnData,
     *,
-    cluster_key: str = "cplearn_labels",
+    cluster_key: str = "cplearn",
     truth_key: str | None = "truth",
     output_dir: Path | None = None,
     save: str | bool = "_clusters.png",
@@ -112,7 +112,7 @@ def coremap(
         coremap_key: Key name for coremap embedding in adata.obsm.
                      Default is "X_cplearn_coremap"
         cluster_key: Key name for cluster labels in adata.obs.
-                     If None, auto-detects: "clustering_labels" > "cplearn_labels" > "leiden" > "louvain"
+                     If None, auto-detects: "cplearn" > "leiden" > "louvain"
         core_layer_key: Key name for core layer marker in adata.obs.
                         If None, auto-detects: "{coremap_key}_is_core"
         truth_key: Key name for truth labels in adata.obs. If None, will not be displayed
@@ -132,7 +132,7 @@ def coremap(
         >>> coremap(
         ...     adata,
         ...     coremap_key="X_cplearn_coremap",
-        ...     cluster_key="clustering_labels",
+        ...     cluster_key="cplearn",
         ...     model=model,
         ...     output_dir="./results"
         ... )
@@ -186,7 +186,7 @@ def coremap(
     
     # Auto-detect cluster_key if not specified
     if cluster_key is None:
-        for key in ["clustering_labels", "cplearn_labels", "leiden", "louvain"]:
+        for key in ["cplearn", "leiden", "louvain"]:
             if key in adata.obs:
                 cluster_key = key
                 break
@@ -282,7 +282,7 @@ def render_visualizations(
     marker_genes: Sequence[str],
     output_dir: Path,
     *,
-    cluster_key: str = "cplearn_labels",
+    cluster_key: str = "cplearn",
     truth_key: str | None = "truth",
     include_coremap: bool = True,
     coremap_key: str = "X_cplearn_coremap",

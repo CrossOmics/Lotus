@@ -2,9 +2,8 @@
 /data/
 /write/
 
-# Docs - only ignore build output, not source files
-/docs/_build/
-/docs/.doctrees/
+# Docs
+/docs/
 
 # tests
 /*cache/

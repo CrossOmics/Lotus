@@ -57,13 +57,13 @@ def core_analysis(
     
     # Auto-detect cluster key if not specified
     if cluster_key is None:
-        for key in ["cplearn_labels", "leiden", "louvain"]:
+        for key in ["cplearn", "leiden", "louvain"]:
             if key in adata.obs:
                 cluster_key = key
                 break
         # If not found, try to get from model
         if cluster_key is None and hasattr(model, "labels_"):
-            cluster_key = "cplearn_labels"
+            cluster_key = "cplearn"
             # Save labels from model if not already saved
             labels = np.asarray(model.labels_, dtype=int)
             adata.obs[cluster_key] = pd.Categorical(labels)
@@ -140,18 +140,11 @@ def core_analysis(
             adata.uns[f"{key_added}_cplearn"]["core_indices"] = sorted(list(core_indices))
             adata.uns[f"{key_added}_cplearn"]["n_core_cells"] = len(core_indices)
     
-    # Ensure cplearn_labels are saved (if from model)
-    cplearn_key = "cplearn_labels"
+    # Ensure cplearn labels are saved (if from model)
+    cplearn_key = "cplearn"
     if cplearn_key not in adata.obs and hasattr(model, "labels_"):
         labels = np.asarray(model.labels_, dtype=int)
         adata.obs[cplearn_key] = pd.Categorical(labels)
-    
-    # Set clustering_labels: if using cplearn, copy cplearn_labels to clustering_labels
-    clustering_key = "clustering_labels"
-    if cplearn_key in adata.obs:
-        # Copy cplearn_labels to clustering_labels (ensure categorical dtype)
-        labels = np.asarray(adata.obs[cplearn_key].values, dtype=int)
-        adata.obs[clustering_key] = pd.Categorical(labels)
     
     # Save cluster key info for reference
     if cluster_key:
@@ -159,7 +152,6 @@ def core_analysis(
             adata.uns[f"{key_added}_cplearn"] = {}
         adata.uns[f"{key_added}_cplearn"]["cluster_key"] = cluster_key
         adata.uns[f"{key_added}_cplearn"]["cplearn_key"] = cplearn_key
-        adata.uns[f"{key_added}_cplearn"]["clustering_key"] = clustering_key
     
     if print_summary:
         embedding = adata.obsm[key_added]
@@ -180,10 +172,10 @@ def core_analysis(
         if cluster_key:
             print(f"Using cluster labels from `adata.obs['{cluster_key}']` for visualization.")
         
-        # Print clustering_labels info
-        if "clustering_labels" in adata.obs:
-            n_clusters = adata.obs["clustering_labels"].nunique()
-            print(f"Stored clustering labels: `adata.obs['clustering_labels']` ({n_clusters} clusters).")
+        # Print cplearn labels info if available
+        if cplearn_key in adata.obs:
+            n_clusters = adata.obs[cplearn_key].nunique()
+            print(f"Stored cplearn labels: `adata.obs['{cplearn_key}']` ({n_clusters} clusters).")
 
 
 # Alias for backward compatibility

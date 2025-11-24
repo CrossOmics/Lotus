@@ -220,7 +220,7 @@ def main() -> None:
     model = clustering(
         adata,
         use_rep=None,  # Auto-detect: will use X_pca
-        key_added="cplearn_labels",
+        key_added="cplearn",
         stable_core_frac=0.3,
         stable_ng_num=10,
         cluster_resolution=0.8,  # Lower resolution for better clustering on small datasets
@@ -229,8 +229,8 @@ def main() -> None:
         print_summary=True,
     )
     logger.info("✓ Clustering complete")
-    logger.info(f"  - Cluster labels stored in: `adata.obs['cplearn_labels']`")
-    unique_labels = adata.obs["cplearn_labels"].unique()
+    logger.info(f"  - Cluster labels stored in: `adata.obs['cplearn']`")
+    unique_labels = adata.obs["cplearn"].unique()
     logger.info(f"  - Number of clusters: {len(unique_labels)}")
     logger.info(f"  - Cluster IDs: {sorted(unique_labels.tolist())}")
     
@@ -239,7 +239,7 @@ def main() -> None:
     if len(valid_clusters) < 2:
         logger.info("\n  - Lotus clustering produced insufficient clusters, using scanpy leiden as fallback")
         sc.tl.leiden(adata, resolution=0.5, key_added="leiden")
-        adata.obs["cplearn_labels"] = adata.obs["leiden"].astype(int)
+        adata.obs["cplearn"] = adata.obs["leiden"].astype(int)
         logger.info("  - Created 'leiden' clusters using scanpy for compatibility testing")
     
     # ============================================
@@ -258,7 +258,7 @@ def main() -> None:
     # Generate visualization
     workflow_umap(
         adata,
-        cluster_key="cplearn_labels",
+        cluster_key="cplearn",
         truth_key="truth",
         output_dir=output_dir,
         save="_clusters.png",
@@ -323,7 +323,7 @@ def main() -> None:
     # Ensure leiden key exists (categorical, scanpy format)
     if "leiden" not in adata.obs:
         adata.obs["leiden"] = pd.Categorical(
-            adata.obs["cplearn_labels"].astype(str)
+            adata.obs["cplearn"].astype(str)
         )
         logger.info("  - Created scanpy-style 'leiden' key (categorical)")
     else:

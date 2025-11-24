@@ -46,7 +46,7 @@ def clustering(
     .. code-block:: python
     
         from lotus.methods.cplearn.external import cplearn
-        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn_labels")
+        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
     
     Supports clustering methods:
     - "leiden" (default): Scanpy Leiden algorithm
@@ -63,7 +63,7 @@ def clustering(
         method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
         use_rep: Representation to use for clustering (deprecated for cplearn, use cplearn API directly)
         key_added: Key name for cluster labels in adata.obs.
-                   If None, uses method-specific default: "leiden", "louvain", or "cplearn_labels"
+                   If None, uses method-specific default: "leiden", "louvain", or "cplearn"
         cluster_resolution: Clustering resolution (applies to all methods)
         stable_core_frac: Stable core fraction (deprecated, use cplearn API directly)
         stable_ng_num: Number of neighbors for stable core (deprecated, use cplearn API directly)
@@ -80,7 +80,7 @@ def clustering(
     # Set default key_added based on method
     if key_added is None:
         if method == "cplearn":
-            key_added = "cplearn_labels"
+            key_added = "cplearn"
         elif method == "leiden":
             key_added = "leiden"
         elif method == "louvain":
@@ -93,7 +93,7 @@ def clustering(
             "Using method='cplearn' in clustering() is deprecated. "
             "Please use cplearn API directly:\n"
             "  from lotus.methods.cplearn.external import cplearn\n"
-            "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn_labels')\n"
+            "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn')\n"
             "For core layer analysis, use:\n"
             "  from lotus.workflows import core_analysis\n"
             "  core_analysis(adata, model=model)",
@@ -138,17 +138,10 @@ def clustering(
         )
         
         # Ensure output is compatible with scanpy format (categorical)
-        cplearn_key = "cplearn_labels"
+        cplearn_key = "cplearn"
         if cplearn_key in adata.obs:
             if not isinstance(adata.obs[cplearn_key].dtype, pd.CategoricalDtype):
                 adata.obs[cplearn_key] = adata.obs[cplearn_key].astype("category")
-        
-        # Set clustering_labels: copy cplearn_labels to clustering_labels
-        clustering_key = "clustering_labels"
-        if cplearn_key in adata.obs:
-            # Copy cplearn_labels to clustering_labels (ensure categorical dtype)
-            labels = np.asarray(adata.obs[cplearn_key].values, dtype=int)
-            adata.obs[clustering_key] = pd.Categorical(labels)
         
         if print_summary:
             if cplearn_key in adata.obs:
@@ -156,8 +149,6 @@ def clustering(
                     "Cluster summary:",
                     summarize_clusters(adata.obs[cplearn_key]),
                 )
-                if clustering_key in adata.obs:
-                    print(f"Stored clustering labels: `adata.obs['{clustering_key}']`")
         
         return model
     
@@ -197,12 +188,7 @@ def clustering(
             if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
                 adata.obs[key_added] = adata.obs[key_added].astype("category")
         
-        # Set clustering_labels: copy scanpy clustering result to clustering_labels
-        clustering_key = "clustering_labels"
-        if key_added in adata.obs:
-            # Copy scanpy labels to clustering_labels (ensure categorical dtype)
-            labels = np.asarray(adata.obs[key_added].values, dtype=int)
-            adata.obs[clustering_key] = pd.Categorical(labels)
+        # No need to copy to clustering_labels - use the key_added directly
         
         if print_summary:
             print(

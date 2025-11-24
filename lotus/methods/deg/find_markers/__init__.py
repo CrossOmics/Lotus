@@ -345,7 +345,7 @@ class _AnnDataCorespectProxy:
 def de_from_adata(
     adata: AnnData,
     *,
-    key: str = "cplearn_labels",
+    key: str = "cplearn",
     layer: str | None = None,
     use_rep: str | None = None,
     layers_key: str | None = None,
@@ -363,7 +363,7 @@ def de_from_adata(
     adata
         Annotated data matrix.
     key
-        Column in ``adata.obs`` containing cluster labels (default ``"cplearn_labels"``).
+        Column in ``adata.obs`` containing cluster labels (default ``"cplearn"``).
     layer, use_rep
         Optional data sources to override ``adata.X``.
     layers_key

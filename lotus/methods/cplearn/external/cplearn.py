@@ -79,7 +79,7 @@ def corespect(
     propagate_cfg: Mapping[str, Any] | None = None,
     fine_grained: bool = False,
     propagate: bool = True,
-    key_added: str = "cplearn_labels",
+    key_added: str = "cplearn",
     copy: bool = False,
 ) -> _cplearn.CorespectModel | tuple[AnnData, _cplearn.CorespectModel]:
     """

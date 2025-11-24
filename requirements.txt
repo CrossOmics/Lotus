@@ -15,6 +15,7 @@ kneed==0.8.5
 legacy-api-wrap==1.5
 leidenalg==0.10.2
 llvmlite==0.45.1
+louvain==0.8.2
 matplotlib==3.10.7
 mkl-service==2.5.2
 narwhals==2.11.0

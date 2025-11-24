@@ -194,8 +194,9 @@ def main() -> None:
     logger.info("Performing clustering analysis...")
     model = clustering(
         adata,
+        method="cplearn",  # Explicitly specify cplearn method
         use_rep="X_latent",
-        key_added="cplearn_labels",
+        key_added="cplearn",
         stable_core_frac=0.25,
         stable_ng_num=8,
         cluster_resolution=1.2,
@@ -204,8 +205,8 @@ def main() -> None:
         print_summary=True,
     )
     logger.info("✓ Clustering complete")
-    logger.info(f"  - Cluster labels stored in: `adata.obs['cplearn_labels']`")
-    unique_labels = adata.obs["cplearn_labels"].unique()
+    logger.info(f"  - Cluster labels stored in: `adata.obs['cplearn']`")
+    unique_labels = adata.obs["cplearn"].unique()
     logger.info(f"  - Number of clusters: {len(unique_labels)}")
     logger.info(f"  - Cluster IDs: {sorted(unique_labels.tolist())}")
 
@@ -218,7 +219,7 @@ def main() -> None:
     logger.info("Computing UMAP embedding and generating visualization...")
     workflow_umap(
         adata,
-        cluster_key="cplearn_labels",
+        cluster_key="cplearn",
         truth_key="truth",
         output_dir=output_dir,
         save="_clusters.png",
@@ -258,7 +259,7 @@ def main() -> None:
     logger.info("Identifying differentially expressed genes (marker genes)...")
     de_result = marker_genes(
         adata,
-        cluster_key="cplearn_labels",
+        cluster_key="cplearn",
         layer="raw_counts",
         min_detect_pct=0.0,
         min_cells_per_group=5,
