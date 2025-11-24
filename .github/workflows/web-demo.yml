@@ -23,14 +23,51 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Prepare web demo files
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
+          echo "Checking Lotus-Web-Demo:"
+          ls -la Lotus-Web-Demo/ 2>&1 || echo "Lotus-Web-Demo not found"
+          
           mkdir -p _web_demo_build
-          cp -r Lotus-Web-Demo/* _web_demo_build/ || true
+          
+          # Check if Lotus-Web-Demo exists and copy files
+          if [ -d "Lotus-Web-Demo" ]; then
+            echo "Lotus-Web-Demo directory exists"
+            # Check if it's a submodule (has .git file)
+            if [ -f "Lotus-Web-Demo/.git" ] || [ -d "Lotus-Web-Demo/.git" ]; then
+              echo "Detected as submodule, initializing..."
+              git submodule update --init --recursive || true
+            fi
+            
+            # Copy files
+            if [ "$(ls -A Lotus-Web-Demo 2>/dev/null)" ]; then
+              echo "Copying files from Lotus-Web-Demo..."
+              cp -r Lotus-Web-Demo/* _web_demo_build/ 2>&1
+              echo "Files copied. Contents of _web_demo_build:"
+              ls -la _web_demo_build/
+            else
+              echo "Warning: Lotus-Web-Demo directory is empty"
+            fi
+          else
+            echo "Error: Lotus-Web-Demo directory not found"
+            exit 1
+          fi
+          
+          # Verify index.html exists
+          if [ ! -f "_web_demo_build/index.html" ]; then
+            echo "Error: index.html not found in _web_demo_build"
+            exit 1
+          fi
           
           # Create config.js with API endpoint
           # IMPORTANT: Update this URL after deploying backend to Render
