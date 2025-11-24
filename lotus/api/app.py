@@ -14,6 +14,7 @@ from .cluster import bp as cluster_bp
 from .visualize import bp as visualize_bp
 from .analysis import bp as analysis_bp
 from .core_selection import bp as core_selection_bp
+from .session import bp as session_bp
 
 
 def create_app(static_folder: str = None):
@@ -41,6 +42,7 @@ def create_app(static_folder: str = None):
     app.register_blueprint(visualize_bp)
     app.register_blueprint(analysis_bp)
     app.register_blueprint(core_selection_bp)
+    app.register_blueprint(session_bp)
     
     # Serve static files if static_folder is provided
     if static_folder:

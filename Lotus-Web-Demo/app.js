@@ -5,8 +5,124 @@ let vectors = null;
 let metadata = null;
 let currentPlot = null;
 let colorMapping = {};
-let sessionId = 'default';
+// Generate unique session ID for each user
+let sessionId = generateSessionId();
 let clusterInfo = {}; // Store cluster information
+let heartbeatInterval = null; // Heartbeat interval ID
+let sessionCleanupSent = false; // Flag to prevent multiple cleanup requests
+
+// Generate unique session ID using UUID v4
+function generateSessionId() {
+    // Use crypto.randomUUID if available (modern browsers)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback: generate UUID v4 manually
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// Initialize session on page load
+async function initializeSession() {
+    try {
+        const response = await fetch(`${API_BASE}/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId })
+        });
+        if (response.ok) {
+            console.log(`[SESSION] Session initialized: ${sessionId}`);
+            // Start heartbeat
+            startHeartbeat();
+        } else {
+            console.warn('[SESSION] Failed to initialize session');
+        }
+    } catch (error) {
+        console.error('[SESSION] Error initializing session:', error);
+    }
+}
+
+// Send heartbeat to keep session alive
+async function sendHeartbeat() {
+    try {
+        await fetch(`${API_BASE}/session/heartbeat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId })
+        });
+    } catch (error) {
+        console.error('[SESSION] Heartbeat error:', error);
+    }
+}
+
+// Start heartbeat (send every 30 seconds)
+function startHeartbeat() {
+    // Send initial heartbeat
+    sendHeartbeat();
+    // Set up interval
+    heartbeatInterval = setInterval(sendHeartbeat, 30000); // 30 seconds
+}
+
+// Stop heartbeat
+function stopHeartbeat() {
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+    }
+}
+
+// Clean up session when page is closed or hidden
+async function cleanupSession() {
+    if (sessionCleanupSent) return; // Prevent multiple cleanup requests
+    sessionCleanupSent = true;
+    
+    stopHeartbeat();
+    
+    try {
+        // Use sendBeacon for reliable cleanup on page unload
+        const data = JSON.stringify({ session_id: sessionId });
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(`${API_BASE}/session/cleanup`, data);
+            console.log(`[SESSION] Session cleanup sent via beacon: ${sessionId}`);
+        } else {
+            // Fallback: use fetch with keepalive
+            await fetch(`${API_BASE}/session/cleanup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: data,
+                keepalive: true
+            });
+            console.log(`[SESSION] Session cleanup sent: ${sessionId}`);
+        }
+    } catch (error) {
+        console.error('[SESSION] Error cleaning up session:', error);
+    }
+}
+
+// Set up cleanup handlers
+window.addEventListener('beforeunload', cleanupSession);
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+        // Page is hidden, but don't cleanup yet (user might come back)
+        // Just stop heartbeat to save resources
+        stopHeartbeat();
+    } else if (document.visibilityState === 'visible') {
+        // Page is visible again, restart heartbeat
+        if (!heartbeatInterval) {
+            startHeartbeat();
+        }
+    }
+});
+
+// Initialize session when page loads
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeSession);
+} else {
+    initializeSession();
+}
 
 // Function to reset all state when new data is loaded
 function resetAllState() {
