@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试和结果
+tests/
+test_output/
+result_*/
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# 文档
+docs/
+*.md
+!README.md
+
+# 数据文件（如果很大，可以排除）
+# data/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# 其他
+.DS_Store
+*.log
+

@@ -119,9 +119,28 @@ def main():
 import os
 
 # Check if running in production (Render sets PORT, Gunicorn sets GUNICORN)
-# In production, don't serve static files (frontend is on GitHub Pages)
+# In Docker, serve static files; on Render/cloud, don't serve (frontend is on GitHub Pages)
 if os.environ.get('PORT') or os.environ.get('GUNICORN'):
-    app = create_app(static_folder=None)
+    # Check if STATIC_FOLDER is explicitly set
+    static_folder_env = os.environ.get('STATIC_FOLDER')
+    if static_folder_env:
+        static_folder = static_folder_env
+    elif os.environ.get('DOCKER') or os.path.exists('/app/Lotus-Web-Demo'):
+        # In Docker, try to find static folder
+        possible_paths = [
+            Path('/app/Lotus-Web-Demo'),
+            Path.cwd() / 'Lotus-Web-Demo',
+            Path(__file__).parent.parent.parent / 'Lotus-Web-Demo',
+        ]
+        static_folder = None
+        for path in possible_paths:
+            if path.exists() and path.is_dir() and (path / 'index.html').exists():
+                static_folder = str(path)
+                break
+    else:
+        # On cloud platforms like Render, don't serve static files
+        static_folder = None
+    app = create_app(static_folder=static_folder)
 else:
     # For development or when imported as module
     app = None
