@@ -34,6 +34,13 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
            </div>
            <p class="lotus-card-description">Find a bug? Interested in improving Lotus? Checkout our GitHub for the latest developments.</p>
        </a>
+       <a href="/demo/" class="lotus-card">
+           <div class="lotus-card-title">
+               <span class="lotus-card-icon">🌐</span>
+               <span>Web Demo</span>
+           </div>
+           <p class="lotus-card-description">Try Lotus interactively in your browser! Upload data, visualize embeddings, and run analysis workflows.</p>
+       </a>
    </div>
 
 .. raw:: html
