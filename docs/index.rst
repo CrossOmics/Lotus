@@ -34,7 +34,7 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
            </div>
            <p class="lotus-card-description">Find a bug? Interested in improving Lotus? Checkout our GitHub for the latest developments.</p>
        </a>
-       <a href="https://crossomics.github.io/Lotus-Web-Demo/" class="lotus-card">
+       <a href="https://lotus.zeabur.app/" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🌐</span>
                <span>Web Demo</span>
