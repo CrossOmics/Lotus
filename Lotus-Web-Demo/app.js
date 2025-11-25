@@ -839,16 +839,88 @@ async function runCoreSelection() {
             body = JSON.stringify(requestBody);
         }
 
-        const response = await fetch(`${API_BASE}/core-selection`, {
-            method: 'POST',
-            headers: headers,
-            body: body
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Core selection failed');
+        // Add timeout and retry logic for long-running operations
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout
+        
+        let response;
+        let data;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+            try {
+                response = await fetch(`${API_BASE}/core-selection`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                // Check if response is actually JSON
+                const contentType = response.headers.get('content-type');
+                const isJson = contentType && contentType.includes('application/json');
+                
+                // Handle non-JSON responses (502 Bad Gateway, 504 Gateway Timeout, etc.)
+                if (!isJson) {
+                    // Clone response to read text without consuming the body
+                    const text = await response.clone().text();
+                    console.error('[CORE] Non-JSON response:', text.substring(0, 200));
+                    
+                    if (response.status === 502 || response.status === 504) {
+                        // Bad Gateway or Gateway Timeout - retry
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            const waitTime = Math.min(1000 * Math.pow(2, retryCount), 10000); // Exponential backoff, max 10s
+                            showStatus(`Server timeout (${response.status}). Retrying in ${waitTime/1000}s... (attempt ${retryCount + 1}/${maxRetries + 1})`, 'info');
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            continue;
+                        } else {
+                            throw new Error(`Server error (${response.status}): The request took too long or the server is overloaded. Please try again later or use a smaller dataset.`);
+                        }
+                    } else {
+                        throw new Error(`Server error (${response.status}): ${text.substring(0, 100)}`);
+                    }
+                }
+                
+                // Parse JSON response
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    // If JSON parsing fails, clone response to get text
+                    const text = await response.clone().text();
+                    console.error('[CORE] JSON parse error. Response text:', text.substring(0, 500));
+                    throw new Error(`Invalid response from server: ${text.substring(0, 100)}`);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `Core selection failed with status ${response.status}`);
+                }
+                
+                // Success - break out of retry loop
+                break;
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timeout: The operation took longer than 10 minutes. Please try with a smaller dataset or contact support.');
+                }
+                
+                // Network error or other fetch error
+                if (retryCount < maxRetries && (error.message.includes('fetch') || error.message.includes('network'))) {
+                    retryCount++;
+                    const waitTime = Math.min(1000 * Math.pow(2, retryCount), 10000);
+                    showStatus(`Network error. Retrying in ${waitTime/1000}s... (attempt ${retryCount + 1}/${maxRetries + 1})`, 'info');
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    continue;
+                }
+                
+                // Re-throw if no more retries or non-retryable error
+                throw error;
+            }
         }
 
         let statusMessage = `✓ Core selection complete! Embedding stored in ${data.key_added}`;

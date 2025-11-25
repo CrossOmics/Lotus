@@ -28,6 +28,10 @@ def run_core_selection():
     - truth_key: Key name for ground truth labels in adata.obs (optional)
     - truth_json: JSON file with ground truth labels (optional)
     """
+    import sys
+    import traceback
+    import gc
+    
     try:
         if not LOTUS_AVAILABLE:
             return jsonify({'error': 'Lotus not available'}), 500
@@ -37,6 +41,9 @@ def run_core_selection():
         from pathlib import Path
         import json as json_lib
         from ..utils import get_session_dir
+        
+        print(f"[CORE] Starting core selection request...")
+        sys.stdout.flush()  # Ensure logs are flushed immediately
         
         # Handle both JSON and form data (for file upload)
         truth_key = None  # Will be extracted from JSON if present, or from request parameter
@@ -238,17 +245,40 @@ def run_core_selection():
                 'resolution': cluster_resolution,
                 'use_rep': use_rep
             }
+            # Save intermediate result (clustering) before core analysis
+            print(f"[CORE] Saving intermediate result (clustering)...")
             save_adata(adata, session_id)
+            sys.stdout.flush()
+            gc.collect()  # Free memory after saving
         
         # Now run core analysis
         print(f"[CORE] Running core analysis with use_rep={use_rep}, key_added={key_added}")
-        core_analysis(
-            adata,
-            model=model,
-            use_rep=use_rep,
-            key_added=key_added,
-            cluster_key=cluster_key
-        )
+        sys.stdout.flush()
+        
+        try:
+            core_analysis(
+                adata,
+                model=model,
+                use_rep=use_rep,
+                key_added=key_added,
+                cluster_key=cluster_key
+            )
+            print(f"[CORE] Core analysis completed successfully")
+            sys.stdout.flush()
+            
+            # Save intermediate result (core analysis) before visualization
+            print(f"[CORE] Saving intermediate result (core analysis)...")
+            save_adata(adata, session_id)
+            sys.stdout.flush()
+            gc.collect()  # Free memory after saving
+        except Exception as core_error:
+            # Save what we have so far
+            print(f"[CORE] Core analysis failed, but saving intermediate results...")
+            try:
+                save_adata(adata, session_id)
+            except:
+                pass
+            raise core_error
         
         # Handle ground truth labels if provided (upload new labels)
         if truth_labels is not None:
@@ -322,12 +352,50 @@ def run_core_selection():
         
         return jsonify(response)
     
+    except MemoryError as e:
+        error_msg = 'Out of memory: The dataset is too large for the current server configuration. Please try with a smaller dataset or contact support to upgrade server resources.'
+        print(f"[CORE] Memory Error: {error_msg}")
+        print(traceback.format_exc())
+        sys.stdout.flush()
+        return jsonify({
+            'error': error_msg,
+            'error_type': 'MemoryError',
+            'suggestion': 'Try with a smaller dataset or use data subsampling'
+        }), 500
+    except TimeoutError as e:
+        error_msg = 'Operation timeout: The computation took too long. Please try with a smaller dataset or lower resolution parameters.'
+        print(f"[CORE] Timeout Error: {error_msg}")
+        print(traceback.format_exc())
+        sys.stdout.flush()
+        return jsonify({
+            'error': error_msg,
+            'error_type': 'TimeoutError',
+            'suggestion': 'Try with a smaller dataset or reduce cluster_resolution'
+        }), 500
     except Exception as e:
-        import traceback
         error_msg = f'Core selection failed: {str(e)}'
         print(f"[CORE] Error: {error_msg}")
         print(traceback.format_exc())
-        return jsonify({'error': error_msg}), 500
+        sys.stdout.flush()
+        
+        # Provide more helpful error messages
+        error_type = type(e).__name__
+        suggestion = None
+        
+        if 'memory' in str(e).lower() or 'Memory' in error_type:
+            suggestion = 'Try with a smaller dataset or contact support to upgrade server resources'
+        elif 'timeout' in str(e).lower() or 'Timeout' in error_type:
+            suggestion = 'Try with a smaller dataset or reduce cluster_resolution'
+        elif 'neighbors' in str(e).lower():
+            suggestion = 'Make sure preprocessing has been completed successfully'
+        elif 'representation' in str(e).lower() or 'rep' in str(e).lower():
+            suggestion = 'Make sure the specified representation (use_rep) exists in the data'
+        
+        return jsonify({
+            'error': error_msg,
+            'error_type': error_type,
+            'suggestion': suggestion
+        }), 500
 
 
 def _generate_coremap_visualization(
