@@ -418,15 +418,31 @@ async function runPreprocess() {
     try {
         const n_pcs = parseInt(document.getElementById('n-pcs').value) || 20;
         const n_neighbors = parseInt(document.getElementById('n-neighbors').value) || 15;
+        const target_sum = parseFloat(document.getElementById('target-sum')?.value) || 1e4;
+        const n_top_genes = document.getElementById('n-top-genes')?.value ? parseInt(document.getElementById('n-top-genes').value) : null;
+        const use_rep = document.getElementById('preprocess-use-rep')?.value || 'X_pca';
+        const save_raw = document.getElementById('save-raw')?.checked !== false;
+        const min_genes = document.getElementById('min-genes')?.value ? parseInt(document.getElementById('min-genes').value) : null;
+        const min_cells = document.getElementById('min-cells')?.value ? parseInt(document.getElementById('min-cells').value) : null;
+
+        const requestBody = {
+            session_id: sessionId,
+            n_pcs: n_pcs,
+            n_neighbors: n_neighbors,
+            target_sum: target_sum,
+            use_rep: use_rep,
+            save_raw: save_raw
+        };
+        
+        // Only include optional parameters if they are set
+        if (n_top_genes !== null) requestBody.n_top_genes = n_top_genes;
+        if (min_genes !== null) requestBody.min_genes = min_genes;
+        if (min_cells !== null) requestBody.min_cells = min_cells;
 
         const response = await fetch(`${API_BASE}/preprocess`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: sessionId,
-                n_pcs: n_pcs,
-                n_neighbors: n_neighbors
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
@@ -460,16 +476,37 @@ async function runClustering() {
         const method = document.getElementById('cluster-method').value;
         const resolution = parseFloat(document.getElementById('cluster-resolution').value) || 1.2;
         const use_rep = document.getElementById('use-rep').value || null;
+        const key_added = null; // Use default (method name)
+        const random_state = parseInt(document.getElementById('random-state')?.value) || 0;
+        
+        // cplearn-specific parameters
+        const stable_core_frac = parseFloat(document.getElementById('stable-core-frac')?.value) || 0.25;
+        const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 8;
+        const fine_grained = document.getElementById('fine-grained')?.checked || false;
+        const propagate = document.getElementById('propagate')?.checked !== false;
+
+        const requestBody = {
+            session_id: sessionId,
+            method: method,
+            resolution: resolution,
+            random_state: random_state
+        };
+        
+        if (use_rep) requestBody.use_rep = use_rep;
+        if (key_added) requestBody.key_added = key_added;
+        
+        // Add cplearn-specific parameters
+        if (method === 'cplearn') {
+            requestBody.stable_core_frac = stable_core_frac;
+            requestBody.stable_ng_num = stable_ng_num;
+            requestBody.fine_grained = fine_grained;
+            requestBody.propagate = propagate;
+        }
 
         const response = await fetch(`${API_BASE}/cluster`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: sessionId,
-                method: method,
-                resolution: resolution,
-                use_rep: use_rep || null
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
@@ -804,6 +841,14 @@ async function runCoreSelection() {
         const use_rep = document.getElementById('core-use-rep')?.value || null;
         const cluster_resolution = parseFloat(document.getElementById('core-cluster-resolution')?.value) || 1.2;
         const fast_view = document.getElementById('core-fast-view')?.checked !== false; // default true
+        const key_added = 'X_cplearn_coremap'; // Use default
+        const cluster_key = 'cplearn'; // Use default
+        
+        // cplearn clustering parameters (used when auto-running clustering)
+        const stable_core_frac = parseFloat(document.getElementById('core-stable-core-frac')?.value) || 0.25;
+        const stable_ng_num = parseInt(document.getElementById('core-stable-ng-num')?.value) || 8;
+        const fine_grained = document.getElementById('core-fine-grained')?.checked || false;
+        const propagate = document.getElementById('core-propagate')?.checked !== false;
         
         // Ground truth labels from JSON file only
         const truth_json_file = document.getElementById('core-truth-json-file')?.files[0];
@@ -818,9 +863,14 @@ async function runCoreSelection() {
             const formData = new FormData();
             formData.append('session_id', sessionId);
             formData.append('use_rep', use_rep || '');
-            formData.append('key_added', 'X_cplearn_coremap');
+            formData.append('key_added', key_added);
+            formData.append('cluster_key', cluster_key);
             formData.append('cluster_resolution', cluster_resolution.toString());
             formData.append('fast_view', fast_view.toString());
+            formData.append('stable_core_frac', stable_core_frac.toString());
+            formData.append('stable_ng_num', stable_ng_num.toString());
+            formData.append('fine_grained', fine_grained.toString());
+            formData.append('propagate', propagate.toString());
             formData.append('truth_json_file', truth_json_file);
             
             headers = {}; // FormData sets Content-Type automatically
@@ -830,9 +880,14 @@ async function runCoreSelection() {
             requestBody = {
                 session_id: sessionId,
                 use_rep: use_rep,
-                key_added: 'X_cplearn_coremap',
+                key_added: key_added,
+                cluster_key: cluster_key,
                 cluster_resolution: cluster_resolution,
-                fast_view: fast_view
+                fast_view: fast_view,
+                stable_core_frac: stable_core_frac,
+                stable_ng_num: stable_ng_num,
+                fine_grained: fine_grained,
+                propagate: propagate
             };
             
             headers = { 'Content-Type': 'application/json' };

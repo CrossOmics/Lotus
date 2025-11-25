@@ -20,9 +20,17 @@ def run_clustering():
     try:
         data = request.json
         session_id = data.get('session_id', 'default')
-        method = data.get('method', 'cplearn')  # 'cplearn' or 'scanpy'
+        method = data.get('method', 'cplearn')  # 'cplearn', 'leiden', 'louvain', 'kmeans'
         resolution = data.get('resolution', 1.2)
         use_rep = data.get('use_rep', None)
+        key_added = data.get('key_added', None)  # If None, uses method-specific default
+        # cplearn-specific parameters
+        stable_core_frac = data.get('stable_core_frac', 0.25)
+        stable_ng_num = data.get('stable_ng_num', 8)
+        fine_grained = data.get('fine_grained', False)
+        propagate = data.get('propagate', True)
+        # scanpy-specific parameters
+        random_state = data.get('random_state', 0)
         
         adata = load_adata(session_id)
         
@@ -57,20 +65,21 @@ def run_clustering():
                         data_matrix = np.nan_to_num(data_matrix, nan=0.0)
                         adata.obsm[rep_to_use] = data_matrix
                 
-                # Use same parameters as lotus_workflow.py for consistency
+                # Use parameters from request
+                cluster_key_to_use = key_added or 'cplearn'
                 model = clustering(
                     adata,
                     method='cplearn',
                     use_rep=rep_to_use,
-                    key_added='cplearn',
+                    key_added=cluster_key_to_use,
                     cluster_resolution=resolution,
-                    stable_core_frac=0.25,  # Match lotus_workflow.py
-                    stable_ng_num=8,  # Match lotus_workflow.py
-                    fine_grained=False,  # Match lotus_workflow.py
-                    propagate=True,  # Match lotus_workflow.py
+                    stable_core_frac=stable_core_frac,
+                    stable_ng_num=stable_ng_num,
+                    fine_grained=fine_grained,
+                    propagate=propagate,
                     print_summary=False  # Don't print in API
                 )
-                cluster_key = 'cplearn'
+                cluster_key = cluster_key_to_use
             except Exception as e:
                 import traceback
                 error_msg = f'cplearn clustering failed: {str(e)}'
@@ -91,9 +100,10 @@ def run_clustering():
                 if 'neighbors' not in adata.uns:
                     print("[CLUSTER] Computing neighbors graph for Leiden...")
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
-                print(f"[CLUSTER] Running scanpy Leiden with resolution={resolution}")
-                sc.tl.leiden(adata, resolution=resolution, key_added='leiden')
-                cluster_key = 'leiden'
+                cluster_key_to_use = key_added or 'leiden'
+                print(f"[CLUSTER] Running scanpy Leiden with resolution={resolution}, key_added={cluster_key_to_use}")
+                sc.tl.leiden(adata, resolution=resolution, key_added=cluster_key_to_use, random_state=random_state)
+                cluster_key = cluster_key_to_use
             except Exception as e:
                 error_msg = f'Leiden clustering failed: {str(e)}'
                 print(f"[CLUSTER] ERROR: {error_msg}")
@@ -119,9 +129,10 @@ def run_clustering():
                 if 'neighbors' not in adata.uns:
                     print("[CLUSTER] Computing neighbors graph for Louvain...")
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
-                print(f"[CLUSTER] Running scanpy Louvain with resolution={resolution}")
-                sc.tl.louvain(adata, resolution=resolution, key_added='louvain')
-                cluster_key = 'louvain'
+                cluster_key_to_use = key_added or 'louvain'
+                print(f"[CLUSTER] Running scanpy Louvain with resolution={resolution}, key_added={cluster_key_to_use}")
+                sc.tl.louvain(adata, resolution=resolution, key_added=cluster_key_to_use, random_state=random_state)
+                cluster_key = cluster_key_to_use
             except (ImportError, ModuleNotFoundError) as e:
                 error_msg = f'Louvain clustering failed: louvain module not installed'
                 print(f"[CLUSTER] ERROR: {error_msg}")
@@ -162,11 +173,12 @@ def run_clustering():
                     X = adata.obsm[rep_to_use]
                 else:
                     X = adata.X
+                cluster_key_to_use = key_added or 'kmeans'
                 # Run KMeans
-                kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init=10)
+                kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
                 labels = kmeans.fit_predict(X)
-                adata.obs['kmeans'] = pd.Categorical(labels)
-                cluster_key = 'kmeans'
+                adata.obs[cluster_key_to_use] = pd.Categorical(labels)
+                cluster_key = cluster_key_to_use
             except ImportError as e:
                 error_msg = f'KMeans clustering failed: {str(e)}'
                 print(f"[CLUSTER] ERROR: {error_msg}")

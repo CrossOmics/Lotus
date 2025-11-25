@@ -60,6 +60,11 @@ def run_core_selection():
             # Support both: truth_key (reference existing) and truth_json (upload new)
             truth_key = data.get('truth_key', None)  # Reference existing ground truth
             truth_json_content = data.get('truth_json', None)  # JSON content as string (upload new)
+            # cplearn clustering parameters (used when auto-running clustering)
+            stable_core_frac = data.get('stable_core_frac', 0.25)
+            stable_ng_num = data.get('stable_ng_num', 8)
+            fine_grained = data.get('fine_grained', False)
+            propagate = data.get('propagate', True)
         else:
             # Form data (for file upload)
             data = request.form
@@ -74,6 +79,13 @@ def run_core_selection():
             fast_view = fast_view_str.lower() == 'true' if isinstance(fast_view_str, str) else bool(fast_view_str)
             truth_key = data.get('truth_key', None)  # Reference existing ground truth
             truth_json_content = None
+            # cplearn clustering parameters (used when auto-running clustering)
+            stable_core_frac = float(data.get('stable_core_frac', '0.25'))
+            stable_ng_num = int(data.get('stable_ng_num', '8'))
+            fine_grained_str = data.get('fine_grained', 'false')
+            fine_grained = fine_grained_str.lower() == 'true' if isinstance(fine_grained_str, str) else bool(fine_grained_str)
+            propagate_str = data.get('propagate', 'true')
+            propagate = propagate_str.lower() == 'true' if isinstance(propagate_str, str) else bool(propagate_str)
             
             # Handle JSON file upload
             if 'truth_json_file' in request.files:
@@ -185,17 +197,17 @@ def run_core_selection():
                 
                 # Re-run clustering to get model
                 print(f"[CORE] Re-running clustering to obtain model (resolution={resolution})...")
-                # Use same parameters as lotus_workflow.py for consistency
+                # Use parameters from request
                 model = clustering(
                     adata,
                     method='cplearn',
                     use_rep=rep_to_use,
                     key_added=cluster_key,
                     cluster_resolution=resolution,
-                    stable_core_frac=0.25,  # Match lotus_workflow.py
-                    stable_ng_num=8,  # Match lotus_workflow.py
-                    fine_grained=False,  # Match lotus_workflow.py
-                    propagate=True,  # Match lotus_workflow.py
+                    stable_core_frac=stable_core_frac,
+                    stable_ng_num=stable_ng_num,
+                    fine_grained=fine_grained,
+                    propagate=propagate,
                     print_summary=False  # Don't print in API
                 )
             else:
@@ -225,17 +237,17 @@ def run_core_selection():
             
             # Run clustering to get model (use cplearn method)
             print(f"[CORE] Running clustering with resolution={cluster_resolution}...")
-            # Use same parameters as lotus_workflow.py for consistency
+            # Use parameters from request
             model = clustering(
                 adata,
                 method='cplearn',
                 use_rep=use_rep,
                 key_added=cluster_key,
                 cluster_resolution=cluster_resolution,
-                stable_core_frac=0.25,  # Match lotus_workflow.py
-                stable_ng_num=8,  # Match lotus_workflow.py
-                fine_grained=False,  # Match lotus_workflow.py
-                propagate=True,  # Match lotus_workflow.py
+                stable_core_frac=stable_core_frac,
+                stable_ng_num=stable_ng_num,
+                fine_grained=fine_grained,
+                propagate=propagate,
                 print_summary=False  # Don't print in API
             )
             

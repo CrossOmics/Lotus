@@ -20,6 +20,13 @@ def run_preprocess():
         session_id = data.get('session_id', 'default')
         n_pcs = data.get('n_pcs', 20)
         n_neighbors = data.get('n_neighbors', 15)
+        target_sum = data.get('target_sum', 1e4)
+        n_top_genes = data.get('n_top_genes', None)  # None means auto: min(2000, adata.n_vars)
+        use_rep = data.get('use_rep', 'X_pca')
+        save_raw = data.get('save_raw', True)
+        raw_layer = data.get('raw_layer', 'raw_counts')
+        min_genes = data.get('min_genes', None)
+        min_cells = data.get('min_cells', None)
         
         adata = load_adata(session_id)
         
@@ -32,7 +39,13 @@ def run_preprocess():
                 adata,
                 n_pcs=n_pcs,
                 n_neighbors=n_neighbors,
-                save_raw=True
+                target_sum=target_sum,
+                n_top_genes=n_top_genes,
+                use_rep=use_rep,
+                save_raw=save_raw,
+                raw_layer=raw_layer,
+                min_genes=min_genes,
+                min_cells=min_cells
             )
         else:
             # Use scanpy for preprocessing

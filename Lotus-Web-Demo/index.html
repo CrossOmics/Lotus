@@ -436,6 +436,45 @@
                             <span class="pipeline-step-number">1</span>
                             <span style="font-weight: 600; font-size: 14px;">Preprocessing</span>
                         </div>
+                        <details style="margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Target Sum (Normalization)</label>
+                                    <input type="number" id="target-sum" class="form-input" value="10000" min="1000" max="100000" step="1000">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Default: 10000</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Top Variable Genes</label>
+                                    <input type="number" id="n-top-genes" class="form-input" value="" placeholder="Auto (min(2000, n_vars))" min="100" max="10000">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for auto-detection</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Representation for Neighbors</label>
+                                    <select id="preprocess-use-rep" class="form-input">
+                                        <option value="X_pca" selected>X_pca</option>
+                                        <option value="X_latent">X_latent</option>
+                                        <option value="X">X</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Min Genes per Cell</label>
+                                    <input type="number" id="min-genes" class="form-input" value="" placeholder="Auto" min="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Min Cells per Gene</label>
+                                    <input type="number" id="min-cells" class="form-input" value="" placeholder="Auto" min="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="save-raw" checked style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Save Raw Counts</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </details>
                         <div class="form-group">
                             <label class="form-label">PCA Components</label>
                             <input type="number" id="n-pcs" class="form-input" value="20" min="5" max="100">
@@ -471,6 +510,31 @@
                                 Used if clustering needs to be auto-run
                             </div>
                         </div>
+                        <details style="margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Clustering Parameters (if auto-run)</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Stable Core Fraction</label>
+                                    <input type="number" id="core-stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Stable Neighbors Number</label>
+                                    <input type="number" id="core-stable-ng-num" class="form-input" value="8" min="4" max="20">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="core-fine-grained" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Fine Grained</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="core-propagate" checked style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Propagate Labels</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </details>
                         <div class="form-group">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                 <input type="checkbox" id="core-fast-view" checked style="cursor: pointer;">
@@ -517,6 +581,40 @@
                                 <option value="X">X</option>
                             </select>
                         </div>
+                        <details style="margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters (cplearn only)</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Stable Core Fraction</label>
+                                    <input type="number" id="stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Stable Neighbors Number</label>
+                                    <input type="number" id="stable-ng-num" class="form-input" value="8" min="4" max="20">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="fine-grained" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Fine Grained</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="propagate" checked style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Propagate Labels</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </details>
+                        <details style="margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters (scanpy methods)</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Random State</label>
+                                    <input type="number" id="random-state" class="form-input" value="0" min="0">
+                                </div>
+                            </div>
+                        </details>
                         <button id="btn-cluster" class="btn" disabled>Run Clustering</button>
                     </div>
 
