@@ -39,7 +39,9 @@ def run_core_selection():
         from ..utils import get_session_dir
         
         # Handle both JSON and form data (for file upload)
-        truth_key = None  # Will be extracted from JSON if present
+        truth_key = None  # Will be extracted from JSON if present, or from request parameter
+        truth_labels = None  # Labels to upload (if provided)
+        
         if request.is_json:
             data = request.json
             session_id = data.get('session_id', 'default')
@@ -48,7 +50,9 @@ def run_core_selection():
             cluster_resolution = data.get('cluster_resolution', 1.2)
             cluster_key = data.get('cluster_key', 'cplearn')
             fast_view = data.get('fast_view', True)
-            truth_json_content = data.get('truth_json', None)  # JSON content as string
+            # Support both: truth_key (reference existing) and truth_json (upload new)
+            truth_key = data.get('truth_key', None)  # Reference existing ground truth
+            truth_json_content = data.get('truth_json', None)  # JSON content as string (upload new)
         else:
             # Form data (for file upload)
             data = request.form
@@ -61,6 +65,7 @@ def run_core_selection():
             cluster_key = data.get('cluster_key', 'cplearn')
             fast_view_str = data.get('fast_view', 'true')
             fast_view = fast_view_str.lower() == 'true' if isinstance(fast_view_str, str) else bool(fast_view_str)
+            truth_key = data.get('truth_key', None)  # Reference existing ground truth
             truth_json_content = None
             
             # Handle JSON file upload
@@ -72,14 +77,25 @@ def run_core_selection():
                     except Exception as e:
                         return jsonify({'error': f'Failed to read JSON file: {str(e)}'}), 400
         
-        # Default visualization parameters (always enabled)
-        visualize = True  # Always generate visualization
-        use_webgl = True
-        save_viz = True
+        # Load adata first to validate session
+        adata = load_adata(session_id)
         
-        # Parse ground truth labels from JSON
-        truth_labels = None
-        if truth_json_content:
+        if adata is None:
+            return jsonify({'error': 'No data found.'}), 400
+        
+        # Parse ground truth labels from JSON (if provided)
+        # Priority: truth_key (reference existing) > truth_json_content (upload new)
+        if truth_key:
+            # Reference existing ground truth in adata.obs
+            if truth_key not in adata.obs:
+                return jsonify({
+                    'error': f'Ground truth key "{truth_key}" not found in adata.obs',
+                    'available_keys': list(adata.obs.columns),
+                    'suggestion': 'Upload ground truth first using /api/ground-truth/upload or provide truth_json/truth_json_file'
+                }), 404
+            print(f"[CORE] Using existing ground truth from adata.obs['{truth_key}']")
+        elif truth_json_content:
+            # Upload new ground truth from JSON
             try:
                 truth_data = json_lib.loads(truth_json_content)
                 # Handle different JSON formats
@@ -109,10 +125,10 @@ def run_core_selection():
             except json_lib.JSONDecodeError as e:
                 return jsonify({'error': f'Invalid JSON format: {str(e)}'}), 400
         
-        adata = load_adata(session_id)
-        
-        if adata is None:
-            return jsonify({'error': 'No data found.'}), 400
+        # Default visualization parameters (always enabled)
+        visualize = True  # Always generate visualization
+        use_webgl = True
+        save_viz = True
         
         # Auto-detect representation if not specified
         if use_rep is None:
@@ -234,11 +250,13 @@ def run_core_selection():
             cluster_key=cluster_key
         )
         
-        # Handle ground truth labels if provided
+        # Handle ground truth labels if provided (upload new labels)
         if truth_labels is not None:
             if len(truth_labels) != adata.n_obs:
                 return jsonify({
-                    'error': f'Truth labels length ({len(truth_labels)}) does not match number of cells ({adata.n_obs})'
+                    'error': f'Truth labels length ({len(truth_labels)}) does not match number of cells ({adata.n_obs})',
+                    'n_cells': adata.n_obs,
+                    'n_labels': len(truth_labels)
                 }), 400
             
             # Save truth labels to adata.obs
@@ -248,9 +266,9 @@ def run_core_selection():
             import pandas as pd
             adata.obs[truth_key] = pd.Categorical(truth_labels)
             print(f"[CORE] Saved ground truth labels to adata.obs['{truth_key}']")
-        
-        # Save updated AnnData
-        save_adata(adata, session_id)
+            
+            # Save updated AnnData (only if we uploaded new labels)
+            save_adata(adata, session_id)
         
         # Get assignment statistics
         embedding = adata.obsm[key_added]
