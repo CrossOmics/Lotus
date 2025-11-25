@@ -446,8 +446,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Top Variable Genes</label>
-                                    <input type="number" id="n-top-genes" class="form-input" value="" placeholder="Auto (min(2000, n_vars))" min="100" max="10000">
-                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for auto-detection</div>
+                                    <input type="number" id="n-top-genes" class="form-input" value="" placeholder="1000" min="100" max="10000">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for default (1000) or specify custom value</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Representation for Neighbors</label>
@@ -477,11 +477,11 @@
                         </details>
                         <div class="form-group">
                             <label class="form-label">PCA Components</label>
-                            <input type="number" id="n-pcs" class="form-input" value="20" min="5" max="100">
+                            <input type="number" id="n-pcs" class="form-input" value="15" min="5" max="100">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Neighbors</label>
-                            <input type="number" id="n-neighbors" class="form-input" value="15" min="5" max="50">
+                            <input type="number" id="n-neighbors" class="form-input" value="10" min="5" max="50">
                         </div>
                         <button id="btn-preprocess" class="btn" disabled>Run Preprocessing</button>
                     </div>

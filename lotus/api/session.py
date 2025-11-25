@@ -3,6 +3,7 @@ Session management API endpoints
 Handles session creation, heartbeat, and cleanup
 """
 
+import gc
 from flask import Blueprint, request, jsonify
 from pathlib import Path
 import shutil
@@ -135,6 +136,10 @@ def cleanup_expired_sessions():
                 print(f"[SESSION] Auto-cleaned expired session: {session_id}")
             except Exception as e:
                 print(f"[SESSION] Warning: Could not delete expired session {session_id}: {e}")
+    
+    # Force garbage collection after cleanup to free memory
+    if expired_sessions:
+        gc.collect()
 
 
 # Background thread to periodically clean up expired sessions

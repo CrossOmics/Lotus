@@ -69,7 +69,7 @@ def load_adata(session_id: str = 'default') -> Optional[AnnData]:
 
 
 def save_adata(adata: AnnData, session_id: str = 'default') -> None:
-    """Save AnnData to session directory
+    """Save AnnData to session directory with memory optimization
     
     Handles serialization of complex data structures in uns that may not be
     directly compatible with h5py (e.g., lists of different lengths).
@@ -206,4 +206,8 @@ def save_adata(adata: AnnData, session_id: str = 'default') -> None:
                 raise
         else:
             raise
+    
+    # Force garbage collection after saving to free memory
+    import gc
+    gc.collect()
 

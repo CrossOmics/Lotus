@@ -2,8 +2,10 @@
 Preprocess API endpoints
 """
 
+import gc
+import sys
 from flask import Blueprint, request, jsonify
-from ..config import LOTUS_AVAILABLE, SCANPY_AVAILABLE, preprocess, sc
+from ..config import LOTUS_AVAILABLE, SCANPY_AVAILABLE, preprocess, sc, DEFAULT_N_PCS, DEFAULT_N_NEIGHBORS, DEFAULT_N_TOP_GENES
 from ..utils import load_adata, save_adata
 
 bp = Blueprint('preprocess', __name__, url_prefix='/api')
@@ -18,10 +20,11 @@ def run_preprocess():
         
         data = request.json
         session_id = data.get('session_id', 'default')
-        n_pcs = data.get('n_pcs', 20)
-        n_neighbors = data.get('n_neighbors', 15)
+        n_pcs = data.get('n_pcs', DEFAULT_N_PCS)  # Optimized default for 4GB memory
+        n_neighbors = data.get('n_neighbors', DEFAULT_N_NEIGHBORS)  # Optimized default
         target_sum = data.get('target_sum', 1e4)
-        n_top_genes = data.get('n_top_genes', None)  # None means auto: min(2000, adata.n_vars)
+        # Use optimized default if not provided, but allow None for auto-detection
+        n_top_genes = data.get('n_top_genes') if 'n_top_genes' in data else DEFAULT_N_TOP_GENES
         use_rep = data.get('use_rep', 'X_pca')
         save_raw = data.get('save_raw', True)
         raw_layer = data.get('raw_layer', 'raw_counts')
@@ -60,12 +63,22 @@ def run_preprocess():
         # Save updated AnnData
         save_adata(adata, session_id)
         
+        # Get results before freeing memory
+        obsm_keys = list(adata.obsm.keys())
+        has_pca = 'X_pca' in adata.obsm
+        has_neighbors = 'neighbors' in adata.uns
+        
+        # Free memory after preprocessing
+        del adata
+        gc.collect()
+        sys.stdout.flush()
+        
         return jsonify({
             'success': True,
             'message': 'Preprocessing complete',
-            'obsm_keys': list(adata.obsm.keys()),
-            'has_pca': 'X_pca' in adata.obsm,
-            'has_neighbors': 'neighbors' in adata.uns
+            'obsm_keys': obsm_keys,
+            'has_pca': has_pca,
+            'has_neighbors': has_neighbors
         })
     
     except Exception as e:

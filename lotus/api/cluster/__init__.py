@@ -2,6 +2,8 @@
 Cluster API endpoints
 """
 
+import gc
+import sys
 from flask import Blueprint, request, jsonify
 import numpy as np
 import pandas as pd
@@ -201,6 +203,7 @@ def run_clustering():
         
         # Save updated AnnData
         save_adata(adata, session_id)
+        gc.collect()  # Free memory after first save
         
         # Store model for core selection (if cplearn was used)
         if model is not None:
@@ -211,19 +214,31 @@ def run_clustering():
                 'use_rep': use_rep
             }
             save_adata(adata, session_id)
+            gc.collect()  # Free memory after second save
         
-        # Get cluster information
+        # Get cluster information before freeing memory
         clusters = adata.obs[cluster_key].unique()
         cluster_counts = adata.obs[cluster_key].value_counts().to_dict()
+        n_clusters = len(clusters)
+        clusters_list = [str(c) for c in clusters]
+        cluster_counts_dict = {str(k): int(v) for k, v in cluster_counts.items()}
+        has_model = model is not None
+        
+        # Free memory
+        del adata
+        if model is not None:
+            del model
+        gc.collect()
+        sys.stdout.flush()
         
         return jsonify({
             'success': True,
             'cluster_key': cluster_key,
-            'n_clusters': len(clusters),
-            'clusters': [str(c) for c in clusters],
-            'cluster_counts': {str(k): int(v) for k, v in cluster_counts.items()},
-            'has_model': model is not None,  # Indicates if core selection is available
-            'message': f'Clustering complete: {len(clusters)} clusters found using {method}'
+            'n_clusters': n_clusters,
+            'clusters': clusters_list,
+            'cluster_counts': cluster_counts_dict,
+            'has_model': has_model,  # Indicates if core selection is available
+            'message': f'Clustering complete: {n_clusters} clusters found using {method}'
         })
     
     except Exception as e:

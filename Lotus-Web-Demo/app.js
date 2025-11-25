@@ -416,8 +416,8 @@ async function runPreprocess() {
     btn.innerHTML = '<span class="spinner"></span> Processing...';
 
     try {
-        const n_pcs = parseInt(document.getElementById('n-pcs').value) || 20;
-        const n_neighbors = parseInt(document.getElementById('n-neighbors').value) || 15;
+        const n_pcs = parseInt(document.getElementById('n-pcs').value) || 15;
+        const n_neighbors = parseInt(document.getElementById('n-neighbors').value) || 10;
         const target_sum = parseFloat(document.getElementById('target-sum')?.value) || 1e4;
         const n_top_genes = document.getElementById('n-top-genes')?.value ? parseInt(document.getElementById('n-top-genes').value) : null;
         const use_rep = document.getElementById('preprocess-use-rep')?.value || 'X_pca';

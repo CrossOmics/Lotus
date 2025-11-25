@@ -312,12 +312,15 @@ def run_core_selection():
             # Save updated AnnData (only if we uploaded new labels)
             save_adata(adata, session_id)
         
-        # Get assignment statistics
+        # Get assignment statistics before freeing memory
         embedding = adata.obsm[key_added]
-        assigned = np.sum(~np.isnan(embedding).any(axis=1))
+        assigned = int(np.sum(~np.isnan(embedding).any(axis=1)))
         n_core = 0
         if f"{key_added}_is_core" in adata.obs:
             n_core = int(np.sum(adata.obs[f"{key_added}_is_core"] == True))
+        total_points = int(adata.n_obs)
+        obsm_keys = list(adata.obsm.keys())
+        has_truth_key = truth_key and truth_key in adata.obs
         
         # Generate visualization if requested
         viz_result = None
@@ -344,23 +347,33 @@ def run_core_selection():
                 # Don't fail the whole request if visualization fails
                 viz_result = {'error': str(viz_error), 'warning': 'Visualization failed but core selection completed'}
         
+        # Build response before freeing memory
         response = {
             'success': True,
             'key_added': key_added,
-            'obsm_keys': list(adata.obsm.keys()),
-            'assigned_points': int(assigned),
-            'total_points': int(adata.n_obs),
+            'obsm_keys': obsm_keys,
+            'assigned_points': assigned,
+            'total_points': total_points,
             'core_cells': n_core,
             'clustering_auto_run': needs_clustering,
             'cluster_key': cluster_key,
-            'message': f'Core selection complete. Embedding stored in obsm["{key_added}"] ({assigned}/{adata.n_obs} points assigned, {n_core} core cells)'
+            'message': f'Core selection complete. Embedding stored in obsm["{key_added}"] ({assigned}/{total_points} points assigned, {n_core} core cells)'
         }
         
         if viz_result:
             response['visualization'] = viz_result
         
-        if truth_key and truth_key in adata.obs:
+        if has_truth_key:
             response['truth_key'] = truth_key
+        
+        # Free memory before returning
+        del adata
+        if model is not None:
+            del model
+        if 'embedding' in locals():
+            del embedding
+        gc.collect()
+        sys.stdout.flush()
         
         return jsonify(response)
     

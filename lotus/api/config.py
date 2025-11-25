@@ -48,3 +48,9 @@ UPLOAD_FOLDER.mkdir(exist_ok=True, parents=True)
 # Max file size: 500MB
 MAX_CONTENT_LENGTH = 500 * 1024 * 1024
 
+# Memory optimization settings for 4GB server
+# Reduce default parameters to save memory
+DEFAULT_N_PCS = 15  # Reduced from 20
+DEFAULT_N_NEIGHBORS = 10  # Reduced from 15
+DEFAULT_N_TOP_GENES = 1000  # Reduced from 2000
+

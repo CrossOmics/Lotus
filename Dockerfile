@@ -35,12 +35,10 @@ EXPOSE 8080
 # Gunicorn needs to run from project root to properly import the lotus package
 
 # Run the application with Gunicorn production server
-# Optimized for compute-intensive operations (clustering, core selection, UMAP)
-# - workers: 4 (adjust based on available CPU cores)
+# - workers: 1 (single worker for memory-constrained environments)
 # - timeout: 600s (10min) for long-running operations
 # - worker-class: sync (for CPU-bound tasks)
-# - max-requests: 100 (restart workers more frequently to prevent memory leaks)
-# - preload: false (better for memory management with multiple workers)
+# - max-requests: 50 (restart workers more frequently to prevent memory leaks)
 # - graceful-timeout: 30s (give workers time to finish current requests)
-CMD ["gunicorn", "lotus.api.app:app", "--bind", "0.0.0.0:8080", "--workers", "4", "--worker-class", "sync", "--timeout", "600", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "100", "--max-requests-jitter", "10", "--preload-app", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info"]
+CMD ["gunicorn", "lotus.api.app:app", "--bind", "0.0.0.0:8080", "--workers", "1", "--worker-class", "sync", "--timeout", "600", "--graceful-timeout", "30", "--keep-alive", "5", "--max-requests", "50", "--max-requests-jitter", "5", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info"]
 
