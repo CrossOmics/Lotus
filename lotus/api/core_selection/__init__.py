@@ -62,7 +62,7 @@ def run_core_selection():
             truth_json_content = data.get('truth_json', None)  # JSON content as string (upload new)
             # cplearn clustering parameters (used when auto-running clustering)
             stable_core_frac = data.get('stable_core_frac', 0.25)
-            stable_ng_num = data.get('stable_ng_num', 8)
+            stable_ng_num = data.get('stable_ng_num', 4)
             fine_grained = data.get('fine_grained', False)
             propagate = data.get('propagate', True)
         else:
@@ -81,7 +81,7 @@ def run_core_selection():
             truth_json_content = None
             # cplearn clustering parameters (used when auto-running clustering)
             stable_core_frac = float(data.get('stable_core_frac', '0.25'))
-            stable_ng_num = int(data.get('stable_ng_num', '8'))
+            stable_ng_num = int(data.get('stable_ng_num', '4'))
             fine_grained_str = data.get('fine_grained', 'false')
             fine_grained = fine_grained_str.lower() == 'true' if isinstance(fine_grained_str, str) else bool(fine_grained_str)
             propagate_str = data.get('propagate', 'true')

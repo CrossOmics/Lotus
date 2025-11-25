@@ -481,7 +481,7 @@ async function runClustering() {
         
         // cplearn-specific parameters
         const stable_core_frac = parseFloat(document.getElementById('stable-core-frac')?.value) || 0.25;
-        const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 8;
+        const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 4;
         const fine_grained = document.getElementById('fine-grained')?.checked || false;
         const propagate = document.getElementById('propagate')?.checked !== false;
 
@@ -846,7 +846,7 @@ async function runCoreSelection() {
         
         // cplearn clustering parameters (used when auto-running clustering)
         const stable_core_frac = parseFloat(document.getElementById('core-stable-core-frac')?.value) || 0.25;
-        const stable_ng_num = parseInt(document.getElementById('core-stable-ng-num')?.value) || 8;
+        const stable_ng_num = parseInt(document.getElementById('core-stable-ng-num')?.value) || 4;
         const fine_grained = document.getElementById('core-fine-grained')?.checked || false;
         const propagate = document.getElementById('core-propagate')?.checked !== false;
         

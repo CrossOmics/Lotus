@@ -26,7 +26,7 @@ def run_clustering():
         key_added = data.get('key_added', None)  # If None, uses method-specific default
         # cplearn-specific parameters
         stable_core_frac = data.get('stable_core_frac', 0.25)
-        stable_ng_num = data.get('stable_ng_num', 8)
+        stable_ng_num = data.get('stable_ng_num', 4)
         fine_grained = data.get('fine_grained', False)
         propagate = data.get('propagate', True)
         # scanpy-specific parameters
