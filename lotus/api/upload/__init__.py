@@ -23,13 +23,26 @@ def upload_data():
             return jsonify({'error': 'No file provided'}), 400
         
         file = request.files['file']
-        file_type = request.form.get('type', 'h5ad')  # h5ad, h5, mtx, csv, tsv
+        file_type = request.form.get('type', 'h5ad')
         
         print(f"[UPLOAD] File: {file.filename}, Type: {file_type}")
         
         if file.filename == '':
             print("[UPLOAD] Error: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
+        
+        # Validate file type (only h5ad, csv, tsv allowed)
+        allowed_types = ['h5ad', 'csv', 'tsv']
+        if file_type not in allowed_types:
+            print(f"[UPLOAD] Error: Unsupported file type: {file_type}")
+            return jsonify({'error': f'Unsupported file format. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
+        
+        # Additional validation: check file extension
+        file_ext = Path(file.filename).suffix.lower()
+        allowed_extensions = ['.h5ad', '.csv', '.tsv']
+        if file_ext not in allowed_extensions:
+            print(f"[UPLOAD] Error: Invalid file extension: {file_ext}")
+            return jsonify({'error': f'Invalid file extension. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
         
         # Save uploaded file
         filepath = UPLOAD_FOLDER / file.filename
@@ -49,21 +62,14 @@ def upload_data():
                         return jsonify({'error': 'scanpy not available. Please install scanpy.'}), 500
                     adata = sc.read(filepath)
                 print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
-            elif file_type == 'h5':
-                print(f"[UPLOAD] Loading h5 file. Lotus available: {LOTUS_AVAILABLE}")
-                if LOTUS_AVAILABLE:
-                    adata = read_10x_h5(filepath)
-                else:
-                    if sc is None:
-                        return jsonify({'error': 'scanpy not available. Please install scanpy.'}), 500
-                    adata = sc.read_10x_h5(filepath)
-            elif file_type == 'mtx':
-                return jsonify({'error': 'MTX format requires additional files'}), 400
-            else:
+            elif file_type in ['csv', 'tsv']:
                 # CSV/TSV - create AnnData from matrix
-                print(f"[UPLOAD] Loading CSV/TSV file")
+                print(f"[UPLOAD] Loading {file_type.upper()} file")
                 df = pd.read_csv(filepath, sep='\t' if file_type == 'tsv' else ',', index_col=0)
                 adata = AnnData(df.T)  # Transpose: genes as vars, cells as obs
+                print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
+            else:
+                return jsonify({'error': f'Unsupported file type: {file_type}. Only .h5ad, .csv, and .tsv are supported.'}), 400
         except Exception as e:
             import traceback
             error_msg = f'Failed to load file: {str(e)}'

@@ -338,15 +338,19 @@ async function handleDataFile(event) {
     console.log('[UPLOAD] File selected:', file.name, 'Size:', file.size, 'bytes');
     showStatus('Uploading data...', 'info');
     
-    // Determine file type from extension
+    // Determine file type from extension (only h5ad, csv, tsv allowed)
     const fileName = file.name.toLowerCase();
-    let fileType = 'h5ad';
-    if (fileName.endsWith('.h5')) {
-        fileType = 'h5';
+    let fileType = null;
+    
+    if (fileName.endsWith('.h5ad')) {
+        fileType = 'h5ad';
     } else if (fileName.endsWith('.csv')) {
         fileType = 'csv';
     } else if (fileName.endsWith('.tsv')) {
         fileType = 'tsv';
+    } else {
+        showStatus('Unsupported file format. Please upload .h5ad, .csv, or .tsv files only.', 'error');
+        return;
     }
     
     console.log('[UPLOAD] Detected file type:', fileType);
