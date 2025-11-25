@@ -38,6 +38,16 @@ __pycache__/
 /environment.yml
 /.pytest_cache/
 
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python package metadata
+*.egg-info/
+.egg-info/
+
 # OS stuff
 .DS_Store
 Thumbs.db
