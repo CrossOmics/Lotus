@@ -35,5 +35,8 @@ EXPOSE 8080
 # Gunicorn needs to run from project root to properly import the lotus package
 
 # Run the application with Gunicorn production server
-CMD ["gunicorn", "lotus.api.app:app", "--bind", "0.0.0.0:8080", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Use dynamic workers: (2 x CPU cores) + 1, with max 8 workers
+# Increased timeout to 600s (10min) for compute-intensive operations (clustering, core selection, UMAP)
+# Use sync worker class for CPU-bound tasks
+CMD ["gunicorn", "lotus.api.app:app", "--bind", "0.0.0.0:8080", "--workers", "4", "--worker-class", "sync", "--timeout", "600", "--keep-alive", "5", "--max-requests", "1000", "--max-requests-jitter", "100", "--access-logfile", "-", "--error-logfile", "-"]
 
