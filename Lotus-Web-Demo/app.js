@@ -1058,8 +1058,11 @@ async function runCoreSelection() {
             // Update available cluster keys for DEG analysis
             await updateAvailableClusterKeys();
             
-            // Update color-by select
-            updateMetadataSelect([data.cluster_key]);
+            // Update color-by select to include cluster key and set it as selected
+            if (data.cluster_key) {
+                updateMetadataSelect([data.cluster_key]);
+                document.getElementById('color-by').value = data.cluster_key;
+            }
         }
         
         // Enable downstream steps
