@@ -42,6 +42,74 @@ def run_clustering():
         # Run clustering based on method
         model = None
         if method == 'cplearn':
+            cluster_key_to_use = key_added or 'cplearn'
+            
+            # Check if cplearn clustering already exists (from core selection)
+            # Check both the cluster key and model_info
+            has_existing_clustering = False
+            if cluster_key_to_use in adata.obs:
+                model_info_key = f'{cluster_key_to_use}_model_info'
+                if model_info_key in adata.uns:
+                    model_info = adata.uns[model_info_key]
+                    # Check if parameters match (allow some flexibility)
+                    existing_resolution = model_info.get('resolution', None)
+                    existing_use_rep = model_info.get('use_rep', None)
+                    
+                    # Auto-detect use_rep for comparison
+                    rep_to_check = use_rep or ('X_latent' if 'X_latent' in adata.obsm else 'X_pca' if 'X_pca' in adata.obsm else None)
+                    
+                    # If resolution matches (or close) and use_rep matches, reuse existing clustering
+                    if existing_resolution is not None:
+                        resolution_match = abs(existing_resolution - resolution) < 0.1  # Allow 0.1 tolerance
+                        rep_match = (existing_use_rep == rep_to_check) or (existing_use_rep is None and rep_to_check is None)
+                        
+                        if resolution_match and rep_match:
+                            print(f"[CLUSTER] Found existing cplearn clustering from core selection (resolution={existing_resolution}, use_rep={existing_use_rep})")
+                            print(f"[CLUSTER] Reusing existing clustering instead of re-running")
+                            has_existing_clustering = True
+                            cluster_key = cluster_key_to_use
+                        else:
+                            print(f"[CLUSTER] Existing clustering found but parameters differ:")
+                            print(f"[CLUSTER]   Existing: resolution={existing_resolution}, use_rep={existing_use_rep}")
+                            print(f"[CLUSTER]   Requested: resolution={resolution}, use_rep={rep_to_check}")
+                            print(f"[CLUSTER]   Will re-run clustering with new parameters")
+                    else:
+                        # If model_info exists but no resolution info, assume compatible
+                        print(f"[CLUSTER] Found existing cplearn clustering from core selection")
+                        print(f"[CLUSTER] Reusing existing clustering")
+                        has_existing_clustering = True
+                        cluster_key = cluster_key_to_use
+            
+            # If existing clustering found and compatible, skip re-running
+            if has_existing_clustering:
+                # Get cluster information from existing clustering
+                clusters = adata.obs[cluster_key].unique()
+                cluster_counts = adata.obs[cluster_key].value_counts().to_dict()
+                n_clusters = len(clusters)
+                clusters_list = [str(c) for c in clusters]
+                cluster_counts_dict = {str(k): int(v) for k, v in cluster_counts.items()}
+                
+                # Check if model exists (for core selection compatibility)
+                model_info_key = f'{cluster_key}_model_info'
+                has_model = model_info_key in adata.uns
+                
+                # Free memory before returning
+                del adata
+                gc.collect()
+                sys.stdout.flush()
+                
+                return jsonify({
+                    'success': True,
+                    'cluster_key': cluster_key,
+                    'n_clusters': n_clusters,
+                    'clusters': clusters_list,
+                    'cluster_counts': cluster_counts_dict,
+                    'has_model': has_model,
+                    'reused': True,  # Indicate that existing clustering was reused
+                    'message': f'Using existing cplearn clustering: {n_clusters} clusters found (from core selection)'
+                })
+            
+            # No existing clustering found, proceed with normal clustering
             # Ensure neighbors graph exists before cplearn clustering
             if 'neighbors' not in adata.uns:
                 print("[CLUSTER] Neighbors graph not found, computing it first...")
@@ -67,8 +135,7 @@ def run_clustering():
                         data_matrix = np.nan_to_num(data_matrix, nan=0.0)
                         adata.obsm[rep_to_use] = data_matrix
                 
-                # Use parameters from request
-                cluster_key_to_use = key_added or 'cplearn'
+                # Use parameters from request (cluster_key_to_use already defined above)
                 model = clustering(
                     adata,
                     method='cplearn',
