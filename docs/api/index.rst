@@ -48,13 +48,6 @@ Complete API reference documentation for Lotus. All functions and classes are or
            </div>
            <p class="lotus-card-description">Differential expression analysis functions for finding marker genes.</p>
        </a>
-       <a href="api_module.html" class="lotus-card">
-           <div class="lotus-card-title">
-               <span class="lotus-card-icon">🌐</span>
-               <span>Interactive API Module</span>
-           </div>
-           <p class="lotus-card-description">Flask REST API documentation used for building interactive analysis and visualization tool, Lotus Embedding Projector.</p>
-       </a>
        <a href="tools.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🔧</span>
@@ -78,4 +71,3 @@ Lotus API is organized into two main layers. The **Workflows Module** provides h
 
 The **Building Blocks API** is consists of Tools Module(``lotus.tl``) and Preprocessing Module(``lotus.pp``). These modules serve as low-level building blocks that can be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and trajectory inference (PAGA, DPT).  For standard analysis workflows, we recommend using the Workflows Module functions such as ``lotus.workflows.preprocess()``, ``lotus.workflows.clustering()``, ``lotus.workflows.umap()``, and ``lotus.workflows.marker_genes()``. For advanced features, use the Building Blocks API directly. 
 
-The **Web API Module** (``lotus.api``) is a Flask REST API that powers the Lotus Embedding Projector, an interactive tool for single-cell data analysis and visualization.  We recommend local deployment for better performance and to support larger datasets. For detailed setup instructions and deployment guide, please refer to the `Lotus Web Demo documentation <https://github.com/CrossOmics/Lotus/tree/main/Lotus-Web-Demo>`__.

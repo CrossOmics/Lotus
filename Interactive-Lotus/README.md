@@ -12,7 +12,7 @@ Web application for Lotus Embedding Projector and provide a [lightweight web dem
 ## Quick Start
 
 ```bash
-cd Lotus-Web-Demo
+cd Interactive-Lotus
 
 # Create virtual environment
 python3 -m venv venv
