@@ -135,27 +135,29 @@
 
 .api-ref-toggle {
     position: absolute;
-    left: -1.25rem;
-    top: 0.35rem;
+    left: -1.5rem;
+    top: 0.3rem;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0.25rem;
-    display: inline-flex;
+    padding: 0.3rem 0.4rem;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 1rem;
-    height: 1rem;
-    color: var(--color-foreground-secondary, #6a737d);
-    transition: color 0.2s ease, transform 0.2s ease;
-    z-index: 10;
+    width: 1.2rem;
+    height: 1.2rem;
+    color: var(--color-foreground-secondary, #6a737d) !important;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    z-index: 100;
     line-height: 1;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .api-ref-toggle:hover {
-    color: var(--color-foreground-primary, #1a1a1a);
-    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05));
-    border-radius: 3px;
+    color: var(--color-foreground-primary, #1a1a1a) !important;
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.08));
+    border-radius: 4px;
 }
 
 .api-ref-toggle:focus {
@@ -164,10 +166,10 @@
 }
 
 .api-ref-toggle .toggle-icon {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     line-height: 1;
-    transition: transform 0.2s ease;
     display: inline-block;
+    font-weight: bold;
 }
 
 .sidebar-tree li.expanded .api-ref-toggle .toggle-icon {
