@@ -9,10 +9,8 @@ Overview
 ``lotus.pp`` is a direct wrapper around ``scanpy.pp``. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy preprocessing workflows.
 
 **Key Features:**
-- Complete scanpy.pp compatibility
-- Same function signatures and behavior
-- Can be used as a drop-in replacement for scanpy.pp
-- All scanpy preprocessing functions are available
+
+The module provides complete scanpy.pp compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.pp, and all scanpy preprocessing functions are available.
 
 Compatibility
 -------------

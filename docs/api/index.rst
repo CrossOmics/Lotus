@@ -18,7 +18,7 @@ Complete API reference documentation for Lotus. All functions and classes are or
                <span class="lotus-card-icon">🔧</span>
                <span>Preprocessing Module</span>
            </div>
-           <p class="lotus-card-description">Preprocessing functions: QC, filtering, normalization, HVG, scaling, PCA, and neighbors.</p>
+           <p class="lotus-card-description">Preprocessing functions.</p>
        </a>
        <a href="core_selection.html" class="lotus-card">
            <div class="lotus-card-title">
@@ -32,14 +32,14 @@ Complete API reference documentation for Lotus. All functions and classes are or
                <span class="lotus-card-icon">🔀</span>
                <span>Clustering Module</span>
            </div>
-           <p class="lotus-card-description">Clustering analysis functions using cplearn or scanpy-compatible methods.</p>
+           <p class="lotus-card-description">Clustering analysis functions.</p>
        </a>
        <a href="visualization.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">📊</span>
                <span>Visualization Module</span>
            </div>
-           <p class="lotus-card-description">Visualization functions for UMAP plots and marker gene visualizations.</p>
+           <p class="lotus-card-description">Visualization functions.</p>
        </a>
        <a href="deg.html" class="lotus-card">
            <div class="lotus-card-title">
@@ -53,14 +53,14 @@ Complete API reference documentation for Lotus. All functions and classes are or
                <span class="lotus-card-icon">🌐</span>
                <span>Web API Module</span>
            </div>
-           <p class="lotus-card-description">Flask REST API endpoints for web applications and Lotus Web Demo.</p>
+           <p class="lotus-card-description">Flask REST API documentation for web applications and Lotus Web Demo.</p>
        </a>
        <a href="tools.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🔧</span>
                <span>Tools Module (lotus.tl)</span>
            </div>
-           <p class="lotus-card-description">Scanpy-compatible tools: clustering, dimensionality reduction, trajectory inference, and more.</p>
+           <p class="lotus-card-description">Tools functions for clustering, dimensionality reduction, trajectory inference, and more.</p>
        </a>
        <a href="preprocessing_compat.html" class="lotus-card">
            <div class="lotus-card-title">
@@ -74,34 +74,14 @@ Complete API reference documentation for Lotus. All functions and classes are or
 Overview
 --------
 
-Lotus API is organized into three main parts:
-
-1. **Workflows Module** (Main API): High-level, workflow-oriented functions
-   - Provides complete analysis pipelines
-   - Clean interface with smart defaults
-   - Recommended for most users
-   - Includes: preprocessing, clustering, visualization, DEG analysis, core analysis
-
-2. **Compatibility API**: Low-level functions compatible with scanpy
-   - ``lotus.tl``: Tools module (clustering, dimensionality reduction, trajectory inference)
-   - ``lotus.pp``: Preprocessing module (QC, filtering, normalization, batch correction)
-   - Complete wrappers around scanpy with identical interfaces
-   - Can be used as drop-in replacements for scanpy
-
-3. **Web API Module**: Flask REST API for web applications
-   - ``lotus.api``: HTTP endpoints for Lotus Web Demo
-   - Session-based data management
-   - Designed for web applications, not direct Python calls
+Lotus API is organized into three main parts. The **Workflows Module** (Main API) provides high-level, workflow-oriented functions with complete analysis pipelines, a clean interface with smart defaults, and includes preprocessing, clustering, visualization, DEG analysis, and core analysis. It is recommended for most users. The **Compatibility API** provides low-level functions compatible with scanpy, including ``lotus.tl`` (tools module for clustering, dimensionality reduction, and trajectory inference) and ``lotus.pp`` (preprocessing module for QC, filtering, normalization, and batch correction). These are complete wrappers around scanpy with identical interfaces and can be used as drop-in replacements for scanpy. The **Web API Module** is a Flask REST API for web applications, with ``lotus.api`` providing HTTP endpoints for Lotus Web Demo, session-based data management, and designed for web applications rather than direct Python calls.
 
 For most users, we recommend using functions from the **Workflows Module**, which provide a cleaner interface and smart defaults.
 
 Compatibility API Details
 -------------------------
 
-Lotus provides scanpy-compatible APIs through ``lotus.tl`` and ``lotus.pp``. These modules are complete wrappers around scanpy:
-
-- **lotus.tl**: All functions from ``scanpy.tl`` (clustering, UMAP, PAGA, etc.)
-- **lotus.pp**: All functions from ``scanpy.pp`` (preprocessing, batch correction, etc.)
+Lotus provides scanpy-compatible APIs through ``lotus.tl`` and ``lotus.pp``. These modules are complete wrappers around scanpy. The **lotus.tl** module provides all functions from ``scanpy.tl`` (clustering, UMAP, PAGA, etc.), and the **lotus.pp** module provides all functions from ``scanpy.pp`` (preprocessing, batch correction, etc.).
 
 These functions work exactly the same way as scanpy. For detailed API documentation of individual functions, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/>`__.
 

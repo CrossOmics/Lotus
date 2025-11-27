@@ -6,15 +6,7 @@ The ``lotus.api`` module provides Flask REST API endpoints for the Lotus Web Dem
 Overview
 --------
 
-The Lotus API module is a Flask-based REST API that wraps Lotus workflows for web applications. It provides HTTP endpoints for:
-
-- Data upload and management
-- Preprocessing workflows
-- Clustering analysis
-- Visualization generation
-- Differential expression analysis
-- Core analysis
-- Session management
+The Lotus API module is a Flask-based REST API that wraps Lotus workflows for web applications. It provides HTTP endpoints for data upload and management, preprocessing workflows, clustering analysis, visualization generation, differential expression analysis, core analysis, and session management.
 
 **Important:** This module is designed for web applications (Flask REST API), not for direct Python function calls. For Python programming, use ``lotus.workflows`` instead.
 
@@ -30,7 +22,7 @@ Flask Application
 
    **Parameters:**
    
-   - ``static_folder``: Path to static files folder (for serving HTML/JS files)
+   The ``static_folder`` parameter specifies the path to static files folder (for serving HTML/JS files).
    
    **Returns:**
    
@@ -80,30 +72,17 @@ The Lotus API provides the following REST endpoints (all prefixed with ``/api``)
 Configuration
 --------------
 
-The API module uses configuration from ``lotus.api.config``:
-
-- **Upload Folder**: Temporary directory for storing uploaded data
-- **Max File Size**: 500MB default limit
-- **Memory Optimization**: Default parameters optimized for 4GB server memory
+The API module uses configuration from ``lotus.api.config``. The upload folder is a temporary directory for storing uploaded data, with a maximum file size limit of 500MB by default. Default parameters are optimized for 4GB server memory.
 
 Session Management
 ------------------
 
-The API uses session-based data management:
-
-- Each analysis session has a unique ``session_id``
-- Data is stored in session-specific directories
-- Sessions expire after a configurable timeout
-- Automatic cleanup of expired sessions
+The API uses session-based data management. Each analysis session has a unique ``session_id``, and data is stored in session-specific directories. Sessions expire after a configurable timeout, with automatic cleanup of expired sessions.
 
 Compatibility
 -------------
 
-The API module:
-- Works with both Lotus workflows and scanpy (fallback)
-- Supports standard AnnData format (h5ad files)
-- Compatible with scanpy-compatible data structures
-- Handles memory optimization for web server environments
+The API module works with both Lotus workflows and scanpy (fallback), supports standard AnnData format (h5ad files), is compatible with scanpy-compatible data structures, and handles memory optimization for web server environments.
 
 Note
 ----

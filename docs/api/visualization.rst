@@ -18,15 +18,7 @@ UMAP Visualization
 
    **Biological Background:**
    
-   UMAP (Uniform Manifold Approximation and Projection):
-   - Projects high-dimensional data into 2D or 3D space
-   - Preserves local and global structure of the data
-   - Used to visualize cell distribution in expression space
-   
-   UMAP plots can help:
-   - Understand relationships between cell types
-   - Identify cell subpopulations
-   - Validate clustering results
+   UMAP (Uniform Manifold Approximation and Projection) projects high-dimensional data into 2D or 3D space while preserving both local and global structure of the data. It is used to visualize cell distribution in expression space. UMAP plots can help understand relationships between cell types, identify cell subpopulations, and validate clustering results.
 
    **Usage Example:**
 
@@ -54,14 +46,7 @@ Marker Gene Visualization
 
    **Biological Background:**
    
-   Marker gene visualization includes:
-   - UMAP clustering plot: Shows cell distribution in reduced-dimensional space
-   - Violin plot: Shows expression distribution of marker genes across different clusters
-   
-   These visualizations can help:
-   - Validate marker gene specificity
-   - Understand characteristics of different cell types
-   - Prepare publication-quality figures
+   Marker gene visualization includes UMAP clustering plots that show cell distribution in reduced-dimensional space, and violin plots that show expression distribution of marker genes across different clusters. These visualizations can help validate marker gene specificity, understand characteristics of different cell types, and prepare publication-quality figures.
 
    **Usage Example:**
 
@@ -86,16 +71,7 @@ CoreMap Visualization
 
    **Biological Background:**
    
-   CoreMap visualization:
-   - Visualizes the core map embedding computed by core_analysis()
-   - Provides interactive Plotly plots with layer sliders
-   - Highlights core cell states and cell relationships
-   - Uses cplearn's own visualization function for optimal display
-   
-   This visualization is particularly useful for:
-   - Understanding core-periphery structure in cell populations
-   - Exploring cell state transitions
-   - Interactive exploration of core map embeddings
+   CoreMap visualization visualizes the core map embedding computed by core_analysis() and provides interactive Plotly plots with layer sliders. It highlights core cell states and cell relationships, using cplearn's own visualization function for optimal display. This visualization is particularly useful for understanding core-periphery structure in cell populations, exploring cell state transitions, and interactive exploration of core map embeddings.
    
    **Usage Example:**
    
@@ -104,9 +80,11 @@ CoreMap Visualization
       from lotus.workflows import coremap, core_analysis
       from lotus.methods.cplearn.external import cplearn
       
-      # First perform clustering and core analysis
+      # First perform core analysis (before clustering)
       model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
       core_analysis(adata, model=model, key_added="X_cplearn_coremap")
+      
+      # Then perform clustering using the core analysis results
       
       # Then visualize the core map
       coremap(

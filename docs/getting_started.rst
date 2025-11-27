@@ -55,13 +55,7 @@ Preprocessing includes quality control, filtering, normalization, highly variabl
         save_raw=True,
     )
 
-This step performs:
-- Calculate quality control metrics (QC metrics)
-- Filter low-quality cells and genes
-- Data normalization and log transformation
-- Select highly variable genes (HVG)
-- Principal component analysis (PCA)
-- Build neighbor graph
+This step performs quality control metrics (QC metrics) calculation, filters low-quality cells and genes, normalizes data and applies log transformation, selects highly variable genes (HVG), performs principal component analysis (PCA), and builds the neighbor graph.
 
 After preprocessing, you can check the results:
 
@@ -85,10 +79,10 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
     2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
 
-3. Core Analysis (after clustering)
-------------------------------------
+3. Core Analysis (before clustering)
+-----------------------------------
 
-Core analysis is performed after clustering to compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
+Core analysis is performed before clustering to identify core cells and compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
 
 .. code-block:: python
 
@@ -103,7 +97,7 @@ Example output:
     Neighbors graph ready: True
     Using representation: adata.obsm['X_latent'] (shape: (180, 32))
 
-This step prepares the data for stable clustering by ensuring the neighbors graph is ready. The actual core map embedding computation will be performed after clustering (as shown in the complete workflow output below).
+This step identifies core cells and computes core map embedding before clustering. The core analysis helps prepare the data for stable clustering by identifying stable cell populations.
 
 4. Clustering
 -----------
@@ -123,10 +117,7 @@ Lotus supports multiple clustering methods through a unified interface:
         print_summary=True,
     )
 
-This method:
-- Auto-detects best representation (X_latent, X_pca, or X)
-- Generates stable clustering results
-- Outputs cluster labels to adata.obs
+This method auto-detects the best representation (X_latent, X_pca, or X), generates stable clustering results, and outputs cluster labels to adata.obs.
 
 Example output (from running ``examples/lotus_workflow.py``):
 
@@ -178,9 +169,7 @@ Generate UMAP visualization of clustering results:
         save="_clusters.png",
     )
 
-This step:
-- Computes UMAP dimensionality reduction
-- Generates visualization plots of clustering results
+This step computes UMAP dimensionality reduction and generates visualization plots of clustering results.
 
 The visualization is saved as a PNG file:
 
@@ -201,11 +190,7 @@ Example output (from running ``examples/lotus_workflow.py``):
 
 The output file contains a UMAP plot colored by cluster labels, showing the cell type separation.
 
-The visualization shows:
-
-- **UMAP embedding**: 2D representation of cells in the UMAP space
-- **Color coding**: Each cluster is colored differently
-- **Cell distribution**: Shows how cells are grouped and separated by cell type
+The visualization shows a UMAP embedding as a 2D representation of cells in the UMAP space, with color coding where each cluster is colored differently, and cell distribution that shows how cells are grouped and separated by cell type.
 
 Example UMAP visualization:
 
@@ -218,12 +203,7 @@ Example UMAP visualization:
    
    *To generate this image, run: ``python examples/lotus_workflow.py --clusters 3 --cells-per-cluster 60``, then copy ``result_*/umap_clusters.png`` to ``docs/_static/umap_clusters_example.png``*
 
-The UMAP plot shows:
-- **X-axis**: UMAP dimension 1
-- **Y-axis**: UMAP dimension 2  
-- **Colors**: Different clusters (e.g., cluster 0 in blue, cluster 1 in red, cluster 2 in green)
-- **Points**: Each point represents a single cell
-- **Separation**: Well-separated clusters indicate distinct cell types
+The UMAP plot shows the X-axis as UMAP dimension 1, the Y-axis as UMAP dimension 2, colors representing different clusters (e.g., cluster 0 in blue, cluster 1 in red, cluster 2 in green), points where each point represents a single cell, and separation where well-separated clusters indicate distinct cell types.
 
 .. note::
 
@@ -251,10 +231,7 @@ Find marker genes between clusters:
         auto_pick_groups=True,
     )
 
-This step:
-- Identifies differentially expressed genes between clusters
-- Auto-selects comparison groups (if not specified)
-- Outputs marker gene list
+This step identifies differentially expressed genes between clusters, auto-selects comparison groups if not specified, and outputs a marker gene list.
 
 Check the results:
 
@@ -319,9 +296,13 @@ Here's a complete workflow example that you can run. For the full example script
     preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
     print(f"Preprocessing complete. Data shape: {adata.shape}")
     
-    # 2. Core Analysis (after clustering)
+    # 2. Core Analysis (before clustering)
     print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    print("Core analysis preparation complete")
+    # Run core analysis to identify core cells
+    from lotus.methods.cplearn.external import cplearn
+    model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+    core_analysis(adata, model=model, key_added="X_cplearn_coremap")
+    print("Core analysis complete")
     
     # 3. Clustering
     # Using cplearn (default)
@@ -455,10 +436,7 @@ Example output (from running ``examples/lotus_workflow.py``):
 Output Files
 ------------
 
-After running the complete workflow, you'll find the following output files in the ``./results/`` directory:
-
-- ``umap_clusters.png`` - UMAP visualization colored by cluster labels
-- ``deg_results.csv`` - Complete differential expression results (if saved)
+After running the complete workflow, you'll find the following output files in the ``./results/`` directory: ``umap_clusters.png`` (UMAP visualization colored by cluster labels) and ``deg_results.csv`` (complete differential expression results, if saved).
 
 Next Steps
 ----------

@@ -9,10 +9,8 @@ Overview
 ``lotus.tl`` is a direct wrapper around ``scanpy.tl``. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy workflows.
 
 **Key Features:**
-- Complete scanpy.tl compatibility
-- Same function signatures and behavior
-- Can be used as a drop-in replacement for scanpy.tl
-- All scanpy tools functions are available
+
+The module provides complete scanpy.tl compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.tl, and all scanpy tools functions are available.
 
 Compatibility
 -------------
