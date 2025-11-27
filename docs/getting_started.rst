@@ -14,14 +14,14 @@ The standard Lotus analysis pipeline consists of the following steps in order:
 
 1. **Load Data** - Load single-cell data (AnnData format)
 2. **Preprocessing** - Quality control, filtering, normalization, HVG selection, scaling, PCA, and neighbor graph construction
-3. **Core Analysis** (before clustering) - Identify core cells and compute core map embedding using cplearn
+3. **Core Analysis** (optional, before clustering) - Identify core cells and compute core map embedding using cplearn
 4. **Clustering** - Cluster cells using cplearn (default), Leiden, or Louvain algorithms
 5. **Visualization** - Generate UMAP embeddings and visualization plots
 6. **Differential Expression Analysis** - Identify marker genes between clusters
 
 **Key Points:**
 
-* **Core analysis is performed before clustering** to identify stable cell populations and prepare for better clustering results
+* **Core analysis is optional** - It can be performed before clustering to identify stable cell populations, but clustering works without it
 * **Clustering methods can be switched** between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter
 * **All methods are compatible** - cluster labels from any method can be used with subsequent visualization and DEG analysis functions
 * **The pipeline is flexible** - you can use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed
@@ -98,10 +98,10 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
     2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
 
-3. Core Analysis (before clustering)
------------------------------------
+3. Core Analysis (optional, before clustering)
+-----------------------------------------------
 
-Core analysis is performed before clustering to identify core cells and compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
+Core analysis is an optional step that can be performed before clustering to identify core cells and compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
 
 .. code-block:: python
 
@@ -160,6 +160,9 @@ Example output (from running ``examples/lotus_workflow.py``):
         cluster_resolution=0.5,
         key_added="leiden",  # auto-set if None
     )
+    
+    # View clustering results
+    print(adata.obs["leiden"].value_counts())
 
 **Option C: Using scanpy Louvain algorithm**
 
@@ -171,6 +174,29 @@ Example output (from running ``examples/lotus_workflow.py``):
         cluster_resolution=0.5,
         key_added="louvain",  # auto-set if None
     )
+    
+    # View clustering results
+    print(adata.obs["louvain"].value_counts())
+
+**Switching between methods:**
+
+You can easily switch between clustering methods in the same workflow:
+
+.. code-block:: python
+
+    # First, try Leiden clustering
+    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
+    
+    # Then try Louvain with different resolution
+    clustering(adata, method="louvain", cluster_resolution=0.8, key_added="louvain")
+    
+    # Compare results
+    print("Leiden clusters:", adata.obs["leiden"].value_counts())
+    print("Louvain clusters:", adata.obs["louvain"].value_counts())
+    
+    # Use either cluster key for visualization
+    umap(adata, cluster_key="leiden", output_dir="./results", save="_leiden.png")
+    umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
 
 All methods output cluster labels in scanpy-compatible format and can be used with subsequent Lotus functions.
 
@@ -315,28 +341,35 @@ Here's a complete workflow example that you can run. For the full example script
     preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
     print(f"Preprocessing complete. Data shape: {adata.shape}")
     
-    # 2. Core Analysis (before clustering)
-    print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    # Run core analysis to identify core cells
-    from lotus.methods.cplearn.external import cplearn
-    model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
-    core_analysis(adata, model=model, key_added="X_cplearn_coremap")
-    print("Core analysis complete")
+    # 2. Core Analysis (optional, before clustering)
+    # Skip this step if you don't need core analysis
+    # print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
+    # from lotus.methods.cplearn.external import cplearn
+    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+    # core_analysis(adata, model=model, key_added="X_cplearn_coremap")
+    # print("Core analysis complete")
     
     # 3. Clustering
-    # Using cplearn (default)
-    model = clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
-    # Or use scanpy methods:
-    # clustering(adata, method="leiden", cluster_resolution=0.5)
-    # clustering(adata, method="louvain", cluster_resolution=0.5)
-    print(f"Clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
+    # Option 1: Using Leiden (scanpy)
+    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
+    print(f"Leiden clustering complete. Found {len(adata.obs['leiden'].unique())} clusters")
+    
+    # Option 2: Using Louvain (scanpy)
+    # clustering(adata, method="louvain", cluster_resolution=0.5, key_added="louvain")
+    # print(f"Louvain clustering complete. Found {len(adata.obs['louvain'].unique())} clusters")
+    
+    # Option 3: Using cplearn (requires core analysis)
+    # from lotus.methods.cplearn.external import cplearn
+    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+    # clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
+    # print(f"Cplearn clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
     
     # 4. Visualization
-    umap(adata, cluster_key="cplearn_labels", output_dir="./results", save="_clusters.png")
+    umap(adata, cluster_key="leiden", output_dir="./results", save="_clusters.png")
     print("UMAP visualization saved to ./results/umap_clusters.png")
     
     # 5. Differential Expression
-    de_result = marker_genes(adata, cluster_key="cplearn_labels", layer="raw_counts", auto_pick_groups=True)
+    de_result = marker_genes(adata, cluster_key="leiden", layer="raw_counts", auto_pick_groups=True)
     print(f"DEG analysis complete. Found {len(de_result)} differentially expressed genes")
     print(f"Top 5 marker genes: {de_result['gene'].head(5).tolist()}")
     
