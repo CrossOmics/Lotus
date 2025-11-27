@@ -14,7 +14,7 @@ If you use core analysis features, please cite:
 
 * **CoreSPECT**: Chandra Sekhar Mukherjee, Joonyoung Bae, and Jiapeng Zhang. *CoreSPECT: Enhancing Clustering Algorithms via an Interplay of Density and Geometry.* `arXiv:2507.08243 <https://arxiv.org/abs/2507.08243>`_
 
-* **Balanced Ranking**: Chandra Sekhar Mukherjee and Jiapeng Zhang. *Balanced Ranking with Relative Centrality: A Multi-Core Periphery Perspective.* ICLR 2025.
+* **Balanced Ranking**: Chandra Sekhar Mukherjee and Jiapeng Zhang. *Balanced Ranking with Relative Centrality: A Multi-Core Periphery Perspective.* ICLR 2025. `<https://iclr.cc/virtual/2025/poster/31168>`_
 
 Preprocessing and Analysis
 --------------------------
