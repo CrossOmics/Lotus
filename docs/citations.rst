@@ -43,6 +43,18 @@ If you use UMAP for dimensionality reduction and visualization, please cite:
 
 * **UMAP**: L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
 
+**t-SNE**
+
+If you use t-SNE for dimensionality reduction and visualization, please cite:
+
+* **t-SNE**: L. van der Maaten and G. Hinton. *Visualizing Data using t-SNE.* Journal of Machine Learning Research 9, 2579-2605 (2008).
+
+**Diffusion Maps**
+
+If you use diffusion maps for dimensionality reduction and visualization, please cite:
+
+* **Diffusion Maps**: R. R. Coifman and S. Lafon. *Diffusion maps.* Applied and Computational Harmonic Analysis 21, 5-30 (2006).
+
 **PCA**
 
 Principal Component Analysis is a standard technique. If relevant, cite:

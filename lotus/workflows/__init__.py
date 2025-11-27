@@ -13,7 +13,15 @@ from .preprocess import (
     qc,
     scaling,
 )
-from .visualization import coremap, render_visualizations, umap
+from .visualization import (
+    coremap,
+    diffmap,
+    draw_graph,
+    render_visualizations,
+    tsne,
+    umap,
+    visualization,
+)
 
 __all__ = [
     # Preprocess steps
@@ -27,7 +35,11 @@ __all__ = [
     "preprocess",
     # Visualization
     "umap",
+    "tsne",
+    "diffmap",
+    "draw_graph",
     "coremap",
+    "visualization",
     "render_visualizations",
     # Clustering
     "clustering",
