@@ -6,11 +6,11 @@ The ``lotus.tl`` module provides scanpy-compatible tools and analysis functions.
 Overview
 --------
 
-``lotus.tl`` is a direct wrapper around ``scanpy.tl``. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy workflows.
+``lotus.tl`` serves as a building block API that provides direct access to all scanpy tools functions. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy workflows. This module is used internally by ``lotus.workflows`` to implement high-level functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module.
 
 **Key Features:**
 
-The module provides complete scanpy.tl compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.tl, and all scanpy tools functions are available.
+The module provides complete scanpy.tl compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.tl, and all scanpy tools functions are available. For standard analysis workflows, we recommend using the high-level functions in ``lotus.workflows`` instead, which provide optimized defaults and a streamlined interface.
 
 Compatibility
 -------------
@@ -160,25 +160,31 @@ Differential Expression
 Complete Function List
 ----------------------
 
-All functions from ``scanpy.tl`` are available in ``lotus.tl``:
+All functions from ``scanpy.tl`` are available in ``lotus.tl``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for most users. For advanced features not covered by workflows, use the building blocks API directly.
 
-- ``leiden()`` - Leiden clustering
-- ``louvain()`` - Louvain clustering
-- ``umap()`` - UMAP embedding
-- ``tsne()`` - t-SNE embedding
-- ``diffmap()`` - Diffusion map
-- ``draw_graph()`` - Force-directed graph layout
-- ``paga()`` - PAGA trajectory inference
-- ``dpt()`` - Diffusion pseudotime
-- ``rank_genes_groups()`` - Differential expression
-- ``score_genes()`` - Gene scoring
-- ``score_genes_cell_cycle()`` - Cell cycle scoring
-- ``dendrogram()`` - Hierarchical clustering
-- ``ingest()`` - Label transfer
-- ``marker_gene_overlap()`` - Marker gene overlap analysis
-- ``embedding_density()`` - Embedding density
-- ``filter_rank_genes_groups()`` - Filter ranked genes
-- ``sim()`` - Simulate data
+**Clustering Functions:**
+
+The ``leiden()`` function provides Leiden clustering algorithm (also available as ``lotus.workflows.clustering(method='leiden')``). The ``louvain()`` function provides Louvain clustering algorithm (also available as ``lotus.workflows.clustering(method='louvain')``).
+
+**Dimensionality Reduction Functions:**
+
+The ``umap()`` function computes UMAP embedding (also available as ``lotus.workflows.umap()``). The ``tsne()`` function provides t-SNE embedding for alternative dimensionality reduction. The ``diffmap()`` function computes diffusion map embedding. The ``draw_graph()`` function generates force-directed graph layouts such as Fruchterman-Reingold.
+
+**Trajectory Inference Functions:**
+
+The ``paga()`` function performs partition-based graph abstraction for trajectory inference. The ``dpt()`` function computes diffusion pseudotime analysis.
+
+**Differential Expression Functions:**
+
+The ``rank_genes_groups()`` function performs differential expression analysis (similar functionality available as ``lotus.workflows.marker_genes()`` but with different interface and more options).
+
+**Gene Scoring Functions:**
+
+The ``score_genes()`` function scores cells based on gene expression. The ``score_genes_cell_cycle()`` function scores cells based on cell cycle phase genes.
+
+**Other Functions:**
+
+The ``dendrogram()`` function computes hierarchical clustering dendrograms. The ``ingest()`` function maps labels from reference dataset to query dataset. The ``marker_gene_overlap()`` function analyzes marker gene overlap. The ``embedding_density()`` function computes embedding density. The ``filter_rank_genes_groups()`` function filters ranked genes. The ``sim()`` function simulates single-cell data.
 
 For detailed documentation of each function, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.html>`__.
 

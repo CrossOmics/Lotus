@@ -74,30 +74,15 @@ Complete API reference documentation for Lotus. All functions and classes are or
 Overview
 --------
 
-Lotus API is organized into three main parts. The **Workflows Module** (Main API) provides high-level, workflow-oriented functions with complete analysis pipelines, a clean interface with smart defaults, and includes preprocessing, clustering, visualization, DEG analysis, and core analysis. It is recommended for most users. The **Compatibility API** provides low-level functions compatible with scanpy, including ``lotus.tl`` (tools module for clustering, dimensionality reduction, and trajectory inference) and ``lotus.pp`` (preprocessing module for QC, filtering, normalization, and batch correction). These are complete wrappers around scanpy with identical interfaces and can be used as drop-in replacements for scanpy. The **Web API Module** is a Flask REST API for web applications, with ``lotus.api`` providing HTTP endpoints for Lotus Web Demo, session-based data management, and designed for web applications rather than direct Python calls.
+Lotus API is organized into two main layers. The **Workflows Module** provides high-level, workflow-oriented functions with complete analysis pipelines covering standard single-cell analysis steps including preprocessing, clustering, visualization, differential expression analysis, and core analysis. These functions offer a clean interface with smart defaults and are recommended for most users. The workflows module internally uses ``lotus.tl`` and ``lotus.pp`` as building blocks to implement its functionality.
 
-For most users, we recommend using functions from the **Workflows Module**, which provide a cleaner interface and smart defaults.
+The **Building Blocks API** consists of ``lotus.tl`` and ``lotus.pp``, which provide all scanpy tools and preprocessing functions with identical interfaces. These modules serve as low-level building blocks that can be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction, trajectory inference (PAGA, DPT), t-SNE, and other specialized scanpy functions.
 
-Compatibility API Details
--------------------------
+**Usage Recommendations:**
 
-Lotus provides scanpy-compatible APIs through ``lotus.tl`` and ``lotus.pp``. These modules are complete wrappers around scanpy. The **lotus.tl** module provides all functions from ``scanpy.tl`` (clustering, UMAP, PAGA, etc.), and the **lotus.pp** module provides all functions from ``scanpy.pp`` (preprocessing, batch correction, etc.).
+For standard analysis workflows including preprocessing, clustering, UMAP visualization, and differential expression analysis, we recommend using the **Workflows Module** functions such as ``lotus.workflows.preprocess()``, ``lotus.workflows.clustering()``, ``lotus.workflows.umap()``, and ``lotus.workflows.marker_genes()``. These provide optimized defaults and a streamlined interface.
 
-These functions work exactly the same way as scanpy. For detailed API documentation of individual functions, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/>`__.
+For advanced features not covered by the workflows module, such as batch correction (ComBat), trajectory inference (PAGA, DPT), t-SNE dimensionality reduction, gene scoring, and other specialized scanpy functions, use the **Building Blocks API** directly: ``lotus.tl`` for analysis tools and ``lotus.pp`` for preprocessing functions. These functions work exactly the same way as scanpy, making Lotus fully compatible with scanpy workflows. For detailed API documentation of individual functions, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/>`__.
 
-**Example:**
+The **Web API Module** (``lotus.api``) is a Flask REST API that provides HTTP endpoints for web-based single-cell analysis. This module powers the Lotus Web Demo application and can be deployed locally for interactive data analysis through a web interface. We recommend local deployment for better performance and to support larger datasets. The Web API provides session-based data management and analysis workflows accessible via HTTP requests. For Python programming and direct function calls, use the Workflows Module or Building Blocks API instead. For detailed setup instructions and deployment guide, please refer to the `Lotus Web Demo documentation <https://github.com/CrossOmics/Lotus/tree/main/Lotus-Web-Demo>`__.
 
-.. code-block:: python
-
-   import lotus as lt
-   
-   # Use lotus.tl exactly like scanpy.tl
-   lt.tl.leiden(adata, resolution=0.5)
-   lt.tl.umap(adata)
-   lt.tl.paga(adata, groups='leiden')
-   
-   # Use lotus.pp exactly like scanpy.pp
-   lt.pp.normalize_total(adata, target_sum=1e4)
-   lt.pp.log1p(adata)
-   lt.pp.highly_variable_genes(adata, n_top_genes=2000)
-   lt.pp.combat(adata, key='batch')  # Batch correction

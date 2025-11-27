@@ -6,11 +6,11 @@ The ``lotus.pp`` module provides scanpy-compatible preprocessing functions. This
 Overview
 --------
 
-``lotus.pp`` is a direct wrapper around ``scanpy.pp``. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy preprocessing workflows.
+``lotus.pp`` serves as a building block API that provides direct access to all scanpy preprocessing functions. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy preprocessing workflows. This module is used internally by ``lotus.workflows`` to implement high-level preprocessing functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and doublet detection.
 
 **Key Features:**
 
-The module provides complete scanpy.pp compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.pp, and all scanpy preprocessing functions are available.
+The module provides complete scanpy.pp compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.pp, and all scanpy preprocessing functions are available. For standard preprocessing workflows, we recommend using ``lotus.workflows.preprocess()`` which provides a complete preprocessing pipeline with optimized defaults. For advanced features like batch correction and doublet detection, use the building blocks API directly.
 
 Compatibility
 -------------
@@ -174,30 +174,43 @@ Doublet Detection
 Complete Function List
 ----------------------
 
-All functions from ``scanpy.pp`` are available in ``lotus.pp``:
+All functions from ``scanpy.pp`` are available in ``lotus.pp``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for standard preprocessing workflows. For advanced features like batch correction and doublet detection, use the building blocks API directly.
 
-- ``calculate_qc_metrics()`` - Calculate QC metrics
-- ``filter_cells()`` - Filter cells
-- ``filter_genes()`` - Filter genes
-- ``filter_genes_dispersion()`` - Filter genes by dispersion
-- ``normalize_total()`` - Normalize counts
-- ``normalize_per_cell()`` - Normalize per cell (deprecated)
-- ``log1p()`` - Log transform
-- ``sqrt()`` - Square root transform
-- ``highly_variable_genes()`` - Find HVG
-- ``scale()`` - Scale data
-- ``pca()`` - Principal component analysis
-- ``neighbors()`` - Compute neighbor graph
-- ``combat()`` - Batch correction
-- ``regress_out()`` - Regress out variables
-- ``scrublet()`` - Doublet detection
-- ``scrublet_simulate_doublets()`` - Simulate doublets
-- ``downsample_counts()`` - Downsample counts
-- ``sample()`` - Sample cells/genes
-- ``subsample()`` - Subsample data
-- ``recipe_seurat()`` - Seurat preprocessing recipe
-- ``recipe_zheng17()`` - Zheng et al. 2017 preprocessing recipe
-- ``recipe_weinreb17()`` - Weinreb et al. 2017 preprocessing recipe
+**Quality Control Functions:**
+
+The ``calculate_qc_metrics()`` function calculates quality control metrics for cells and genes (also available as ``lotus.workflows.qc()``).
+
+**Filtering Functions:**
+
+The ``filter_cells()`` function filters cells based on QC metrics (also available as ``lotus.workflows.filtering()``). The ``filter_genes()`` function filters genes based on expression (also available as ``lotus.workflows.filtering()``). The ``filter_genes_dispersion()`` function filters genes by dispersion.
+
+**Normalization Functions:**
+
+The ``normalize_total()`` function normalizes counts per cell (also available as ``lotus.workflows.normalization()``). The ``normalize_per_cell()`` function normalizes per cell but is deprecated. The ``log1p()`` function applies log transformation to the data matrix.
+
+**Highly Variable Genes Functions:**
+
+The ``highly_variable_genes()`` function identifies highly variable genes (also available as ``lotus.workflows.hvg()``).
+
+**Scaling Functions:**
+
+The ``scale()`` function scales data to unit variance and zero mean (also available as ``lotus.workflows.scaling()``).
+
+**Dimensionality Reduction Functions:**
+
+The ``pca()`` function performs principal component analysis (also available as ``lotus.workflows.pca()``). The ``neighbors()`` function computes neighborhood graph of cells (also available as ``lotus.workflows.neighbors()``).
+
+**Batch Correction Functions:**
+
+The ``combat()`` function performs ComBat batch correction for removing batch effects. This advanced feature is not covered by the workflows module and should be used directly from the building blocks API. The ``regress_out()`` function regresses out unwanted sources of variation.
+
+**Doublet Detection Functions:**
+
+The ``scrublet()`` function detects doublets using Scrublet. This advanced feature is not covered by the workflows module and should be used directly from the building blocks API. The ``scrublet_simulate_doublets()`` function simulates doublets for training.
+
+**Other Functions:**
+
+The ``downsample_counts()`` function downsamples counts to a target number. The ``sample()`` function samples cells or genes. The ``subsample()`` function subsamples data. The ``sqrt()`` function applies square root transformation. The ``recipe_seurat()`` function provides Seurat preprocessing recipe. The ``recipe_zheng17()`` function provides Zheng et al. 2017 preprocessing recipe. The ``recipe_weinreb17()`` function provides Weinreb et al. 2017 preprocessing recipe.
 
 For detailed documentation of each function, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/en/stable/api/scanpy.pp.html>`__.
 
