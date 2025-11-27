@@ -17,19 +17,17 @@ def core_analysis(
     print_summary: bool = True,
 ) -> None:
     """
-    CoreAnalysis step: Compute core map embedding and extract core layer information.
+    Compute core map embedding and extract core layer information.
     
-    This function computes core map embedding and stores it in adata.obsm, extracts and saves core layer information (core_layers_) for visualization, and ensures clustering labels are available for visualization. Core analysis is performed before clustering to identify core cells and prepare for stable clustering. The function is compatible with scanpy workflow, working with scanpy neighbors graph stored in adata.obsp, accepting scanpy standard representations such as X_pca and X_umap, outputting embedding in adata.obsm compatible with scanpy format, and saving core layer information in adata.obs for scanpy plotting.
-    
-    Note: Neighbors should be computed in preprocessing step before calling this function. You can use either lotus preprocessing or scanpy's sc.pp.neighbors().
+    Core analysis is performed before clustering to identify core cells. Requires neighbors graph from preprocessing.
     
     Parameters:
-        adata: AnnData object (compatible with scanpy AnnData)
-        model: CorespectModel object from cplearn.corespect() call (performed before clustering)
-        use_rep: Representation to use for computation. If None, auto-detects: "X_latent" > "X_pca" > "X". Default is None (auto-detect)
-        key_added: Key name for embedding results in adata.obsm. Compatible with scanpy embedding keys
-        cluster_key: Key name for cluster labels in adata.obs. If None, auto-detects: "cplearn_labels" > "leiden" > "louvain". Default is None (auto-detect)
-        print_summary: Whether to print assignment summary
+        adata (AnnData): AnnData object
+        model (cplearn.CorespectModel): CorespectModel from cplearn.corespect() call
+        use_rep (str | None): Representation to use. Default: None (auto-detect: "X_latent" > "X_pca" > "X")
+        key_added (str): Key name for embedding in adata.obsm. Default: "X_cplearn_coremap"
+        cluster_key (str | None): Key name for cluster labels in adata.obs. Default: None (auto-detect)
+        print_summary (bool): Print assignment summary. Default: True
     """
     # Auto-detect representation if not specified
     if use_rep is None:

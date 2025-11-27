@@ -8,12 +8,12 @@ import lotus as lt
 
 def input(adata: AnnData, *, save_raw: bool = True, raw_layer: str = "raw_counts") -> None:
     """
-    Input step: Save raw count matrix
+    Save raw count matrix.
     
     Parameters:
-        adata: AnnData object
-        save_raw: Whether to save the raw count matrix
-        raw_layer: Name of the layer to save raw count matrix
+        adata (AnnData): AnnData object
+        save_raw (bool): Save raw count matrix. Default: True
+        raw_layer (str): Layer name for raw counts. Default: "raw_counts"
     """
     if save_raw:
         adata.layers[raw_layer] = adata.X.copy()
@@ -32,18 +32,18 @@ def qc(
     log1p: bool = True,
 ) -> None:
     """
-    QC (Quality Control) step: Calculate QC metrics
+    Calculate QC metrics.
     
     Parameters:
-        adata: AnnData object
-        expr_type: Expression type for QC calculation
-        var_type: Variable type for QC calculation
-        qc_vars: QC variables to calculate
-        percent_top: Percent top genes to calculate. If None, auto-adjusts based on n_vars
-        layer: Layer to use for QC calculation
-        use_raw: Whether to use raw data
-        inplace: Whether to modify adata in place
-        log1p: Whether to apply log1p transformation
+        adata (AnnData): AnnData object
+        expr_type (str): Expression type for QC calculation. Default: "counts"
+        var_type (str): Variable type for QC calculation. Default: "genes"
+        qc_vars (tuple): QC variables to calculate. Default: ()
+        percent_top (tuple[int, ...] | None): Percent top genes to calculate. Default: None (auto-adjust)
+        layer (str | None): Layer to use for QC calculation. Default: None
+        use_raw (bool): Use raw data. Default: False
+        inplace (bool): Modify adata in place. Default: True
+        log1p (bool): Apply log1p transformation. Default: True
     """
     # Auto-adjust percent_top based on number of genes
     if percent_top is None:
@@ -76,16 +76,16 @@ def filtering(
     inplace: bool = True,
 ) -> None:
     """
-    Filtering step: Filter cells and genes
+    Filter cells and genes.
     
     Parameters:
-        adata: AnnData object
-        min_counts: Minimum number of counts per cell
-        min_genes: Minimum number of genes per cell
-        max_counts: Maximum number of counts per cell
-        max_genes: Maximum number of genes per cell
-        min_cells: Minimum number of cells expressing a gene
-        inplace: Whether to modify adata in place
+        adata (AnnData): AnnData object
+        min_counts (int | None): Minimum number of counts per cell. Default: None
+        min_genes (int | None): Minimum number of genes per cell. Default: None
+        max_counts (int | None): Maximum number of counts per cell. Default: None
+        max_genes (int | None): Maximum number of genes per cell. Default: None
+        min_cells (int | None): Minimum number of cells expressing a gene. Default: None
+        inplace (bool): Modify adata in place. Default: True
     """
     # Filter cells
     if min_counts is not None or min_genes is not None or max_counts is not None or max_genes is not None:
@@ -109,11 +109,11 @@ def filtering(
 
 def normalization(adata: AnnData, *, target_sum: float = 1e4) -> None:
     """
-    Normalization step: Normalize to target sum
+    Normalize to target sum.
     
     Parameters:
-        adata: AnnData object
-        target_sum: Target sum for normalization
+        adata (AnnData): AnnData object
+        target_sum (float): Target sum for normalization. Default: 1e4
     """
     lt.pp.normalize_total(adata, target_sum=target_sum)
     lt.pp.log1p(adata)
@@ -121,11 +121,11 @@ def normalization(adata: AnnData, *, target_sum: float = 1e4) -> None:
 
 def hvg(adata: AnnData, *, n_top_genes: int | None = None) -> None:
     """
-    HVG (Highly Variable Genes) step: Select highly variable genes
+    Select highly variable genes.
     
     Parameters:
-        adata: AnnData object
-        n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)
+        adata (AnnData): AnnData object
+        n_top_genes (int | None): Number of highly variable genes. Default: None (min(2000, n_vars))
     """
     if n_top_genes is None:
         n_top_genes = min(2000, adata.n_vars)
@@ -139,23 +139,23 @@ def hvg(adata: AnnData, *, n_top_genes: int | None = None) -> None:
 
 def scaling(adata: AnnData, *, zero_center: bool = True, max_value: float = 10) -> None:
     """
-    Scaling step: Standardize data
+    Standardize data.
     
     Parameters:
-        adata: AnnData object
-        zero_center: Whether to zero center
-        max_value: Maximum value for clipping
+        adata (AnnData): AnnData object
+        zero_center (bool): Zero center the data. Default: True
+        max_value (float): Maximum value for clipping. Default: 10
     """
     lt.pp.scale(adata, zero_center=zero_center, max_value=max_value)
 
 
 def pca(adata: AnnData, *, n_pcs: int = 20) -> None:
     """
-    PCA step: Principal component analysis
+    Principal component analysis.
     
     Parameters:
-        adata: AnnData object
-        n_pcs: Number of principal components
+        adata (AnnData): AnnData object
+        n_pcs (int): Number of principal components. Default: 20
     """
     lt.tl.pca(adata, n_comps=n_pcs)
     
@@ -170,12 +170,12 @@ def pca(adata: AnnData, *, n_pcs: int = 20) -> None:
 
 def neighbors(adata: AnnData, *, use_rep: str = "X_pca", n_neighbors: int = 15) -> None:
     """
-    Neighbors step: Construct neighbor graph
+    Construct neighbor graph.
     
     Parameters:
-        adata: AnnData object
-        use_rep: Representation to use for neighbor graph construction, default is "X_pca"
-        n_neighbors: Number of neighbors
+        adata (AnnData): AnnData object
+        use_rep (str): Representation to use for neighbor graph. Default: "X_pca"
+        n_neighbors (int): Number of neighbors. Default: 15
     """
     lt.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors)
 
@@ -196,19 +196,17 @@ def preprocess(
     """
     Complete preprocessing pipeline: QC, filtering, normalization, HVG selection, scaling, PCA, and neighbors.
     
-    This function performs a complete preprocessing pipeline including quality control, filtering, normalization, highly variable genes selection, scaling, principal component analysis, and neighbor graph construction. Raw count matrix is automatically saved at the beginning if save_raw=True.
-    
     Parameters:
-        adata: AnnData object
-        n_pcs: Number of principal components for PCA
-        target_sum: Target sum for normalization
-        n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)
-        n_neighbors: Number of neighbors for neighbor graph construction
-        use_rep: Representation to use for neighbor graph construction, default is "X_pca"
-        save_raw: Whether to save the raw count matrix
-        raw_layer: Name of the layer to save raw count matrix
-        min_genes: Minimum number of genes per cell for filtering
-        min_cells: Minimum number of cells expressing a gene for filtering
+        adata (AnnData): AnnData object
+        n_pcs (int): Number of principal components. Default: 20
+        target_sum (float): Target sum for normalization. Default: 1e4
+        n_top_genes (int | None): Number of highly variable genes. Default: None (min(2000, n_vars))
+        n_neighbors (int): Number of neighbors. Default: 15
+        use_rep (str): Representation for neighbor graph. Default: "X_pca"
+        save_raw (bool): Save raw count matrix. Default: True
+        raw_layer (str): Layer name for raw counts. Default: "raw_counts"
+        min_genes (int | None): Minimum genes per cell. Default: None
+        min_cells (int | None): Minimum cells per gene. Default: None
     """
     # Save raw count matrix at the beginning
     if save_raw:

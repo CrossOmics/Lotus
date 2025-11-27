@@ -37,22 +37,20 @@ def marker_genes(
     auto_pick_groups: bool = True,
 ) -> pd.DataFrame:
     """
-    Marker Genes step: Identify differentially expressed genes (marker genes) between groups.
-    
-    This function identifies differentially expressed genes between different cell populations. The function is compatible with scanpy workflow, accepting scanpy cluster keys such as "leiden" and "louvain", working with scanpy layers such as "raw", "counts", or custom layers, and outputting DataFrame compatible with scanpy's rank_genes_groups format.
+    Identify differentially expressed genes (marker genes) between groups.
     
     Parameters:
-        adata: AnnData object (compatible with scanpy AnnData)
-        cluster_key: Key name for cluster labels in adata.obs. If None, auto-detects: "cplearn" > "leiden" > "louvain". Default is None (auto-detect)
-        groups_a: Set of cluster labels for first group. If None and auto_pick_groups=True, will be auto-selected
-        groups_b: Set of cluster labels for second group. If None and auto_pick_groups=True, will be auto-selected
-        layer: Layer to use for analysis. If None, auto-detects: "raw_counts" > "raw" > "counts" > None (use X). Default is None (auto-detect)
-        min_detect_pct: Minimum detection percentage
-        min_cells_per_group: Minimum number of cells per group
-        auto_pick_groups: Whether to automatically select the first two non-negative clusters as comparison groups
+        adata (AnnData): AnnData object
+        cluster_key (str | None): Key name for cluster labels in adata.obs. Default: None (auto-detect)
+        groups_a (set[int] | None): Set of cluster labels for first group. Default: None
+        groups_b (set[int] | None): Set of cluster labels for second group. Default: None
+        layer (str | None): Layer to use for analysis. Default: None (auto-detect)
+        min_detect_pct (float): Minimum detection percentage. Default: 0.0
+        min_cells_per_group (int): Minimum number of cells per group. Default: 5
+        auto_pick_groups (bool): Auto-select first two non-negative clusters. Default: True
     
     Returns:
-        DataFrame with differential expression analysis results. Compatible with scanpy's rank_genes_groups format.
+        pd.DataFrame: Differential expression analysis results
     """
     # Auto-detect cluster key if not specified
     if cluster_key is None:

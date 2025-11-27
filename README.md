@@ -26,9 +26,9 @@ This will make the `lotus` package available system-wide without needing to set 
 
 See `examples/lotus_workflow.py` for a complete workflow example.
 
-## Web Demo
+## Lotus Embedding Projector
 
-A lightweight web application is available in `Lotus-Web-Demo/`. See the [Web Demo README](Lotus-Web-Demo/README.md) for setup instructions.
+We developed an interactive analysis tool, available at `Interactive-Lotus/`. See the [Interactive-Lotus README](Interactive-Lotus/README.md) for setup instructions. We also support a [lightweight web demo](https://lotus.zeabur.app/) for demonstration. 
 
 **Note:** The web demo has computational resource limitations and only supports very small datasets.
 

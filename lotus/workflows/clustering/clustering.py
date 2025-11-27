@@ -38,27 +38,25 @@ def clustering(
     print_summary: bool = True,
 ) -> cplearn.CorespectModel | None:
     """
-    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain).
-    
-    This function primarily implements scanpy clustering methods. For cplearn clustering, please use the cplearn API directly by calling ``cplearn.corespect()`` from ``lotus.methods.cplearn.external``. The function supports clustering methods including "leiden" (default, Scanpy Leiden algorithm), "louvain" (Scanpy Louvain algorithm), and "cplearn" (deprecated, use cplearn API directly). The function is compatible with scanpy workflow, accepting scanpy standard representations such as X_pca and X_umap, working with scanpy neighbors graph stored in adata.obsp, and outputting cluster labels compatible with scanpy format.
+    Perform clustering analysis.
     
     Parameters:
-        adata: AnnData object (compatible with scanpy AnnData)
-        method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
-        use_rep: Representation to use for clustering (deprecated for cplearn, use cplearn API directly)
-        key_added: Key name for cluster labels in adata.obs. If None, uses method-specific default: "leiden", "louvain", or "cplearn"
-        cluster_resolution: Clustering resolution (applies to all methods)
-        stable_core_frac: Stable core fraction (deprecated, use cplearn API directly)
-        stable_ng_num: Number of neighbors for stable core (deprecated, use cplearn API directly)
-        fine_grained: Whether to use fine-grained clustering (deprecated, use cplearn API directly)
-        propagate: Whether to propagate labels (deprecated, use cplearn API directly)
-        random_state: Random seed for reproducibility (scanpy methods only)
-        neighbors_key: Key in adata.uns where neighbors are stored (scanpy methods only)
-        obsp: Key in adata.obsp to use as adjacency matrix (scanpy methods only)
-        print_summary: Whether to print cluster summary
+        adata (AnnData): AnnData object
+        method (Literal["cplearn", "leiden", "louvain"]): Clustering method. Default: "leiden"
+        use_rep (str | None): Representation to use. Default: None (auto-detect)
+        key_added (str | None): Key name for cluster labels in adata.obs. Default: None (method-specific)
+        cluster_resolution (float): Clustering resolution. Default: 1.2
+        stable_core_frac (float): Stable core fraction (cplearn only). Default: 0.25
+        stable_ng_num (int): Number of neighbors for stable core (cplearn only). Default: 8
+        fine_grained (bool): Use fine-grained clustering (cplearn only). Default: False
+        propagate (bool): Propagate labels (cplearn only). Default: True
+        random_state (int): Random seed (scanpy methods only). Default: 0
+        neighbors_key (str | None): Key in adata.uns for neighbors (scanpy methods only). Default: None
+        obsp (str | None): Key in adata.obsp for adjacency matrix (scanpy methods only). Default: None
+        print_summary (bool): Print cluster summary. Default: True
     
     Returns:
-        None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
+        None | cplearn.CorespectModel: None for scanpy methods, CorespectModel for cplearn (deprecated)
     """
     # Set default key_added based on method
     if key_added is None:
