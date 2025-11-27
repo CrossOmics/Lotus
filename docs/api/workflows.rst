@@ -9,7 +9,7 @@ Overview
 The Workflows module includes the following submodules:
 
 - **Preprocessing**: Data quality control, filtering, normalization, and dimensionality reduction
-- **CoreSelection**: Core map embedding (typically before clustering)
+- **CoreAnalysis**: Core map embedding (typically after clustering)
 - **Clustering**: Cell clustering analysis
   - Supports multiple methods: Lotus cplearn (default) or scanpy (Leiden/Louvain)
   - Easy to switch between methods
@@ -32,10 +32,10 @@ Preprocessing Functions
    :undoc-members:
    :show-inheritance:
 
-Core Selection Functions
+Core Analysis Functions
 ------------------------
 
-.. automodule:: lotus.workflows.core_selection.core_selection
+.. automodule:: lotus.workflows.core_analysis.core_analysis
    :members:
    :undoc-members:
    :show-inheritance:

@@ -17,7 +17,7 @@ First, import the necessary modules:
         clustering,
         umap,
         marker_genes,
-        core_selection,
+        core_analysis,
     )
     from anndata import AnnData
     import numpy as np
@@ -85,14 +85,14 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
     2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
 
-3. Core Selection (before clustering)
--------------------------------------
+3. Core Analysis (after clustering)
+------------------------------------
 
-Core selection is performed before clustering to identify core cells for stable clustering. The neighbors graph is already constructed in the preprocessing step:
+Core analysis is performed after clustering to compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
 
 .. code-block:: python
 
-    # Core selection preparation (neighbors graph is already constructed in preprocessing)
+    # Core analysis preparation (neighbors graph is already constructed in preprocessing)
     print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
     print(f"Using representation: adata.obsm['X_latent'] (shape: {adata.obsm['X_latent'].shape})")
 
@@ -308,7 +308,7 @@ Here's a complete workflow example that you can run. For the full example script
         clustering,
         umap,
         marker_genes,
-        core_selection,
+        core_analysis,
     )
     import numpy as np
     
@@ -319,9 +319,9 @@ Here's a complete workflow example that you can run. For the full example script
     preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
     print(f"Preprocessing complete. Data shape: {adata.shape}")
     
-    # 2. Core Selection (before clustering)
+    # 2. Core Analysis (after clustering)
     print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    print("Core selection preparation complete")
+    print("Core analysis preparation complete")
     
     # 3. Clustering
     # Using cplearn (default)
@@ -384,7 +384,7 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:48,497 - INFO -   - Visualization saved to: /tmp/lotus_real_output/umap_clusters.png
     2025-11-23 00:13:48,497 - INFO - 
     ============================================================
-    2025-11-23 00:13:48,497 - INFO - CoreSelection: Neighbors → CoreSelection
+    2025-11-23 00:13:48,497 - INFO - CoreAnalysis: Neighbors → CoreAnalysis
     2025-11-23 00:13:48,497 - INFO - ============================================================
     2025-11-23 00:13:48,497 - INFO - Computing core map embedding...
     Total number of clusters= 3
@@ -398,7 +398,7 @@ Example output (from running ``examples/lotus_workflow.py``):
     Shape of embedding after round 4 is (177, 32)
     Shape of embedding after round 5 is (180, 32)
     Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-    2025-11-23 00:13:51,072 - INFO - ✓ CoreSelection complete
+    2025-11-23 00:13:51,072 - INFO - ✓ CoreAnalysis complete
     2025-11-23 00:13:51,072 - INFO -   - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 32))
     2025-11-23 00:13:51,072 - INFO -   - Assigned points: 180/180 (100.0%)
     2025-11-23 00:13:51,072 - INFO - 

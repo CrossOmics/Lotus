@@ -78,3 +78,44 @@ Marker Gene Visualization
           output_dir="./results",
           cluster_key="cplearn_labels",  # Can also use "leiden" or "louvain" if using scanpy
       )
+
+CoreMap Visualization
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.visualization.visualization.coremap
+
+   **Biological Background:**
+   
+   CoreMap visualization:
+   - Visualizes the core map embedding computed by core_analysis()
+   - Provides interactive Plotly plots with layer sliders
+   - Highlights core cell states and cell relationships
+   - Uses cplearn's own visualization function for optimal display
+   
+   This visualization is particularly useful for:
+   - Understanding core-periphery structure in cell populations
+   - Exploring cell state transitions
+   - Interactive exploration of core map embeddings
+   
+   **Usage Example:**
+   
+   .. code-block:: python
+   
+      from lotus.workflows import coremap, core_analysis
+      from lotus.methods.cplearn.external import cplearn
+      
+      # First perform clustering and core analysis
+      model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
+      core_analysis(adata, model=model, key_added="X_cplearn_coremap")
+      
+      # Then visualize the core map
+      coremap(
+          adata,
+          coremap_key="X_cplearn_coremap",
+          cluster_key="cplearn",
+          model=model,
+          output_dir="./results",
+          save="_coremap.html",
+      )
+   
+   **Note:** The output is an interactive HTML file (Plotly format) that can be opened in a web browser. The visualization includes layer sliders to explore different core layers.
