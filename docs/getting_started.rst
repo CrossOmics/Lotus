@@ -21,10 +21,7 @@ The standard Lotus analysis pipeline consists of the following steps in order:
 
 **Key Points:**
 
-* **Core analysis is optional** - It can be performed before clustering to identify stable cell populations, but clustering works without it
-* **Clustering methods can be switched** between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter
-* **All methods are compatible** - cluster labels from any method can be used with subsequent visualization and DEG analysis functions
-* **The pipeline is flexible** - you can use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed
+Core analysis is optional. It can be performed before clustering to identify stable cell populations, but clustering works without it. Clustering methods can be switched between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter. All methods are compatible, meaning cluster labels from any method can be used with subsequent visualization and DEG analysis functions. The pipeline is flexible, allowing you to use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed.
 
 First, import the necessary modules:
 
@@ -493,6 +490,4 @@ After running the complete workflow, you'll find the following output files in t
 Next Steps
 ----------
 
-* See :doc:`api/index` for the complete API reference
-* Run the example script: ``examples/lotus_workflow.py`` for a more detailed example with logging
-* View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_
+See :doc:`api/index` for the complete API reference. Run the example script ``examples/lotus_workflow.py`` for a more detailed example with logging. View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_.
