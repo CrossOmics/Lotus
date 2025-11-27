@@ -100,27 +100,20 @@ def coremap(
     **kwargs,
 ) -> None:
     """
-    CoreMap visualization: Visualize core map embedding from cplearn using cplearn's visualize_coremap
+    CoreMap visualization: Visualize core map embedding from cplearn using cplearn's visualize_coremap.
     
-    This function visualizes the core map embedding computed by core_analysis(),
-    which provides a special dimensionality reduction representation highlighting
-    core cell states and cell relationships. It uses cplearn's own visualization
-    function which provides interactive Plotly plots with layer sliders.
+    This function visualizes the core map embedding computed by core_analysis(), which provides a special dimensionality reduction representation highlighting core cell states and cell relationships. It uses cplearn's own visualization function which provides interactive Plotly plots with layer sliders.
     
     Parameters:
         adata: AnnData object with coremap embedding in adata.obsm
-        coremap_key: Key name for coremap embedding in adata.obsm.
-                     Default is "X_cplearn_coremap"
-        cluster_key: Key name for cluster labels in adata.obs.
-                     If None, auto-detects: "cplearn" > "leiden" > "louvain"
-        core_layer_key: Key name for core layer marker in adata.obs.
-                        If None, auto-detects: "{coremap_key}_is_core"
+        coremap_key: Key name for coremap embedding in adata.obsm. Default is "X_cplearn_coremap"
+        cluster_key: Key name for cluster labels in adata.obs. If None, auto-detects: "cplearn" > "leiden" > "louvain"
+        core_layer_key: Key name for core layer marker in adata.obs. If None, auto-detects: "{coremap_key}_is_core"
         truth_key: Key name for truth labels in adata.obs. If None, will not be displayed
         output_dir: Output directory. If None, uses current figdir setting
         save: Save filename or False to not save. Default is "_coremap.html" (Plotly HTML format)
         show: Whether to show the plot
-        model: CorespectModel object from cplearn clustering. If None, will try to reconstruct
-               from adata.uns. Required for proper layer visualization.
+        model: CorespectModel object from cplearn.corespect() call. If None, will try to reconstruct from adata.uns. Required for proper layer visualization.
         use_webgl: Whether to use WebGL for rendering (faster for large datasets)
         **kwargs: Additional arguments (currently unused, kept for compatibility)
     
@@ -289,7 +282,9 @@ def render_visualizations(
     model: cplearn.CorespectModel | None = None,
 ) -> None:
     """
-    Visualization module: Generate UMAP, CoreMap, and marker gene visualizations
+    Visualization module: Generate UMAP, CoreMap, and marker gene visualizations.
+    
+    This function generates multiple visualizations including UMAP clustering plots, CoreMap visualizations (if available), and marker gene violin plots. The function saves all visualizations to the specified output directory.
     
     Parameters:
         adata: AnnData object
@@ -299,7 +294,7 @@ def render_visualizations(
         truth_key: Key name for truth labels in adata.obs. If None, will not be displayed
         include_coremap: Whether to include coremap visualization if available
         coremap_key: Key name for coremap embedding in adata.obsm
-        model: CorespectModel object from cplearn clustering. Required for coremap visualization.
+        model: CorespectModel object from cplearn.corespect() call. Required for coremap visualization.
     """
     output_dir = Path(output_dir)
     # Scanpy requires the directory to exist before saving

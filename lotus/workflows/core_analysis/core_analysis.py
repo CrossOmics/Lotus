@@ -17,33 +17,18 @@ def core_analysis(
     print_summary: bool = True,
 ) -> None:
     """
-    CoreAnalysis step: Compute core map embedding and extract core layer information
+    CoreAnalysis step: Compute core map embedding and extract core layer information.
     
-    This function:
-    1. Computes core map embedding and stores it in adata.obsm
-    2. Extracts and saves core layer information (core_layers_) for visualization
-    3. Ensures clustering labels are available for visualization
+    This function computes core map embedding and stores it in adata.obsm, extracts and saves core layer information (core_layers_) for visualization, and ensures clustering labels are available for visualization. Core analysis is performed before clustering to identify core cells and prepare for stable clustering. The function is compatible with scanpy workflow, working with scanpy neighbors graph stored in adata.obsp, accepting scanpy standard representations such as X_pca and X_umap, outputting embedding in adata.obsm compatible with scanpy format, and saving core layer information in adata.obs for scanpy plotting.
     
-    Compatible with scanpy workflow:
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Outputs embedding in adata.obsm compatible with scanpy format
-    - Saves core layer information in adata.obs for scanpy plotting
-    
-    Note: Neighbors should be computed in preprocessing step before calling this function.
-    Can use either lotus preprocessing or scanpy's sc.pp.neighbors().
+    Note: Neighbors should be computed in preprocessing step before calling this function. You can use either lotus preprocessing or scanpy's sc.pp.neighbors().
     
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
-        model: CorespectModel object from clustering step
-        use_rep: Representation to use for computation.
-                 If None, auto-detects: "X_latent" > "X_pca" > "X"
-                 Default is None (auto-detect)
-        key_added: Key name for embedding results in adata.obsm
-                   Compatible with scanpy embedding keys
-        cluster_key: Key name for cluster labels in adata.obs.
-                     If None, auto-detects: "cplearn_labels" > "leiden" > "louvain"
-                     Default is None (auto-detect)
+        model: CorespectModel object from cplearn.corespect() call (performed before clustering)
+        use_rep: Representation to use for computation. If None, auto-detects: "X_latent" > "X_pca" > "X". Default is None (auto-detect)
+        key_added: Key name for embedding results in adata.obsm. Compatible with scanpy embedding keys
+        cluster_key: Key name for cluster labels in adata.obs. If None, auto-detects: "cplearn_labels" > "leiden" > "louvain". Default is None (auto-detect)
         print_summary: Whether to print assignment summary
     """
     # Auto-detect representation if not specified

@@ -194,9 +194,9 @@ def preprocess(
     min_cells: int | None = None,
 ) -> None:
     """
-    Complete preprocessing pipeline: QC → Filtering → Normalization → HVG → Scaling → PCA → Neighbors
+    Complete preprocessing pipeline: QC, filtering, normalization, HVG selection, scaling, PCA, and neighbors.
     
-    Note: Raw count matrix is automatically saved at the beginning if save_raw=True.
+    This function performs a complete preprocessing pipeline including quality control, filtering, normalization, highly variable genes selection, scaling, principal component analysis, and neighbor graph construction. Raw count matrix is automatically saved at the beginning if save_raw=True.
     
     Parameters:
         adata: AnnData object

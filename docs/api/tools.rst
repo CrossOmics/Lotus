@@ -1,27 +1,26 @@
 Tools Module (lotus.tl)
 ========================
 
-The ``lotus.tl`` module provides scanpy-compatible tools and analysis functions. This module is a complete wrapper around ``scanpy.tl``, providing all scanpy tools functions with identical interfaces.
+The ``lotus.tl`` module provides tools and analysis functions for single-cell data analysis.
 
 Overview
 --------
 
-``lotus.tl`` serves as a building block API that provides direct access to all scanpy tools functions. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy workflows. This module is used internally by ``lotus.workflows`` to implement high-level functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module.
+``lotus.tl`` serves as a building block API that provides direct access to all tools functions. This module is used internally by ``lotus.workflows`` to implement high-level functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module.
 
 **Key Features:**
 
-The module provides complete scanpy.tl compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.tl, and all scanpy tools functions are available. For standard analysis workflows, we recommend using the high-level functions in ``lotus.workflows`` instead, which provide optimized defaults and a streamlined interface.
+The module provides complete tools functionality with standard function signatures and behavior. All tools functions are available. For standard analysis workflows, we recommend using the high-level functions in ``lotus.workflows`` instead, which provide optimized defaults and a streamlined interface.
 
 Compatibility
 -------------
 
-You can use ``lotus.tl`` exactly like ``scanpy.tl``:
+Usage example:
 
 .. code-block:: python
 
    import lotus as lt
    
-   # These work exactly like scanpy.tl
    lt.tl.leiden(adata, resolution=0.5)
    lt.tl.umap(adata)
    lt.tl.paga(adata, groups='leiden')
@@ -35,18 +34,18 @@ Clustering
 
 .. autofunction:: lotus.methods.scanpy.tools.leiden
 
-   Leiden clustering algorithm (default clustering method in scanpy).
+   ⚙️ Leiden clustering algorithm (also available as ``lotus.workflows.clustering(method='leiden')``).
 
 .. autofunction:: lotus.methods.scanpy.tools.louvain
 
-   Louvain clustering algorithm.
+   ⚙️ Louvain clustering algorithm (also available as ``lotus.workflows.clustering(method='louvain')``).
 
 Dimensionality Reduction
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.tools.umap
 
-   UMAP dimensionality reduction.
+   ⚙️ UMAP dimensionality reduction (also available as ``lotus.workflows.umap()``).
 
 .. autofunction:: lotus.methods.scanpy.tools.tsne
 
@@ -76,7 +75,7 @@ Differential Expression
 
 .. autofunction:: lotus.methods.scanpy.tools.rank_genes_groups
 
-   Rank genes for characterizing groups (differential expression analysis).
+   ⚙️ Rank genes for characterizing groups (differential expression analysis). Similar functionality available as ``lotus.workflows.marker_genes()`` but with different interface and more options.
 
 Gene Scoring
 ~~~~~~~~~~~~
@@ -160,7 +159,7 @@ Differential Expression
 Complete Function List
 ----------------------
 
-All functions from ``scanpy.tl`` are available in ``lotus.tl``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for most users. For advanced features not covered by workflows, use the building blocks API directly.
+All tools functions are available in ``lotus.tl``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for most users. For advanced features not covered by workflows, use the building blocks API directly.
 
 **Clustering Functions:**
 
@@ -187,9 +186,4 @@ The ``score_genes()`` function scores cells based on gene expression. The ``scor
 The ``dendrogram()`` function computes hierarchical clustering dendrograms. The ``ingest()`` function maps labels from reference dataset to query dataset. The ``marker_gene_overlap()`` function analyzes marker gene overlap. The ``embedding_density()`` function computes embedding density. The ``filter_rank_genes_groups()`` function filters ranked genes. The ``sim()`` function simulates single-cell data.
 
 For detailed documentation of each function, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.html>`__.
-
-Note
-----
-
-All functions in ``lotus.tl`` are direct wrappers around ``scanpy.tl`` functions. They have identical signatures, parameters, and behavior. You can use them as drop-in replacements for scanpy.tl functions.
 

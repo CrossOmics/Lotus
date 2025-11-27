@@ -47,10 +47,6 @@ Marker Gene Identification
 
    The result DataFrame contains the following columns: ``gene`` (gene name), ``log2fc`` (log2 fold change, where > 0 means upregulated and < 0 means downregulated), ``z_score`` (Z score), ``pvalue`` (p value), ``p_adj`` (adjusted p value using FDR, more reliable), ``mean_a`` and ``mean_b`` (mean expression in the two groups), and ``pct_expr_a`` and ``pct_expr_b`` (expression percentage).
 
-.. autofunction:: lotus.workflows.deg.deg.run_differential_expression
-
-   This is an alias for ``marker_genes()`` for backward compatibility.
-
 Helper Functions
 ----------------
 

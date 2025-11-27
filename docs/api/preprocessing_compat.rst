@@ -1,27 +1,26 @@
 Preprocessing Module (lotus.pp)
 ================================
 
-The ``lotus.pp`` module provides scanpy-compatible preprocessing functions. This module is a complete wrapper around ``scanpy.pp``, providing all scanpy preprocessing functions with identical interfaces.
+The ``lotus.pp`` module provides preprocessing functions for single-cell data analysis.
 
 Overview
 --------
 
-``lotus.pp`` serves as a building block API that provides direct access to all scanpy preprocessing functions. All functions work exactly the same way as in scanpy, making Lotus fully compatible with scanpy preprocessing workflows. This module is used internally by ``lotus.workflows`` to implement high-level preprocessing functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and doublet detection.
+``lotus.pp`` serves as a building block API that provides direct access to all preprocessing functions. This module is used internally by ``lotus.workflows`` to implement high-level preprocessing functionality, and can also be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and doublet detection.
 
 **Key Features:**
 
-The module provides complete scanpy.pp compatibility with the same function signatures and behavior. It can be used as a drop-in replacement for scanpy.pp, and all scanpy preprocessing functions are available. For standard preprocessing workflows, we recommend using ``lotus.workflows.preprocess()`` which provides a complete preprocessing pipeline with optimized defaults. For advanced features like batch correction and doublet detection, use the building blocks API directly.
+The module provides complete preprocessing functionality with standard function signatures and behavior. All preprocessing functions are available. For standard preprocessing workflows, we recommend using ``lotus.workflows.preprocess()`` which provides a complete preprocessing pipeline with optimized defaults. For advanced features like batch correction and doublet detection, use the building blocks API directly.
 
 Compatibility
 -------------
 
-You can use ``lotus.pp`` exactly like ``scanpy.pp``:
+Usage example:
 
 .. code-block:: python
 
    import lotus as lt
    
-   # These work exactly like scanpy.pp
    lt.pp.calculate_qc_metrics(adata)
    lt.pp.filter_cells(adata, min_genes=200)
    lt.pp.normalize_total(adata, target_sum=1e4)
@@ -39,25 +38,25 @@ Quality Control
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.calculate_qc_metrics
 
-   Calculate quality control metrics for cells and genes.
+   ⚙️ Calculate quality control metrics for cells and genes (also available as ``lotus.workflows.qc()``).
 
 Filtering
 ~~~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.filter_cells
 
-   Filter cells based on QC metrics.
+   ⚙️ Filter cells based on QC metrics (also available as ``lotus.workflows.filtering()``).
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.filter_genes
 
-   Filter genes based on expression.
+   ⚙️ Filter genes based on expression (also available as ``lotus.workflows.filtering()``).
 
 Normalization
 ~~~~~~~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.normalize_total
 
-   Normalize counts per cell.
+   ⚙️ Normalize counts per cell (also available as ``lotus.workflows.normalization()``).
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.log1p
 
@@ -68,28 +67,28 @@ Highly Variable Genes
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.highly_variable_genes
 
-   Identify highly variable genes.
+   ⚙️ Identify highly variable genes (also available as ``lotus.workflows.hvg()``).
 
 Scaling
 ~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.scale
 
-   Scale data to unit variance and zero mean.
+   ⚙️ Scale data to unit variance and zero mean (also available as ``lotus.workflows.scaling()``).
 
 Dimensionality Reduction
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.pca
 
-   Principal component analysis.
+   ⚙️ Principal component analysis (also available as ``lotus.workflows.pca()``).
 
 Neighbor Graph
 ~~~~~~~~~~~~~~
 
 .. autofunction:: lotus.methods.scanpy.preprocessing.neighbors
 
-   Compute neighborhood graph of cells.
+   ⚙️ Compute neighborhood graph of cells (also available as ``lotus.workflows.neighbors()``).
 
 Batch Correction
 ~~~~~~~~~~~~~~~~
@@ -174,7 +173,7 @@ Doublet Detection
 Complete Function List
 ----------------------
 
-All functions from ``scanpy.pp`` are available in ``lotus.pp``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for standard preprocessing workflows. For advanced features like batch correction and doublet detection, use the building blocks API directly.
+All preprocessing functions are available in ``lotus.pp``. Functions marked with ⚙️ are also available as high-level wrappers in ``lotus.workflows``, which we recommend for standard preprocessing workflows. For advanced features like batch correction and doublet detection, use the building blocks API directly.
 
 **Quality Control Functions:**
 
@@ -213,9 +212,4 @@ The ``scrublet()`` function detects doublets using Scrublet. This advanced featu
 The ``downsample_counts()`` function downsamples counts to a target number. The ``sample()`` function samples cells or genes. The ``subsample()`` function subsamples data. The ``sqrt()`` function applies square root transformation. The ``recipe_seurat()`` function provides Seurat preprocessing recipe. The ``recipe_zheng17()`` function provides Zheng et al. 2017 preprocessing recipe. The ``recipe_weinreb17()`` function provides Weinreb et al. 2017 preprocessing recipe.
 
 For detailed documentation of each function, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/en/stable/api/scanpy.pp.html>`__.
-
-Note
-----
-
-All functions in ``lotus.pp`` are direct wrappers around ``scanpy.pp`` functions. They have identical signatures, parameters, and behavior. You can use them as drop-in replacements for scanpy.pp functions.
 

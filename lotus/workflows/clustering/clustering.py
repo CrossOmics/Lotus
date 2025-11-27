@@ -38,32 +38,15 @@ def clustering(
     print_summary: bool = True,
 ) -> cplearn.CorespectModel | None:
     """
-    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain)
+    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain).
     
-    This function primarily implements scanpy clustering methods.
-    For cplearn clustering, please use the cplearn API directly:
-    
-    .. code-block:: python
-    
-        from lotus.methods.cplearn.external import cplearn
-        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
-    
-    Supports clustering methods:
-    - "leiden" (default): Scanpy Leiden algorithm
-    - "louvain": Scanpy Louvain algorithm
-    - "cplearn": Deprecated - use cplearn API directly (see above)
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
+    This function primarily implements scanpy clustering methods. For cplearn clustering, please use the cplearn API directly by calling ``cplearn.corespect()`` from ``lotus.methods.cplearn.external``. The function supports clustering methods including "leiden" (default, Scanpy Leiden algorithm), "louvain" (Scanpy Louvain algorithm), and "cplearn" (deprecated, use cplearn API directly). The function is compatible with scanpy workflow, accepting scanpy standard representations such as X_pca and X_umap, working with scanpy neighbors graph stored in adata.obsp, and outputting cluster labels compatible with scanpy format.
     
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
         use_rep: Representation to use for clustering (deprecated for cplearn, use cplearn API directly)
-        key_added: Key name for cluster labels in adata.obs.
-                   If None, uses method-specific default: "leiden", "louvain", or "cplearn"
+        key_added: Key name for cluster labels in adata.obs. If None, uses method-specific default: "leiden", "louvain", or "cplearn"
         cluster_resolution: Clustering resolution (applies to all methods)
         stable_core_frac: Stable core fraction (deprecated, use cplearn API directly)
         stable_ng_num: Number of neighbors for stable core (deprecated, use cplearn API directly)

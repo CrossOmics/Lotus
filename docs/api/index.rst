@@ -67,7 +67,7 @@ Complete API reference documentation for Lotus. All functions and classes are or
                <span class="lotus-card-icon">⚙️</span>
                <span>Preprocessing Module</span>
            </div>
-           <p class="lotus-card-description">Scanpy-compatible preprocessing: QC, filtering, normalization, batch correction, and more.</p>
+           <p class="lotus-card-description">Preprocessing functions: QC, filtering, normalization, batch correction, and more.</p>
        </a>
    </div>
 

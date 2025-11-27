@@ -8,7 +8,7 @@ Overview
 
 Core analysis is used to compute core map embedding, a special dimensionality reduction representation that can be used for further analysis and visualization.
 
-**Note on workflow order:** Core analysis is performed before clustering to identify core cells and prepare for stable clustering. It is compatible with both cplearn and scanpy clustering workflows.
+**Note on workflow order:** Core analysis is performed before clustering to identify core cells and prepare for stable clustering. 
 Main Functions
 --------------
 
@@ -39,7 +39,3 @@ Core Analysis
       
       # View results
       print(adata.obsm["X_cplearn_coremap"].shape)
-
-.. autofunction:: lotus.workflows.core_analysis.core_analysis.compute_coremap_embedding
-
-   This is an alias for ``core_analysis()`` for backward compatibility.
