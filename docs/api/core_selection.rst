@@ -8,7 +8,13 @@ Overview
 
 Core analysis is used to compute core map embedding, a special dimensionality reduction representation that can be used for further analysis and visualization.
 
-**Note on workflow order:** Core analysis is performed before clustering to identify core cells and prepare for stable clustering. 
+**Note on workflow order:** Core analysis is performed before clustering to identify core cells and prepare for stable clustering.
+
+**Citation:** If you use core analysis features, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the following papers:
+
+* **CoreSPECT**: Chandra Sekhar Mukherjee, Joonyoung Bae, and Jiapeng Zhang. *CoreSPECT: Enhancing Clustering Algorithms via an Interplay of Density and Geometry.* `arXiv:2507.08243 <https://arxiv.org/abs/2507.08243>`_
+
+* **Balanced Ranking**: Chandra Sekhar Mukherjee and Jiapeng Zhang. *Balanced Ranking with Relative Centrality: A Multi-Core Periphery Perspective.* ICLR 2025. 
 Main Functions
 --------------
 

@@ -8,6 +8,12 @@ Overview
 
 Visualization is an important way to display analysis results and help understand the structure of the data and clustering results.
 
+**Citation:**
+
+* **UMAP**: L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
+
+* **CoreMap**: If you use CoreMap visualization, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the CoreSPECT paper (see :doc:`../citations`).
+
 Main Functions
 --------------
 

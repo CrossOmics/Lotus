@@ -8,6 +8,10 @@ Overview
 
 Differential expression analysis is used to identify differentially expressed genes between different cell populations, which are often called "marker genes".
 
+**Citation:** 
+
+* **Wilcoxon Rank-Sum Test**: F. Wilcoxon. *Individual comparisons by ranking methods.* Biometrics Bulletin 1, 80-83 (1945).
+
 Main Functions
 --------------
 
