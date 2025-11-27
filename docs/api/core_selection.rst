@@ -17,10 +17,6 @@ Core Analysis
 
 .. autofunction:: lotus.workflows.core_analysis.core_analysis.core_analysis
 
-   **Biological Background:**
-   
-   Core map embedding is a special embedding computed before clustering to identify core cells. It can highlight core features of cells, is used to prepare data for stable clustering, and helps identify stable cell populations. This function should be used before clustering analysis and requires a neighbor graph from preprocessing.
-
    **Usage Example:**
 
    .. code-block:: python

@@ -16,10 +16,6 @@ UMAP Visualization
 
 .. autofunction:: lotus.workflows.visualization.visualization.umap
 
-   **Biological Background:**
-   
-   UMAP (Uniform Manifold Approximation and Projection) projects high-dimensional data into 2D or 3D space while preserving both local and global structure of the data. It is used to visualize cell distribution in expression space. UMAP plots can help understand relationships between cell types, identify cell subpopulations, and validate clustering results.
-
    **Usage Example:**
 
    .. code-block:: python
@@ -44,10 +40,6 @@ Marker Gene Visualization
 
 .. autofunction:: lotus.workflows.visualization.visualization.render_visualizations
 
-   **Biological Background:**
-   
-   Marker gene visualization includes UMAP clustering plots that show cell distribution in reduced-dimensional space, and violin plots that show expression distribution of marker genes across different clusters. These visualizations can help validate marker gene specificity, understand characteristics of different cell types, and prepare publication-quality figures.
-
    **Usage Example:**
 
    .. code-block:: python
@@ -69,10 +61,6 @@ CoreMap Visualization
 
 .. autofunction:: lotus.workflows.visualization.visualization.coremap
 
-   **Biological Background:**
-   
-   CoreMap visualization visualizes the core map embedding computed by core_analysis() and provides interactive Plotly plots with layer sliders. It highlights core cell states and cell relationships, using cplearn's own visualization function for optimal display. This visualization is particularly useful for understanding core-periphery structure in cell populations, exploring cell state transitions, and interactive exploration of core map embeddings.
-   
    **Usage Example:**
    
    .. code-block:: python

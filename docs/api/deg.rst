@@ -16,10 +16,6 @@ Marker Gene Identification
 
 .. autofunction:: lotus.workflows.deg.deg.marker_genes
 
-   **Biological Background:**
-   
-   Marker genes are genes highly expressed in specific cell types, used to identify and distinguish different cell types and help understand cell function and characteristics. Differential expression analysis identifies marker genes by comparing gene expression between different cell populations. Upregulated genes are highly expressed in the target population, while downregulated genes are lowly expressed in the target population. Significance is determined through statistical tests.
-   
    **Compatibility:**
    
    This function works with cluster labels from both Lotus cplearn (``"cplearn_labels"``) and scanpy (``"leiden"``, ``"louvain"``), and auto-detects cluster keys if not specified.

@@ -46,28 +46,13 @@ API Endpoints
 
 The Lotus API provides the following REST endpoints (all prefixed with ``/api``):
 
-**Data Management:**
-- ``POST /api/upload`` - Upload single-cell data (h5ad format)
-- ``POST /api/session/create`` - Create a new analysis session
-- ``POST /api/session/heartbeat`` - Keep session alive
-- ``POST /api/session/cleanup`` - Clean up expired sessions
+**Data Management:** The ``POST /api/upload`` endpoint uploads single-cell data in h5ad format. The ``POST /api/session/create`` endpoint creates a new analysis session. The ``POST /api/session/heartbeat`` endpoint keeps a session alive. The ``POST /api/session/cleanup`` endpoint cleans up expired sessions.
 
-**Analysis Workflows:**
-- ``POST /api/preprocess`` - Run preprocessing pipeline
-- ``POST /api/cluster`` - Run clustering analysis
-- ``POST /api/visualize`` - Generate UMAP visualization
-- ``POST /api/marker-genes`` - Run differential expression analysis
-- ``POST /api/core-selection`` - Run core analysis
+**Analysis Workflows:** The ``POST /api/preprocess`` endpoint runs the preprocessing pipeline. The ``POST /api/cluster`` endpoint runs clustering analysis. The ``POST /api/visualize`` endpoint generates UMAP visualization. The ``POST /api/marker-genes`` endpoint runs differential expression analysis. The ``POST /api/core-selection`` endpoint runs core analysis.
 
-**Information:**
-- ``GET /api/info/health`` - Check API health status
-- ``GET /api/info/metadata`` - Get dataset metadata
-- ``POST /api/available-cluster-keys`` - Get available cluster keys
+**Information:** The ``GET /api/info/health`` endpoint checks API health status. The ``GET /api/info/metadata`` endpoint gets dataset metadata. The ``POST /api/available-cluster-keys`` endpoint gets available cluster keys.
 
-**Ground Truth:**
-- ``POST /api/ground-truth/upload`` - Upload ground truth labels
-- ``GET /api/ground-truth/list`` - List available ground truth labels
-- ``GET /api/ground-truth/get`` - Get ground truth labels
+**Ground Truth:** The ``POST /api/ground-truth/upload`` endpoint uploads ground truth labels. The ``GET /api/ground-truth/list`` endpoint lists available ground truth labels. The ``GET /api/ground-truth/get`` endpoint gets ground truth labels.
 
 Configuration
 --------------
