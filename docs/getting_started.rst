@@ -7,6 +7,25 @@ All example outputs shown below are **real outputs** from running ``examples/lot
 
 For a complete runnable example, see the `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_ script in the examples directory.
 
+Lotus Analysis Pipeline
+-----------------------
+
+The standard Lotus analysis pipeline consists of the following steps in order:
+
+1. **Load Data** - Load single-cell data (AnnData format)
+2. **Preprocessing** - Quality control, filtering, normalization, HVG selection, scaling, PCA, and neighbor graph construction
+3. **Core Analysis** (before clustering) - Identify core cells and compute core map embedding using cplearn
+4. **Clustering** - Cluster cells using cplearn (default), Leiden, or Louvain algorithms
+5. **Visualization** - Generate UMAP embeddings and visualization plots
+6. **Differential Expression Analysis** - Identify marker genes between clusters
+
+**Key Points:**
+
+* **Core analysis is performed before clustering** to identify stable cell populations and prepare for better clustering results
+* **Clustering methods can be switched** between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter
+* **All methods are compatible** - cluster labels from any method can be used with subsequent visualization and DEG analysis functions
+* **The pipeline is flexible** - you can use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed
+
 First, import the necessary modules:
 
 .. code-block:: python
