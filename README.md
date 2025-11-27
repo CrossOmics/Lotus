@@ -1,12 +1,4 @@
----
-title: Lotus
-emoji: 🏆
-colorFrom: purple
-colorTo: indigo
-sdk: docker
-pinned: false
-license: apache-2.0
----
+
 
 # Lotus
 
