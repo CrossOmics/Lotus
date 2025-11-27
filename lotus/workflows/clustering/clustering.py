@@ -56,7 +56,7 @@ def clustering(
         print_summary (bool): Print cluster summary. Default: True
     
     Returns:
-        None | cplearn.CorespectModel: None for scanpy methods, CorespectModel for cplearn (deprecated)
+        None | cplearn.CorespectModel: None for scanpy methods, CorespectModel for cplearn
     """
     # Set default key_added based on method
     if key_added is None:

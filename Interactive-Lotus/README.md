@@ -1,6 +1,6 @@
 # Lotus Web Demo
 
-Web application for Lotus Embedding Projector. Due to computational resource limitations, this web demo only supports very small datasets. We encourage you to deploy locally using the following method.
+Web application for Lotus Embedding Projector and provide a [lightweight web demo](https://huggingface.co/spaces/zzq1zh/Lotus-hf). Due to computational resource limitations, this web demo only supports small datasets. We encourage you to deploy locally using the following method.
 
 
 ## Features
