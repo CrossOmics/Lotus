@@ -128,3 +128,92 @@
     font-weight: 500;
 }
 
+/* Sidebar dropdown menu styles for API Reference */
+.sidebar-tree li {
+    position: relative;
+}
+
+.api-ref-toggle {
+    position: absolute;
+    left: -1.25rem;
+    top: 0.35rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-foreground-secondary, #6a737d);
+    transition: color 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+    line-height: 1;
+}
+
+.api-ref-toggle:hover {
+    color: var(--color-foreground-primary, #1a1a1a);
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05));
+    border-radius: 3px;
+}
+
+.api-ref-toggle:focus {
+    outline: 2px solid var(--color-accent, #0066cc);
+    outline-offset: 2px;
+}
+
+.api-ref-toggle .toggle-icon {
+    font-size: 0.65rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.sidebar-tree li.expanded .api-ref-toggle .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.sidebar-tree li:not(.expanded) .api-ref-toggle .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.api-ref-submenu {
+    margin-left: 1.25rem;
+    margin-top: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--color-background-border, rgba(0, 0, 0, 0.1));
+    list-style: none;
+}
+
+.api-ref-submenu li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.api-ref-submenu a {
+    font-size: 0.9em;
+    color: var(--color-foreground-secondary, #6a737d);
+    padding: 0.25rem 0.5rem;
+    display: block;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+}
+
+.api-ref-submenu a:hover {
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05));
+    color: var(--color-foreground-primary, #1a1a1a);
+}
+
+.api-ref-submenu a.current {
+    color: var(--color-foreground-primary, #1a1a1a);
+    font-weight: 500;
+}
+
+/* Ensure the API Reference link has proper spacing when toggle button is present */
+.sidebar-tree li:has(.api-ref-toggle) > a,
+.sidebar-tree li .api-ref-toggle + a {
+    padding-left: 0.5rem;
+}
+
