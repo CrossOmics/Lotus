@@ -1,77 +1,13 @@
 """
-Analysis API endpoints (marker-genes)
+DEG Analysis API endpoints (marker genes)
 """
 
 import numpy as np
 from flask import Blueprint, request, jsonify
-from ..config import LOTUS_AVAILABLE, clustering
+from ..config import LOTUS_AVAILABLE
 from ..utils import load_adata, save_adata
 
-bp = Blueprint('analysis', __name__, url_prefix='/api')
-
-
-@bp.route('/available-cluster-keys', methods=['POST'])
-def get_available_cluster_keys():
-    """Get all available cluster keys from adata.obs"""
-    try:
-        data = request.json
-        session_id = data.get('session_id', 'default')
-        
-        from ..utils import load_adata
-        adata = load_adata(session_id)
-        
-        if adata is None:
-            return jsonify({'error': 'No data found.'}), 400
-        
-        # Find all cluster-related keys in adata.obs
-        # Common cluster keys: cplearn, leiden, louvain, kmeans, etc.
-        cluster_keys = []
-        for key in adata.obs.columns:
-            # Check if it looks like a cluster key
-            # (categorical or has integer/string values that could be cluster labels)
-            if key in ['cplearn', 'leiden', 'louvain', 'kmeans']:
-                unique_vals = adata.obs[key].unique()
-                if len(unique_vals) > 1:  # At least 2 clusters
-                    cluster_keys.append({
-                        'key': key,
-                        'n_clusters': len(unique_vals),
-                        'clusters': [str(v) for v in sorted(unique_vals)],
-                        'method': _infer_clustering_method(key)
-                    })
-            # Also check for other potential cluster keys
-            elif key.endswith('_labels') or key.endswith('_clusters'):
-                unique_vals = adata.obs[key].unique()
-                if len(unique_vals) > 1:
-                    cluster_keys.append({
-                        'key': key,
-                        'n_clusters': len(unique_vals),
-                        'clusters': [str(v) for v in sorted(unique_vals)],
-                        'method': _infer_clustering_method(key)
-                    })
-        
-        return jsonify({
-            'success': True,
-            'cluster_keys': cluster_keys,
-            'message': f'Found {len(cluster_keys)} cluster key(s)'
-        })
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-
-def _infer_clustering_method(key: str) -> str:
-    """Infer clustering method from key name"""
-    if 'cplearn' in key.lower():
-        return 'cplearn'
-    elif 'leiden' in key.lower():
-        return 'leiden'
-    elif 'louvain' in key.lower():
-        return 'louvain'
-    elif 'kmeans' in key.lower():
-        return 'kmeans'
-    else:
-        return 'unknown'
+bp = Blueprint('deg_analyze', __name__, url_prefix='/api')
 
 
 @bp.route('/marker-genes', methods=['POST'])

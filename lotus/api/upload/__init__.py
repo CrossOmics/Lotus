@@ -11,6 +11,25 @@ from ..utils import get_session_dir, save_adata
 
 bp = Blueprint('upload', __name__, url_prefix='/api')
 
+# Default datasets directory - check multiple possible locations
+def get_default_datasets_dir():
+    """Get the directory containing default datasets"""
+    # Try multiple possible locations
+    possible_paths = [
+        Path(__file__).parent.parent.parent.parent / 'datasets',  # From lotus/api/upload/__init__.py
+        Path(__file__).parent.parent.parent / 'datasets',  # Alternative
+        Path.cwd() / 'datasets',  # Current working directory
+        UPLOAD_FOLDER / 'datasets',  # In upload folder
+        UPLOAD_FOLDER,  # Directly in upload folder
+    ]
+    
+    for path in possible_paths:
+        if path.exists() and path.is_dir():
+            return path
+    
+    # If no datasets directory found, use upload folder as fallback
+    return UPLOAD_FOLDER
+
 
 @bp.route('/upload', methods=['POST'])
 def upload_data():
@@ -117,6 +136,117 @@ def upload_data():
         import traceback
         error_msg = f'Upload failed: {str(e)}'
         print(f"[UPLOAD] Exception: {error_msg}")
+        print(traceback.format_exc())
+        return jsonify({'error': error_msg}), 500
+
+
+@bp.route('/load-default-dataset', methods=['POST'])
+def load_default_dataset():
+    """Load a default dataset by filename"""
+    try:
+        data = request.get_json()
+        if not data:
+            print("[LOAD] Error: No JSON data in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        filename = data.get('filename')
+        if not filename:
+            print("[LOAD] Error: No filename provided")
+            return jsonify({'error': 'No filename provided'}), 400
+        
+        session_id = data.get('session_id', 'default')
+        
+        print(f"[LOAD] Loading default dataset: {filename}, session: {session_id}")
+        
+        # Validate filename (security: only allow specific filenames)
+        allowed_datasets = ['demo_data.h5ad', 'pbmc3k_raw.h5ad']
+        if filename not in allowed_datasets:
+            print(f"[LOAD] Error: Dataset not allowed: {filename}")
+            return jsonify({'error': f'Dataset not allowed. Allowed datasets: {", ".join(allowed_datasets)}'}), 400
+        
+        # Find the dataset file
+        datasets_dir = get_default_datasets_dir()
+        filepath = datasets_dir / filename
+        
+        # Also check in upload folder directly
+        if not filepath.exists():
+            filepath = UPLOAD_FOLDER / filename
+        
+        # Also check in parent directories
+        if not filepath.exists():
+            possible_locations = [
+                Path(__file__).parent.parent.parent.parent / filename,
+                Path(__file__).parent.parent.parent / filename,
+                Path.cwd() / filename,
+            ]
+            for loc in possible_locations:
+                if loc.exists() and loc.is_file():
+                    filepath = loc
+                    break
+        
+        if not filepath.exists():
+            error_msg = f'Default dataset file not found: {filename}. Please ensure the file exists in the datasets directory or upload folder.'
+            print(f"[LOAD] Error: {error_msg}")
+            print(f"[LOAD] Searched in: {datasets_dir}, {UPLOAD_FOLDER}")
+            return jsonify({'error': error_msg}), 404
+        
+        print(f"[LOAD] Found dataset file: {filepath}")
+        
+        # Load the dataset
+        try:
+            if LOTUS_AVAILABLE:
+                adata = read(filepath)
+            else:
+                if sc is None:
+                    return jsonify({'error': 'scanpy not available. Please install scanpy.'}), 500
+                adata = sc.read(filepath)
+            print(f"[LOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
+        except Exception as e:
+            import traceback
+            error_msg = f'Failed to load dataset: {str(e)}'
+            print(f"[LOAD] Load error: {error_msg}")
+            print(traceback.format_exc())
+            return jsonify({'error': error_msg}), 400
+        
+        # Store session data
+        session_dir = get_session_dir(session_id)
+        print(f"[LOAD] Session dir: {session_dir}")
+        
+        # Clear all previous data and results when loading new data
+        print(f"[LOAD] Clearing previous data and results...")
+        if session_dir.exists():
+            import shutil
+            try:
+                # Remove entire session directory to clear everything
+                shutil.rmtree(session_dir)
+                print(f"[LOAD] Cleared session directory: {session_dir}")
+            except Exception as e:
+                print(f"[LOAD] Warning: Could not fully clear session directory: {e}")
+                # Fallback: just remove the adata file
+                adata_path = session_dir / 'data.h5ad'
+                if adata_path.exists():
+                    adata_path.unlink()
+                    print(f"[LOAD] Removed old adata file: {adata_path}")
+        
+        # Save new AnnData (this will create the session directory)
+        save_adata(adata, session_id)
+        print(f"[LOAD] Saved successfully")
+        
+        result = {
+            'success': True,
+            'session_id': session_id,
+            'shape': list(adata.shape),
+            'obs_columns': list(adata.obs.columns),
+            'obsm_keys': list(adata.obsm.keys()),
+            'message': f'Loaded {adata.shape[0]} cells and {adata.shape[1]} genes from {filename}'
+        }
+        print(f"[LOAD] Success: {result['message']}")
+        return jsonify(result)
+    
+    except Exception as e:
+        import traceback
+        error_msg = f'Load default dataset failed: {str(e)}'
+        print(f"[LOAD] Exception: {error_msg}")
         print(traceback.format_exc())
         return jsonify({'error': error_msg}), 500
 

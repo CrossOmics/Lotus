@@ -1,22 +1,32 @@
 from __future__ import annotations
 
-from .clustering import clustering, run_clustering
-from .core_analysis import compute_coremap_embedding, core_analysis
-from .deg import marker_genes, run_differential_expression
-from .preprocess import (
+from .clustering import cluster, run_clustering
+from .core_analysis import core_analyze
+from .deg_analysis import marker_genes, run_differential_expression
+from .preprocessing import (
+    combat,
+    downsample_counts,
     filtering,
     hvg,
+    log1p,
     neighbors,
     normalization,
     pca,
     preprocess,
     qc,
+    recipe_seurat,
+    recipe_weinreb17,
+    recipe_zheng17,
+    regress_out,
+    sample,
     scaling,
+    scrublet,
+    scrublet_simulate_doublets,
 )
 from .visualization import coremap, render_visualizations, umap
 
 __all__ = [
-    # Preprocess steps
+    # Preprocessing steps
     "qc",
     "filtering",
     "normalization",
@@ -25,17 +35,26 @@ __all__ = [
     "pca",
     "neighbors",
     "preprocess",
+    "log1p",
+    "regress_out",
+    "combat",
+    "scrublet",
+    "scrublet_simulate_doublets",
+    "sample",
+    "downsample_counts",
+    "recipe_zheng17",
+    "recipe_weinreb17",
+    "recipe_seurat",
     # Visualization
     "umap",
     "coremap",
     "render_visualizations",
     # Clustering
-    "clustering",
+    "cluster",
     "run_clustering",
     # DEG
     "marker_genes",
     "run_differential_expression",
     # CoreAnalysis
-    "core_analysis",
-    "compute_coremap_embedding",  # Backward compatibility alias
+    "core_analyze",
 ]

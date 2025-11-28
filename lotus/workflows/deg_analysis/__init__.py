@@ -177,3 +177,8 @@ def marker_genes(
 
 # Alias for backward compatibility
 run_differential_expression = marker_genes
+
+__all__ = [
+    "marker_genes",
+    "run_differential_expression",
+]

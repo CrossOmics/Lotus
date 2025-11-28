@@ -36,6 +36,7 @@ python-igraph==0.11.9
 pytz==2025.2
 scanpy==1.11.5
 scikit-learn==1.7.2
+scikit-misc>=0.3.0
 scipy==1.15.3
 seaborn==0.13.2
 session-info2==0.2.3

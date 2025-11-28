@@ -1,5 +1,5 @@
 """
-Flask backend for Lotus Embedding Projector Web Application
+Flask backend for Lotus Web Application
 Uses the modular API structure from lotus.api
 """
 

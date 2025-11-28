@@ -2,7 +2,7 @@
 # Run script for Lotus Web Demo
 
 echo "=========================================="
-echo "Lotus Embedding Projector Web Application"
+echo "Lotus Web Application"
 echo "=========================================="
 echo ""
 
@@ -24,12 +24,12 @@ pip install -r requirements.txt
 # Check if lotus is available and install if needed
 echo ""
 echo "Checking Lotus availability..."
-python3 -c "from lotus.workflows import preprocess, clustering; from lotus import read; print('✓ Lotus is available and working')" 2>/dev/null
+python3 -c "from lotus.workflows import preprocess, cluster; from lotus import read; print('✓ Lotus is available and working')" 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "⚠ Lotus not found. Installing Lotus in development mode..."
     pip install -e .. --no-deps
     echo "Verifying installation..."
-    python3 -c "from lotus.workflows import preprocess, clustering; from lotus import read; print('✓ Lotus installed successfully')" || echo "⚠ Warning: Lotus installation may have issues"
+    python3 -c "from lotus.workflows import preprocess, cluster; from lotus import read; print('✓ Lotus installed successfully')" || echo "⚠ Warning: Lotus installation may have issues"
 fi
 
 # Run the application

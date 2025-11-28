@@ -6,7 +6,7 @@ from pathlib import Path
 from anndata import AnnData
 from typing import Optional
 
-from .config import UPLOAD_FOLDER, LOTUS_AVAILABLE
+from ..config import UPLOAD_FOLDER, LOTUS_AVAILABLE
 
 
 def get_session_dir(session_id: str = 'default') -> Path:
@@ -27,7 +27,7 @@ def load_adata(session_id: str = 'default') -> Optional[AnnData]:
     """
     import json
     
-    from .config import read, sc
+    from ..config import read, sc
     
     adata_path = get_adata_path(session_id)
     if not adata_path.exists():

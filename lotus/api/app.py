@@ -7,15 +7,14 @@ from flask_cors import CORS
 from pathlib import Path
 
 from .config import UPLOAD_FOLDER, MAX_CONTENT_LENGTH, LOTUS_AVAILABLE, SCANPY_AVAILABLE
-from .info import bp as info_bp
+from .get_info import bp as get_info_bp
 from .upload import bp as upload_bp
 from .preprocess import bp as preprocess_bp
 from .cluster import bp as cluster_bp
 from .visualize import bp as visualize_bp
-from .analysis import bp as analysis_bp
-from .core_selection import bp as core_selection_bp
+from .core_analyze import bp as core_analyze_bp
+from .deg_analyze import bp as deg_analyze_bp
 from .session import bp as session_bp
-from .ground_truth import bp as ground_truth_bp
 
 
 def create_app(static_folder: str = None):
@@ -36,15 +35,14 @@ def create_app(static_folder: str = None):
     app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
     
     # Register blueprints
-    app.register_blueprint(info_bp)
+    app.register_blueprint(get_info_bp)
     app.register_blueprint(upload_bp)
     app.register_blueprint(preprocess_bp)
     app.register_blueprint(cluster_bp)
     app.register_blueprint(visualize_bp)
-    app.register_blueprint(analysis_bp)
-    app.register_blueprint(core_selection_bp)
+    app.register_blueprint(core_analyze_bp)
+    app.register_blueprint(deg_analyze_bp)
     app.register_blueprint(session_bp)
-    app.register_blueprint(ground_truth_bp)
     
     # Serve static files if static_folder is provided
     if static_folder:
@@ -81,7 +79,7 @@ def main():
     logger.setLevel(logging.INFO)
     
     print("=" * 60)
-    print("Lotus Embedding Projector Web Application")
+    print("Lotus Web Application")
     print("=" * 60)
     print(f"Lotus available: {LOTUS_AVAILABLE}")
     print(f"Scanpy available: {SCANPY_AVAILABLE}")

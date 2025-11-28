@@ -30,6 +30,17 @@ def run_preprocess():
         raw_layer = data.get('raw_layer', 'raw_counts')
         min_genes = data.get('min_genes', None)
         min_cells = data.get('min_cells', None)
+        # New filtering parameters
+        min_counts = data.get('min_counts', None)
+        max_counts = data.get('max_counts', None)
+        max_genes = data.get('max_genes', None)
+        pct_mt_max = data.get('pct_mt_max', None)
+        # HVG flavor
+        hvg_flavor = data.get('hvg_flavor', 'seurat_v3')
+        # Batch correction parameters
+        batch_key = data.get('batch_key', None)
+        regress_out_keys = data.get('regress_out_keys', None)
+        use_combat = data.get('use_combat', False)
         
         adata = load_adata(session_id)
         
@@ -48,7 +59,15 @@ def run_preprocess():
                 save_raw=save_raw,
                 raw_layer=raw_layer,
                 min_genes=min_genes,
-                min_cells=min_cells
+                min_cells=min_cells,
+                min_counts=min_counts,
+                max_counts=max_counts,
+                max_genes=max_genes,
+                pct_mt_max=pct_mt_max,
+                hvg_flavor=hvg_flavor,
+                batch_key=batch_key,
+                regress_out_keys=regress_out_keys,
+                use_combat=use_combat,
             )
         else:
             # Use scanpy for preprocessing
@@ -68,6 +87,13 @@ def run_preprocess():
         has_pca = 'X_pca' in adata.obsm
         has_neighbors = 'neighbors' in adata.uns
         
+        # Extract PCA variance ratio data for visualization
+        pca_variance_ratio = None
+        if 'pca' in adata.uns and 'variance_ratio' in adata.uns['pca']:
+            variance_ratio = adata.uns['pca']['variance_ratio']
+            # Convert numpy array to list for JSON serialization
+            pca_variance_ratio = variance_ratio.tolist() if hasattr(variance_ratio, 'tolist') else list(variance_ratio)
+        
         # Free memory after preprocessing
         del adata
         gc.collect()
@@ -78,7 +104,8 @@ def run_preprocess():
             'message': 'Preprocessing complete',
             'obsm_keys': obsm_keys,
             'has_pca': has_pca,
-            'has_neighbors': has_neighbors
+            'has_neighbors': has_neighbors,
+            'pca_variance_ratio': pca_variance_ratio
         })
     
     except Exception as e:

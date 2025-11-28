@@ -24,8 +24,8 @@ if str(_project_root) not in sys.path:
 
 import scanpy as sc
 from lotus.workflows import (
-    clustering,
-    core_analysis,
+    cluster,
+    core_analyze,
     marker_genes,
     preprocess,
     render_visualizations,
@@ -217,7 +217,7 @@ def main() -> None:
     logger.info("Testing automatic representation detection...")
     
     # Test 1: Auto-detect X_pca (scanpy standard)
-    model = clustering(
+    model = cluster(
         adata,
         use_rep=None,  # Auto-detect: will use X_pca
         key_added="cplearn",
@@ -276,7 +276,7 @@ def main() -> None:
     logger.info("Testing compatibility with scanpy neighbors graph...")
     
     try:
-        core_analysis(
+        core_analyze(
             adata,
             model=model,
             use_rep=None,  # Auto-detect: will use X_pca

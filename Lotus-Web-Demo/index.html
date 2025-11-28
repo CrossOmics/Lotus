@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotus Embedding Projector</title>
+    <title>Lotus</title>
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <style>
         * {
@@ -13,9 +13,9 @@
         }
 
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
+            --primary: #7CC9A2;
+            --primary-dark: #6BB892;
+            --primary-light: #8DD9B2;
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
@@ -143,44 +143,118 @@
             display: none;
         }
 
-        .status {
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            animation: slideIn 0.3s ease;
+        .btn-remove-file {
+            transition: all 0.2s ease;
         }
 
-        @keyframes slideIn {
+        .btn-remove-file:hover {
+            background: #dc2626 !important;
+            transform: scale(1.1);
+        }
+
+        .btn-remove-file:active {
+            transform: scale(0.95);
+        }
+
+        /* Toast notification styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            pointer-events: auto;
+            animation: toastSlideIn 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes toastSlideIn {
             from {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateX(100%);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
         }
 
-        .status.success {
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .toast.success {
             background: #d1fae5;
             color: #065f46;
             border-left: 4px solid var(--success);
         }
 
-        .status.error {
+        .toast.error {
             background: #fee2e2;
             color: #991b1b;
             border-left: 4px solid var(--error);
         }
 
-        .status.info {
+        .toast.info {
             background: #dbeafe;
             color: #1e40af;
             border-left: 4px solid var(--primary);
+        }
+
+        .toast-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            word-wrap: break-word;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.6;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        .toast.slide-out {
+            animation: toastSlideOut 0.3s ease forwards;
         }
 
         .btn {
@@ -205,13 +279,25 @@
         }
 
         .btn:active:not(:disabled) {
+            background: var(--primary-dark);
             transform: translateY(0);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:focus:not(:disabled) {
+            outline: 2px solid var(--primary-light);
+            outline-offset: 2px;
         }
 
         .btn:disabled {
-            background: #cbd5e1;
+            background: var(--primary);
             cursor: not-allowed;
-            opacity: 0.6;
+            opacity: 0.7;
+        }
+        
+        .btn:disabled:hover {
+            background: var(--primary);
+            transform: none;
         }
 
         .btn-secondary {
@@ -222,6 +308,19 @@
 
         .btn-secondary:hover:not(:disabled) {
             background: var(--bg);
+        }
+        
+        .btn-secondary:disabled {
+            background: var(--surface);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary:disabled:hover {
+            background: var(--surface);
+            transform: none;
         }
 
         .form-group {
@@ -249,7 +348,7 @@
         .form-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(124, 201, 162, 0.1);
         }
 
         .form-input[type="range"] {
@@ -359,7 +458,7 @@
         .search-box:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(124, 201, 162, 0.1);
         }
 
         .info-box {
@@ -399,6 +498,14 @@
             border-radius: 50%;
             border-top-color: white;
             animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
+        /* Spinner for disabled buttons (when computing) */
+        .btn:disabled .spinner {
+            border: 2px solid rgba(124, 201, 162, 0.3);
+            border-top-color: var(--primary);
         }
 
         @keyframes spin {
@@ -410,7 +517,7 @@
     <div class="container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>🌺 Lotus Projector</h1>
+                <h1>Lotus</h1>
                 <p>Interactive Single-Cell Analysis</p>
             </div>
             
@@ -424,8 +531,19 @@
                         <div class="file-upload-hint">.h5ad, .csv, .tsv</div>
                         <input type="file" id="data-file" class="file-input" accept=".h5ad,.csv,.tsv">
                     </div>
+                    
+                    <div style="margin-top: 16px;">
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 8px; font-weight: 600;">Default Datasets</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button class="btn btn-secondary" id="load-demo-data" style="width: 100%; padding: 10px;">
+                                📦 Load demo_data.h5ad
+                            </button>
+                            <button class="btn btn-secondary" id="load-pbmc3k" style="width: 100%; padding: 10px;">
+                                📦 Load pbmc3k_raw.h5ad
+                            </button>
+                        </div>
+                    </div>
 
-                    <div id="status" class="status" style="display: none;"></div>
                 </div>
 
                 <div class="section" id="pipeline-section" style="display: none;">
@@ -445,11 +563,6 @@
                                     <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Default: 10000</div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Top Variable Genes</label>
-                                    <input type="number" id="n-top-genes" class="form-input" value="" placeholder="1000" min="100" max="10000">
-                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for default (1000) or specify custom value</div>
-                                </div>
-                                <div class="form-group">
                                     <label class="form-label">Representation for Neighbors</label>
                                     <select id="preprocess-use-rep" class="form-input">
                                         <option value="X_pca" selected>X_pca</option>
@@ -458,14 +571,45 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Min Genes per Cell</label>
-                                    <input type="number" id="min-genes" class="form-input" value="" placeholder="Auto" min="1">
-                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
-                                </div>
-                                <div class="form-group">
                                     <label class="form-label">Min Cells per Gene</label>
                                     <input type="number" id="min-cells" class="form-input" value="" placeholder="Auto" min="1">
                                     <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Min Counts per Cell</label>
+                                    <input type="number" id="min-counts" class="form-input" value="" placeholder="Auto" min="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max Counts per Cell</label>
+                                    <input type="number" id="max-counts" class="form-input" value="" placeholder="Auto" min="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max Genes per Cell</label>
+                                    <input type="number" id="max-genes" class="form-input" value="" placeholder="Auto" min="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">HVG Flavor</label>
+                                    <select id="hvg-flavor" class="form-input">
+                                        <option value="seurat_v3" selected>seurat_v3 (Recommended)</option>
+                                        <option value="seurat">seurat</option>
+                                        <option value="cell_ranger">cell_ranger</option>
+                                    </select>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Method for highly variable genes selection</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Regress Out Variables</label>
+                                    <input type="text" id="regress-out-keys" class="form-input" value="" placeholder="total_counts,pct_counts_mt">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Comma-separated list (e.g., total_counts,pct_counts_mt)</div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="use-combat" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Use ComBat for Batch Correction</span>
+                                    </label>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px; margin-left: 24px;">Requires batch_key to be set</div>
                                 </div>
                                 <div class="form-group">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -476,12 +620,33 @@
                             </div>
                         </details>
                         <div class="form-group">
+                            <label class="form-label">Min Genes per Cell</label>
+                            <input type="number" id="min-genes" class="form-input" value="" placeholder="Auto" min="1">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Mitochondrial %</label>
+                            <input type="number" id="pct-mt-max" class="form-input" value="" placeholder="10" min="0" max="100" step="0.1">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Filter cells with pct_mt above this value (e.g., 10)</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Top Variable Genes</label>
+                            <input type="number" id="n-top-genes" class="form-input" value="" placeholder="1000" min="100" max="10000">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for default (1000) or specify custom value</div>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">PCA Components</label>
-                            <input type="number" id="n-pcs" class="form-input" value="15" min="5" max="100">
+                            <input type="number" id="n-pcs" class="form-input" value="" placeholder="Auto" min="5" max="100">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for automatic selection (recommended), or specify number of principal components</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Batch Key (for batch correction)</label>
+                            <input type="text" id="batch-key" class="form-input" value="" placeholder="batch">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Key in obs for batch information</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Neighbors</label>
-                            <input type="number" id="n-neighbors" class="form-input" value="10" min="5" max="50">
+                            <input type="number" id="n-neighbors" class="form-input" value="15" min="5" max="50">
                         </div>
                         <button id="btn-preprocess" class="btn" disabled>Run Preprocessing</button>
                     </div>
@@ -489,10 +654,10 @@
                     <div class="pipeline-step" id="core-selection-step">
                         <div style="display: flex; align-items: center; margin-bottom: 12px;">
                             <span class="pipeline-step-number">2</span>
-                            <span style="font-weight: 600; font-size: 14px;">Core Selection</span>
+                            <span style="font-weight: 600; font-size: 14px;">Core Analysis</span>
                         </div>
                         <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
-                            Compute core map embedding with visualization. Can run independently - will automatically run clustering if needed. Neighbors graph will be used from preprocessing results.
+                            Compute core map embedding with visualization.
                         </div>
                         <div class="form-group">
                             <label class="form-label">Representation</label>
@@ -506,12 +671,9 @@
                         <div class="form-group">
                             <label class="form-label">Cluster Resolution</label>
                             <input type="number" id="core-cluster-resolution" class="form-input" value="1.2" min="0.1" max="5.0" step="0.1">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                Used if clustering needs to be auto-run
-                            </div>
                         </div>
                         <details style="margin-bottom: 12px;">
-                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Clustering Parameters (if auto-run)</summary>
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Clustering Parameters</summary>
                             <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
                                 <div class="form-group">
                                     <label class="form-label">Stable Core Fraction</label>
@@ -519,7 +681,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Stable Neighbors Number</label>
-                                    <input type="number" id="core-stable-ng-num" class="form-input" value="4" min="4" max="20">
+                                    <input type="number" id="core-stable-ng-num" class="form-input" value="8" min="4" max="20">
                                 </div>
                                 <div class="form-group">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -535,23 +697,7 @@
                                 </div>
                             </div>
                         </details>
-                        <div class="form-group">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" id="core-fast-view" checked style="cursor: pointer;">
-                                <span class="form-label" style="margin: 0;">Fast View Mode</span>
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Ground Truth (JSON file, optional)</label>
-                            <input type="file" id="core-truth-json-file" class="form-input" accept=".json">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                JSON format: ["label1", "label2", ...] or {"labels": [...]} or {"key": "cell_type", "labels": [...]}
-                            </div>
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                If JSON contains "key" field, it will be used as the column name in adata.obs. Otherwise, defaults to "ground_truth".
-                            </div>
-                        </div>
-                        <button id="btn-core-selection" class="btn" disabled>Run Core Selection</button>
+                        <button id="btn-core-selection" class="btn" disabled>Run Core Analysis</button>
                     </div>
 
                     <div class="pipeline-step">
@@ -581,40 +727,28 @@
                                 <option value="X">X</option>
                             </select>
                         </div>
-                        <details style="margin-bottom: 12px;">
-                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters (cplearn only)</summary>
-                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
-                                <div class="form-group">
-                                    <label class="form-label">Stable Core Fraction</label>
-                                    <input type="number" id="stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Stable Neighbors Number</label>
-                                    <input type="number" id="stable-ng-num" class="form-input" value="4" min="4" max="20">
-                                </div>
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" id="fine-grained" style="cursor: pointer;">
-                                        <span class="form-label" style="margin: 0;">Fine Grained</span>
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" id="propagate" checked style="cursor: pointer;">
-                                        <span class="form-label" style="margin: 0;">Propagate Labels</span>
-                                    </label>
-                                </div>
+                        <div id="cplearn-advanced-params" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Stable Core Fraction</label>
+                                <input type="number" id="stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
                             </div>
-                        </details>
-                        <details style="margin-bottom: 12px;">
-                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters (scanpy methods)</summary>
-                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
-                                <div class="form-group">
-                                    <label class="form-label">Random State</label>
-                                    <input type="number" id="random-state" class="form-input" value="0" min="0">
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">Stable Neighbors Number</label>
+                                <input type="number" id="stable-ng-num" class="form-input" value="8" min="4" max="20">
                             </div>
-                        </details>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="fine-grained" style="cursor: pointer;">
+                                    <span class="form-label" style="margin: 0;">Fine Grained</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="propagate" checked style="cursor: pointer;">
+                                    <span class="form-label" style="margin: 0;">Propagate Labels</span>
+                                </label>
+                            </div>
+                        </div>
                         <button id="btn-cluster" class="btn" disabled>Run Clustering</button>
                     </div>
 
@@ -624,24 +758,64 @@
                             <span style="font-weight: 600; font-size: 14px;">Visualization</span>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Method</label>
+                            <select id="viz-method" class="form-input">
+                                <option value="umap">UMAP</option>
+                            </select>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                Select visualization method. Coremap is available after Core Analysis.
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cluster Key</label>
+                            <select id="viz-cluster-key" class="form-input">
+                                <option value="">No cluster keys available - Run clustering first</option>
+                            </select>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                Select cluster key to visualize. Visualization results are cached for each cluster key.
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Dimension</label>
                             <select id="dimension" class="form-input">
                                 <option value="2d">2D</option>
                                 <option value="3d">3D</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="umap-params-group">
                             <label class="form-label">UMAP Min Distance</label>
                             <input type="number" id="umap-min-dist" class="form-input" value="0.5" min="0.1" max="1.0" step="0.1">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="umap-spread-group">
                             <label class="form-label">UMAP Spread</label>
                             <input type="number" id="umap-spread" class="form-input" value="1.0" min="0.5" max="3.0" step="0.1">
+                        </div>
+                        <div class="form-group" id="coremap-fast-view-group" style="display: none;">
+                            <label class="form-label">
+                                <input type="checkbox" id="viz-fast-view" checked style="margin-right: 8px;">
+                                Fast View Mode
+                            </label>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                Enable fast view mode for faster rendering (may reduce detail)
+                            </div>
+                        </div>
+                        <div class="form-group" id="coremap-ground-truth-group" style="display: none;">
+                            <label class="form-label">Ground Truth (JSON file, optional)</label>
+                            <div class="file-upload-area" id="viz-ground-truth-upload-area" style="padding: 20px; margin-bottom: 8px; position: relative;">
+                                <div class="file-upload-icon" style="font-size: 32px; margin-bottom: 8px;">📄</div>
+                                <div class="file-upload-text" style="font-size: 13px;">Click or drag JSON file</div>
+                                <div class="file-upload-hint" style="font-size: 11px; margin-top: 4px;">.json</div>
+                                <button type="button" id="viz-ground-truth-remove-btn" class="btn-remove-file" style="display: none; position: absolute; top: 8px; right: 8px; padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Remove file">✕</button>
+                                <input type="file" id="viz-truth-json-file" class="file-input" accept=".json">
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                JSON format: ["label1", "label2", ...] or {"labels": [...]} or {"key": "cell_type", "labels": [...]}
+                            </div>
                         </div>
                         <button id="btn-visualize" class="btn" disabled>Generate Visualization</button>
                     </div>
 
-                    <div class="pipeline-step" id="deg-step" style="display: none;">
+                    <div class="pipeline-step" id="deg-step">
                         <div style="display: flex; align-items: center; margin-bottom: 12px;">
                             <span class="pipeline-step-number">5</span>
                             <span style="font-weight: 600; font-size: 14px;">Marker Genes (DEG)</span>
@@ -715,7 +889,7 @@
 
         <div class="main-content">
             <div class="header">
-                <h2>Embedding Visualization</h2>
+                <h2>Visualization</h2>
                 <p>Interactive exploration of single-cell data</p>
             </div>
             <div class="plot-container">
@@ -723,6 +897,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast notification container -->
+    <div class="toast-container" id="toast-container"></div>
 
     <script src="app.js?v=2"></script>
 </body>

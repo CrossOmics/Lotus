@@ -7,7 +7,7 @@ import sys
 from flask import Blueprint, request, jsonify
 import numpy as np
 import pandas as pd
-from ..config import LOTUS_AVAILABLE, clustering, sc
+from ..config import LOTUS_AVAILABLE, cluster, sc
 from ..utils import load_adata, save_adata
 
 bp = Blueprint('cluster', __name__, url_prefix='/api')
@@ -28,11 +28,9 @@ def run_clustering():
         key_added = data.get('key_added', None)  # If None, uses method-specific default
         # cplearn-specific parameters
         stable_core_frac = data.get('stable_core_frac', 0.25)
-        stable_ng_num = data.get('stable_ng_num', 4)
+        stable_ng_num = data.get('stable_ng_num', 8)
         fine_grained = data.get('fine_grained', False)
         propagate = data.get('propagate', True)
-        # scanpy-specific parameters
-        random_state = data.get('random_state', 0)
         
         adata = load_adata(session_id)
         
@@ -114,7 +112,7 @@ def run_clustering():
             if 'neighbors' not in adata.uns:
                 print("[CLUSTER] Neighbors graph not found, computing it first...")
                 if LOTUS_AVAILABLE:
-                    from lotus.workflows.preprocess import neighbors as compute_neighbors
+                    from lotus.workflows.preprocessing import neighbors as compute_neighbors
                     rep_to_use = use_rep or ('X_pca' if 'X_pca' in adata.obsm else 'X_latent' if 'X_latent' in adata.obsm else None)
                     if rep_to_use:
                         compute_neighbors(adata, use_rep=rep_to_use, n_neighbors=15)
@@ -136,7 +134,7 @@ def run_clustering():
                         adata.obsm[rep_to_use] = data_matrix
                 
                 # Use parameters from request (cluster_key_to_use already defined above)
-                model = clustering(
+                model = cluster(
                     adata,
                     method='cplearn',
                     use_rep=rep_to_use,
@@ -171,7 +169,7 @@ def run_clustering():
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
                 cluster_key_to_use = key_added or 'leiden'
                 print(f"[CLUSTER] Running scanpy Leiden with resolution={resolution}, key_added={cluster_key_to_use}")
-                sc.tl.leiden(adata, resolution=resolution, key_added=cluster_key_to_use, random_state=random_state)
+                sc.tl.leiden(adata, resolution=resolution, key_added=cluster_key_to_use)
                 cluster_key = cluster_key_to_use
             except Exception as e:
                 error_msg = f'Leiden clustering failed: {str(e)}'
@@ -200,7 +198,7 @@ def run_clustering():
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
                 cluster_key_to_use = key_added or 'louvain'
                 print(f"[CLUSTER] Running scanpy Louvain with resolution={resolution}, key_added={cluster_key_to_use}")
-                sc.tl.louvain(adata, resolution=resolution, key_added=cluster_key_to_use, random_state=random_state)
+                sc.tl.louvain(adata, resolution=resolution, key_added=cluster_key_to_use)
                 cluster_key = cluster_key_to_use
             except (ImportError, ModuleNotFoundError) as e:
                 error_msg = f'Louvain clustering failed: louvain module not installed'
@@ -244,7 +242,7 @@ def run_clustering():
                     X = adata.X
                 cluster_key_to_use = key_added or 'kmeans'
                 # Run KMeans
-                kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
+                kmeans = KMeans(n_clusters=n_clusters, n_init=10)
                 labels = kmeans.fit_predict(X)
                 adata.obs[cluster_key_to_use] = pd.Categorical(labels)
                 cluster_key = cluster_key_to_use

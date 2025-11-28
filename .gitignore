@@ -18,9 +18,6 @@
 # figures
 /figures/
 
-# data
-/data/
-
 # Environment management
 /Pipfile
 /Pipfile.lock

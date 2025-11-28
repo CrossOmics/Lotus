@@ -1,11 +1,11 @@
 # Lotus Web Demo
 
-Web application for Lotus Embedding Projector.
+Web application for Lotus.
 
 ## Features
 
 - Upload and visualize single-cell RNA-seq data
-- Interactive embedding visualization
+- Interactive visualization
 - Clustering and preprocessing workflows
 
 ## Quick Start

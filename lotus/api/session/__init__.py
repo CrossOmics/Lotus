@@ -9,8 +9,8 @@ from pathlib import Path
 import shutil
 import time
 import threading
-from .utils import get_session_dir
-from .config import UPLOAD_FOLDER
+from ..utils import get_session_dir
+from ..config import UPLOAD_FOLDER
 
 bp = Blueprint('session', __name__, url_prefix='/api')
 

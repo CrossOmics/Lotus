@@ -18,17 +18,17 @@ from anndata import AnnData
 
 import lotus as lt
 from lotus.workflows import (
-    # Preprocess
+    # Preprocessing
     preprocess,
     # Visualization
     umap as workflow_umap,
     render_visualizations,
     # Clustering
-    clustering,
+    cluster,
     # DEG
     marker_genes,
     # CoreAnalysis
-    core_analysis,
+    core_analyze,
 )
 
 
@@ -192,7 +192,7 @@ def main() -> None:
     logger.info("Clustering")
     logger.info("=" * 60)
     logger.info("Performing clustering analysis...")
-    model = clustering(
+    model = cluster(
         adata,
         method="cplearn",  # Explicitly specify cplearn method
         use_rep="X_latent",
@@ -237,7 +237,7 @@ def main() -> None:
     logger.info("CoreAnalysis: Core map embedding and core layer extraction")
     logger.info("=" * 60)
     logger.info("Computing core map embedding...")
-    core_analysis(
+    core_analyze(
         adata,
         model=model,
         use_rep="X_latent",

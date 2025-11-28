@@ -1,4 +1,4 @@
-// Lotus Embedding Projector - Main Application Logic with Backend Integration
+// Lotus - Main Application Logic with Backend Integration
 
 const API_BASE = '/api';
 let vectors = null;
@@ -10,6 +10,102 @@ let sessionId = generateSessionId();
 let clusterInfo = {}; // Store cluster information
 let heartbeatInterval = null; // Heartbeat interval ID
 let sessionCleanupSent = false; // Flag to prevent multiple cleanup requests
+let visualizationCache = {}; // Store visualization results: { cache_key: { vectors, metadata, params } }
+let coreAnalysisVisualization = null; // Store Core Analysis visualization data: { file_url, htmlContent, iframe }
+// Cache key format: `${cluster_key}_${n_components}_${min_dist}_${spread}`
+
+// Function to generate cache key from cluster key, method, and visualization parameters
+function getVisualizationCacheKey(cluster_key, method, n_components, min_dist, spread) {
+    if (method === 'coremap') {
+        return `${cluster_key}_coremap_${n_components}`;
+    } else {
+        return `${cluster_key}_umap_${n_components}_${min_dist}_${spread}`;
+    }
+}
+
+// Function to get current visualization parameters
+function getVisualizationParams() {
+    const method = document.getElementById('viz-method')?.value || 'umap';
+    const n_components = document.getElementById('dimension').value === '3d' ? 3 : 2;
+    const min_dist = parseFloat(document.getElementById('umap-min-dist').value) || 0.5;
+    const spread = parseFloat(document.getElementById('umap-spread').value) || 1.0;
+    return { method, n_components, min_dist, spread };
+}
+
+// Function to update visualization method selector based on Core Analysis availability
+function updateVisualizationMethodSelector() {
+    const methodSelect = document.getElementById('viz-method');
+    if (!methodSelect) return;
+    
+    // Check if Core Analysis has been run
+    // Use clusterInfo.has_model which is set when Core Analysis or cplearn clustering is run
+    // This is preserved even when running scanpy clustering after Core Analysis
+    const hasCoreAnalysis = clusterInfo && clusterInfo.has_model;
+    
+    // Get current value
+    const currentValue = methodSelect.value;
+    
+    // Clear options
+    methodSelect.innerHTML = '';
+    
+    // Always add UMAP
+    const umapOption = document.createElement('option');
+    umapOption.value = 'umap';
+    umapOption.textContent = 'UMAP';
+    methodSelect.appendChild(umapOption);
+    
+    // Add Coremap if Core Analysis is available
+    if (hasCoreAnalysis) {
+        const coremapOption = document.createElement('option');
+        coremapOption.value = 'coremap';
+        coremapOption.textContent = 'Coremap';
+        methodSelect.appendChild(coremapOption);
+    }
+    
+    // Restore previous selection if still valid, otherwise default to UMAP
+    if (currentValue && Array.from(methodSelect.options).some(opt => opt.value === currentValue)) {
+        methodSelect.value = currentValue;
+    } else {
+        methodSelect.value = 'umap';
+    }
+    
+    // Update UMAP parameters visibility
+    updateUMAPParamsVisibility();
+}
+
+// Function to update UMAP parameters visibility based on selected method
+function updateUMAPParamsVisibility() {
+    const methodSelect = document.getElementById('viz-method');
+    const umapParamsGroup = document.getElementById('umap-params-group');
+    const umapSpreadGroup = document.getElementById('umap-spread-group');
+    const vizClusterKeyGroup = document.getElementById('viz-cluster-key')?.closest('.form-group');
+    const dimensionGroup = document.getElementById('dimension')?.closest('.form-group');
+    const coremapGroundTruthGroup = document.getElementById('coremap-ground-truth-group');
+    const coremapFastViewGroup = document.getElementById('coremap-fast-view-group');
+    
+    if (methodSelect) {
+        const method = methodSelect.value;
+        if (method === 'coremap') {
+            // Hide UMAP parameters, Cluster Key, and Dimension for coremap
+            if (umapParamsGroup) umapParamsGroup.style.display = 'none';
+            if (umapSpreadGroup) umapSpreadGroup.style.display = 'none';
+            if (vizClusterKeyGroup) vizClusterKeyGroup.style.display = 'none';
+            if (dimensionGroup) dimensionGroup.style.display = 'none';
+            // Show Fast View and Ground Truth upload for coremap
+            if (coremapFastViewGroup) coremapFastViewGroup.style.display = 'block';
+            if (coremapGroundTruthGroup) coremapGroundTruthGroup.style.display = 'block';
+        } else {
+            // Show all parameters for UMAP
+            if (umapParamsGroup) umapParamsGroup.style.display = 'block';
+            if (umapSpreadGroup) umapSpreadGroup.style.display = 'block';
+            if (vizClusterKeyGroup) vizClusterKeyGroup.style.display = 'block';
+            if (dimensionGroup) dimensionGroup.style.display = 'block';
+            // Hide Fast View and Ground Truth upload for UMAP
+            if (coremapFastViewGroup) coremapFastViewGroup.style.display = 'none';
+            if (coremapGroundTruthGroup) coremapGroundTruthGroup.style.display = 'none';
+        }
+    }
+}
 
 // Generate unique session ID using UUID v4
 function generateSessionId() {
@@ -124,12 +220,93 @@ if (document.readyState === 'loading') {
     initializeSession();
 }
 
+// Function to disable all buttons during operations
+// Note: File upload and default dataset buttons are NOT disabled to allow reloading data at any time
+function disableAllButtons() {
+    const buttons = [
+        'btn-preprocess',
+        'btn-cluster',
+        'btn-core-selection',
+        'btn-visualize',
+        'btn-marker-genes'
+    ];
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = true;
+        }
+    });
+}
+
+// Function to disable data loading buttons during loading
+function disableDataLoadingButtons() {
+    const buttons = [
+        'load-demo-data',
+        'load-pbmc3k',
+        'data-file'  // File input (though it's hidden, we can disable it)
+    ];
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = true;
+        }
+    });
+}
+
+// Function to enable data loading buttons
+function enableDataLoadingButtons() {
+    const buttons = [
+        'load-demo-data',
+        'load-pbmc3k',
+        'data-file'
+    ];
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = false;
+        }
+    });
+}
+
+// Function to update button states based on current data state
+// Rule 2: Visualization and Marker Genes require either Core Analysis or Clustering to be completed
+function updateButtonStates() {
+    // Check if we have clustering or core analysis results
+    const hasClustering = clusterInfo && clusterInfo.cluster_key;
+    const hasCoreAnalysis = clusterInfo && clusterInfo.has_model;
+    
+    // Rule 2: Visualization and Marker Genes require clustering or core analysis
+    const canVisualize = hasClustering || hasCoreAnalysis;
+    
+    const btnVisualize = document.getElementById('btn-visualize');
+    const btnMarkerGenes = document.getElementById('btn-marker-genes');
+    
+    if (btnVisualize) {
+        btnVisualize.disabled = !canVisualize;
+    }
+    if (btnMarkerGenes) {
+        btnMarkerGenes.disabled = !canVisualize;
+    }
+    
+    // Update cluster key select for Marker Genes
+    const degClusterKeySelect = document.getElementById('deg-cluster-key');
+    if (degClusterKeySelect && canVisualize) {
+        // If we can visualize, the select should be enabled if cluster keys are available
+        // This will be handled by updateAvailableClusterKeys
+    } else if (degClusterKeySelect && !canVisualize) {
+        degClusterKeySelect.disabled = true;
+    }
+}
+
 // Function to reset all state when new data is loaded
 function resetAllState() {
     console.log('[RESET] Resetting all state...');
     
     // Clear cluster info
     clusterInfo = {};
+    
+    // Clear visualization cache
+    visualizationCache = {};
     
     // Disable all pipeline buttons except preprocess
     document.getElementById('btn-preprocess').disabled = false;
@@ -154,18 +331,19 @@ function resetAllState() {
         }
     }
     
-    // Reset cluster keys dropdown
+    // Reset cluster keys dropdowns
     const degClusterKeySelect = document.getElementById('deg-cluster-key');
     if (degClusterKeySelect) {
         degClusterKeySelect.innerHTML = '<option value="">No cluster keys available - Run clustering first</option>';
         degClusterKeySelect.disabled = true;
     }
-    
-    // Hide DEG step initially
-    const degStep = document.getElementById('deg-step');
-    if (degStep) {
-        degStep.style.display = 'none';
+    const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+    if (vizClusterKeySelect) {
+        vizClusterKeySelect.innerHTML = '<option value="">No cluster keys available - Run clustering first</option>';
+        vizClusterKeySelect.disabled = true;
     }
+    
+    // DEG step is always visible (same as visualization)
     
     // Clear coremap visualization if exists
     const coremapViz = document.getElementById('coremap-visualization');
@@ -174,13 +352,22 @@ function resetAllState() {
         coremapViz.style.display = 'none';
     }
     
+    // Clear Core Analysis visualization data (if exists, for caching)
+    coreAnalysisVisualization = null;
+    
+    // Clear Ground Truth file
+    clearVizGroundTruthFile();
+    
     console.log('[RESET] All state reset complete');
+    
+    // Update button states based on rules
+    updateButtonStates();
 }
 
 // Function to update available cluster keys dropdown
 async function updateAvailableClusterKeys() {
     try {
-        const response = await fetch(`${API_BASE}/available-cluster-keys`, {
+        const response = await fetch(`${API_BASE}/cluster-keys`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -195,14 +382,13 @@ async function updateAvailableClusterKeys() {
             return;
         }
 
-        // Update the cluster key selector
-        const select = document.getElementById('deg-cluster-key');
-        if (!select) return;
+        // Update both cluster key selectors (DEG and Visualization)
+        const degSelect = document.getElementById('deg-cluster-key');
+        const vizSelect = document.getElementById('viz-cluster-key');
 
-        // Clear existing options
-        select.innerHTML = '';
-
-        // Add available cluster keys (only show existing ones)
+        // Update DEG cluster key selector
+        if (degSelect) {
+            degSelect.innerHTML = '';
         if (data.cluster_keys && data.cluster_keys.length > 0) {
             data.cluster_keys.forEach(clusterKeyInfo => {
                 const option = document.createElement('option');
@@ -210,28 +396,49 @@ async function updateAvailableClusterKeys() {
                 const label = `${clusterKeyInfo.key} (${clusterKeyInfo.method}, ${clusterKeyInfo.n_clusters} clusters)`;
                 option.textContent = label;
                 option.selected = clusterKeyInfo.key === clusterInfo.cluster_key;
-                select.appendChild(option);
-            });
-            // Enable the select and marker genes button when cluster keys are available
-            select.disabled = false;
-            const btnMarkerGenes = document.getElementById('btn-marker-genes');
-            if (btnMarkerGenes) {
-                btnMarkerGenes.disabled = false;
+                    degSelect.appendChild(option);
+                });
+                degSelect.disabled = false;
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No cluster keys available - Run clustering first';
+                option.disabled = true;
+                degSelect.appendChild(option);
+                degSelect.disabled = true;
             }
+        }
+
+        // Update Visualization cluster key selector
+        if (vizSelect) {
+            vizSelect.innerHTML = '';
+            if (data.cluster_keys && data.cluster_keys.length > 0) {
+                data.cluster_keys.forEach(clusterKeyInfo => {
+                    const option = document.createElement('option');
+                    option.value = clusterKeyInfo.key;
+                    const label = `${clusterKeyInfo.key} (${clusterKeyInfo.method}, ${clusterKeyInfo.n_clusters} clusters)`;
+                    option.textContent = label;
+                    option.selected = clusterKeyInfo.key === clusterInfo.cluster_key;
+                    vizSelect.appendChild(option);
+                });
+                vizSelect.disabled = false;
+                // Do not auto-trigger visualization when updating cluster keys
+                // User should manually select cluster key or click "Generate Visualization" button
         } else {
-            // Show message if no cluster keys found
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'No cluster keys available - Run clustering first';
             option.disabled = true;
-            select.appendChild(option);
-            // Disable the select and marker genes button when no cluster keys
-            select.disabled = true;
-            const btnMarkerGenes = document.getElementById('btn-marker-genes');
-            if (btnMarkerGenes) {
-                btnMarkerGenes.disabled = true;
+                vizSelect.appendChild(option);
+                vizSelect.disabled = true;
             }
         }
+        
+        // Update button states based on rules after cluster keys are updated
+        updateButtonStates();
+        
+        // Update visualization method selector (to show/hide coremap option)
+        updateVisualizationMethodSelector();
     } catch (error) {
         console.warn('Error updating cluster keys:', error);
     }
@@ -247,12 +454,20 @@ const colorPalette = [
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    try {
+        console.log('[INIT] Initializing application...');
     checkHealth();
     setupFileInputs();
+        setupDefaultDatasets();
     setupControls();
     setupPipelineButtons();
     // Initialize cluster keys dropdown (will be empty until clustering is run)
     updateAvailableClusterKeys();
+        console.log('[INIT] Application initialized successfully');
+    } catch (error) {
+        console.error('[INIT] Error during initialization:', error);
+        showStatus('Error initializing application. Please refresh the page.', 'error');
+    }
 });
 
 async function checkHealth() {
@@ -295,11 +510,247 @@ function setupFileInputs() {
     uploadArea.addEventListener('click', () => {
         fileInput.click();
     });
+    
+    // Setup Ground Truth file upload for Visualization (coremap)
+    setupGroundTruthFileInput();
+}
+
+function setupGroundTruthFileInput() {
+    try {
+        // Setup for Visualization Ground Truth upload (coremap)
+        const vizGroundTruthInput = document.getElementById('viz-truth-json-file');
+        const vizGroundTruthUploadArea = document.getElementById('viz-ground-truth-upload-area');
+        
+        if (!vizGroundTruthInput || !vizGroundTruthUploadArea) {
+            // Elements don't exist yet (might be hidden), that's okay
+            return;
+        }
+        
+        // Drag and drop for Ground Truth
+        vizGroundTruthUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            vizGroundTruthUploadArea.classList.add('dragover');
+        });
+        
+        vizGroundTruthUploadArea.addEventListener('dragleave', () => {
+            vizGroundTruthUploadArea.classList.remove('dragover');
+        });
+        
+        vizGroundTruthUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            vizGroundTruthUploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/json') {
+                vizGroundTruthInput.files = files;
+                
+                // Update UI to show selected file
+                updateVizGroundTruthFileDisplay(files[0].name);
+            }
+        });
+        
+        vizGroundTruthUploadArea.addEventListener('click', () => {
+            vizGroundTruthInput.click();
+        });
+        
+        // Update UI when file is selected via click
+        vizGroundTruthInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                updateVizGroundTruthFileDisplay(e.target.files[0].name);
+            }
+        });
+        
+        // Setup remove button
+        const removeBtn = document.getElementById('viz-ground-truth-remove-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering file input click
+                clearVizGroundTruthFile();
+            });
+        }
+    } catch (error) {
+        console.error('[SETUP] Error setting up Ground Truth file input:', error);
+    }
+}
+
+function updateVizGroundTruthFileDisplay(filename) {
+    const uploadArea = document.getElementById('viz-ground-truth-upload-area');
+    if (!uploadArea) return;
+    
+    const textElement = uploadArea.querySelector('.file-upload-text');
+    const hintElement = uploadArea.querySelector('.file-upload-hint');
+    const removeBtn = document.getElementById('viz-ground-truth-remove-btn');
+    
+    if (textElement) {
+        textElement.textContent = filename;
+        textElement.style.color = 'var(--primary)';
+    }
+    if (hintElement) {
+        hintElement.textContent = 'Click to change file';
+    }
+    if (removeBtn) {
+        removeBtn.style.display = 'block';
+    }
+}
+
+function clearVizGroundTruthFile() {
+    const vizGroundTruthInput = document.getElementById('viz-truth-json-file');
+    const uploadArea = document.getElementById('viz-ground-truth-upload-area');
+    if (!uploadArea || !vizGroundTruthInput) return;
+    
+    // Clear file input
+    vizGroundTruthInput.value = '';
+    
+    // Reset display
+    const textElement = uploadArea.querySelector('.file-upload-text');
+    const hintElement = uploadArea.querySelector('.file-upload-hint');
+    const removeBtn = document.getElementById('viz-ground-truth-remove-btn');
+    
+    if (textElement) {
+        textElement.textContent = 'Click or drag JSON file';
+        textElement.style.color = '';
+    }
+    if (hintElement) {
+        hintElement.textContent = '.json';
+    }
+    if (removeBtn) {
+        removeBtn.style.display = 'none';
+    }
+}
+
+function setupDefaultDatasets() {
+    const loadDemoDataBtn = document.getElementById('load-demo-data');
+    const loadPbmc3kBtn = document.getElementById('load-pbmc3k');
+    
+    if (loadDemoDataBtn) {
+        loadDemoDataBtn.addEventListener('click', () => {
+            loadDefaultDataset('demo_data.h5ad');
+        });
+    }
+    
+    if (loadPbmc3kBtn) {
+        loadPbmc3kBtn.addEventListener('click', () => {
+            loadDefaultDataset('pbmc3k_raw.h5ad');
+        });
+    }
+}
+
+async function loadDefaultDataset(filename) {
+    console.log(`[LOAD] Loading default dataset: ${filename}`);
+    showStatus(`Loading ${filename}...`, 'info');
+    
+    // Reset all state when loading new data
+    resetAllState();
+    
+    // Disable pipeline buttons and data loading buttons during loading
+    disableAllButtons();
+    disableDataLoadingButtons();
+    
+    try {
+        const response = await fetch(`${API_BASE}/load-default-dataset`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                filename: filename,
+                session_id: sessionId
+            })
+        });
+
+        let data;
+        try {
+            data = await response.json();
+            console.log('[LOAD] Response data:', data);
+        } catch (e) {
+            const text = await response.text();
+            console.error('[LOAD] Failed to parse JSON:', text);
+            throw new Error(`Server error: ${response.status} ${response.statusText}. Response: ${text.substring(0, 200)}`);
+        }
+
+        if (!response.ok) {
+            console.error('[LOAD] Error response:', data);
+            throw new Error(data.error || `Load failed: ${response.status}`);
+        }
+
+        console.log('[LOAD] Success:', data);
+        showStatus(data.message || `✓ Loaded ${data.shape[0]} cells, ${data.shape[1]} genes`, 'success');
+        
+        // Reset all state when new data is loaded
+        resetAllState();
+        
+        // Enable pipeline buttons
+        document.getElementById('btn-preprocess').disabled = false;
+        document.getElementById('pipeline-section').style.display = 'block';
+        
+        // Update metadata select
+        if (data.obs_columns) {
+            updateMetadataSelect(data.obs_columns);
+        }
+        
+        // Update available cluster keys (in case loaded data already has clustering results)
+        await updateAvailableClusterKeys();
+        
+        // Update button states based on rules (check if loaded data has clustering/core analysis)
+        updateButtonStates();
+        
+        // Update visualization method selector
+        updateVisualizationMethodSelector();
+        
+    } catch (error) {
+        console.error('[LOAD] Exception:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+    } finally {
+        // Always re-enable data loading buttons to allow reloading at any time
+        enableDataLoadingButtons();
+    }
 }
 
 function setupControls() {
+    // Initialize visualization method selector
+    updateVisualizationMethodSelector();
+    
+    // Add event listener for visualization method selector
+    const vizMethodSelect = document.getElementById('viz-method');
+    if (vizMethodSelect) {
+        vizMethodSelect.addEventListener('change', (e) => {
+            // Update UMAP parameters visibility
+            updateUMAPParamsVisibility();
+            
+            // Clear cache for current cluster key when method changes
+            const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+            const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+            if (selectedKey && selectedKey !== '') {
+                Object.keys(visualizationCache).forEach(key => {
+                    if (key.startsWith(selectedKey + '_')) {
+                        delete visualizationCache[key];
+                    }
+                });
+            }
+            
+            // Don't auto-generate visualization when switching to coremap
+            // User needs to click "Generate Visualization" button
+        });
+    }
+    
     document.getElementById('color-by').addEventListener('change', updatePlot);
-    document.getElementById('dimension').addEventListener('change', updatePlot);
+    document.getElementById('dimension').addEventListener('change', (e) => {
+        // When dimension changes, clear current visualization cache for the selected cluster key
+        // This forces regeneration with new parameters
+        const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+        const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+        if (selectedKey && selectedKey !== '') {
+            // Clear cache entries for this cluster key (they will be regenerated with new parameters)
+            Object.keys(visualizationCache).forEach(key => {
+                if (key.startsWith(selectedKey + '_')) {
+                    delete visualizationCache[key];
+                }
+            });
+        }
+        updatePlot();
+    });
     
     const pointSizeInput = document.getElementById('point-size');
     const pointSizeValue = document.getElementById('point-size-value');
@@ -315,17 +766,139 @@ function setupControls() {
         updatePlot();
     });
     
-    document.getElementById('cluster-method').addEventListener('change', () => {
-        // Update UI based on method
-    });
+    // Update cplearn advanced parameters visibility based on method selection
+    const clusterMethodSelect = document.getElementById('cluster-method');
+    const cplearnAdvancedParams = document.getElementById('cplearn-advanced-params');
+    
+    function updateCplearnParamsVisibility() {
+        if (clusterMethodSelect && cplearnAdvancedParams) {
+            const method = clusterMethodSelect.value;
+            if (method === 'cplearn') {
+                cplearnAdvancedParams.style.display = 'block';
+            } else {
+                cplearnAdvancedParams.style.display = 'none';
+            }
+        }
+    }
+    
+    if (clusterMethodSelect) {
+        clusterMethodSelect.addEventListener('change', updateCplearnParamsVisibility);
+        // Initialize visibility on page load
+        updateCplearnParamsVisibility();
+    }
+    
+    // Add event listeners for visualization parameters to clear cache when changed
+    const umapMinDistInput = document.getElementById('umap-min-dist');
+    const umapSpreadInput = document.getElementById('umap-spread');
+    
+    if (umapMinDistInput) {
+        umapMinDistInput.addEventListener('change', () => {
+            // Clear cache for current cluster key when min_dist changes
+            const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+            const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+            if (selectedKey && selectedKey !== '') {
+                Object.keys(visualizationCache).forEach(key => {
+                    if (key.startsWith(selectedKey + '_')) {
+                        delete visualizationCache[key];
+                    }
+                });
+            }
+        });
+    }
+    
+    if (umapSpreadInput) {
+        umapSpreadInput.addEventListener('change', () => {
+            // Clear cache for current cluster key when spread changes
+            const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+            const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+            if (selectedKey && selectedKey !== '') {
+                Object.keys(visualizationCache).forEach(key => {
+                    if (key.startsWith(selectedKey + '_')) {
+                        delete visualizationCache[key];
+                    }
+                });
+            }
+        });
+    }
+    
+    // Add event listener for Visualization cluster key selector
+    const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+    if (vizClusterKeySelect) {
+        vizClusterKeySelect.addEventListener('change', async (e) => {
+            const selectedKey = e.target.value;
+            if (selectedKey && selectedKey !== '') {
+                // Automatically update Color By to match the selected cluster key
+                const colorBySelect = document.getElementById('color-by');
+                if (colorBySelect) {
+                    // Check if the cluster key exists in the color-by options
+                    const optionExists = Array.from(colorBySelect.options).some(opt => opt.value === selectedKey);
+                    if (!optionExists) {
+                        // Add the cluster key to color-by options if it doesn't exist
+                        const option = document.createElement('option');
+                        option.value = selectedKey;
+                        option.textContent = selectedKey;
+                        colorBySelect.appendChild(option);
+                    }
+                    // Set color-by to the selected cluster key
+                    colorBySelect.value = selectedKey;
+                }
+                
+                // Automatically generate new visualization when switching cluster key
+                // Cache will be checked inside runVisualizationForClusterKey with current parameters
+                await runVisualizationForClusterKey(selectedKey);
+            } else {
+                // Clear visualization if no cluster key selected
+                vectors = null;
+                metadata = null;
+                const plotDiv = document.getElementById('plot');
+                if (plotDiv) {
+                    plotDiv.innerHTML = '<div style="padding: 40px; text-align: center; color: #64748b;">Select a cluster key to visualize</div>';
+                }
+            }
+        });
+    }
 }
 
 function setupPipelineButtons() {
-    document.getElementById('btn-preprocess').addEventListener('click', runPreprocess);
-    document.getElementById('btn-cluster').addEventListener('click', runClustering);
-    document.getElementById('btn-visualize').addEventListener('click', runVisualization);
-    document.getElementById('btn-core-selection').addEventListener('click', runCoreSelection);
-    document.getElementById('btn-marker-genes').addEventListener('click', runMarkerGenes);
+    try {
+        const btnPreprocess = document.getElementById('btn-preprocess');
+        const btnCluster = document.getElementById('btn-cluster');
+        const btnVisualize = document.getElementById('btn-visualize');
+        const btnCoreSelection = document.getElementById('btn-core-selection');
+        const btnMarkerGenes = document.getElementById('btn-marker-genes');
+        
+        if (btnPreprocess) {
+            btnPreprocess.addEventListener('click', runPreprocess);
+        } else {
+            console.error('[SETUP] btn-preprocess not found');
+        }
+        
+        if (btnCluster) {
+            btnCluster.addEventListener('click', runClustering);
+        } else {
+            console.error('[SETUP] btn-cluster not found');
+        }
+        
+        if (btnVisualize) {
+            btnVisualize.addEventListener('click', runVisualization);
+        } else {
+            console.error('[SETUP] btn-visualize not found');
+        }
+        
+        if (btnCoreSelection) {
+            btnCoreSelection.addEventListener('click', runCoreSelection);
+        } else {
+            console.error('[SETUP] btn-core-selection not found');
+        }
+        
+        if (btnMarkerGenes) {
+            btnMarkerGenes.addEventListener('click', runMarkerGenes);
+        } else {
+            console.error('[SETUP] btn-marker-genes not found');
+        }
+    } catch (error) {
+        console.error('[SETUP] Error setting up pipeline buttons:', error);
+    }
 }
 
 async function handleDataFile(event) {
@@ -337,6 +910,13 @@ async function handleDataFile(event) {
 
     console.log('[UPLOAD] File selected:', file.name, 'Size:', file.size, 'bytes');
     showStatus('Uploading data...', 'info');
+    
+    // Reset all state when loading new data
+    resetAllState();
+    
+    // Disable pipeline buttons and data loading buttons during upload
+    disableAllButtons();
+    disableDataLoadingButtons();
     
     // Determine file type from extension (only h5ad, csv, tsv allowed)
     const fileName = file.name.toLowerCase();
@@ -350,6 +930,7 @@ async function handleDataFile(event) {
         fileType = 'tsv';
     } else {
         showStatus('Unsupported file format. Please upload .h5ad, .csv, or .tsv files only.', 'error');
+        enableDataLoadingButtons(); // Re-enable buttons if file format is invalid
         return;
     }
     
@@ -402,9 +983,18 @@ async function handleDataFile(event) {
         // Update available cluster keys (in case uploaded data already has clustering results)
         await updateAvailableClusterKeys();
         
+        // Update button states based on rules (check if uploaded data has clustering/core analysis)
+        updateButtonStates();
+        
+        // Update visualization method selector
+        updateVisualizationMethodSelector();
+        
     } catch (error) {
         console.error('[UPLOAD] Exception:', error);
         showStatus(`Error: ${error.message}`, 'error');
+    } finally {
+        // Always re-enable data loading buttons to allow reloading at any time
+        enableDataLoadingButtons();
     }
 }
 
@@ -412,32 +1002,54 @@ async function runPreprocess() {
     showStatus('Running preprocessing... This may take a while.', 'info');
     const btn = document.getElementById('btn-preprocess');
     const originalText = btn.textContent;
-    btn.disabled = true;
+    
+    // Disable all buttons during preprocessing
+    disableAllButtons();
     btn.innerHTML = '<span class="spinner"></span> Processing...';
 
     try {
-        const n_pcs = parseInt(document.getElementById('n-pcs').value) || 15;
-        const n_neighbors = parseInt(document.getElementById('n-neighbors').value) || 10;
+        const n_pcs_value = document.getElementById('n-pcs').value?.trim();
+        const n_pcs = n_pcs_value ? parseInt(n_pcs_value) : null;
+        const n_neighbors = parseInt(document.getElementById('n-neighbors').value) || 15;
         const target_sum = parseFloat(document.getElementById('target-sum')?.value) || 1e4;
         const n_top_genes = document.getElementById('n-top-genes')?.value ? parseInt(document.getElementById('n-top-genes').value) : null;
         const use_rep = document.getElementById('preprocess-use-rep')?.value || 'X_pca';
         const save_raw = document.getElementById('save-raw')?.checked !== false;
         const min_genes = document.getElementById('min-genes')?.value ? parseInt(document.getElementById('min-genes').value) : null;
         const min_cells = document.getElementById('min-cells')?.value ? parseInt(document.getElementById('min-cells').value) : null;
+        const min_counts = document.getElementById('min-counts')?.value ? parseInt(document.getElementById('min-counts').value) : null;
+        const max_counts = document.getElementById('max-counts')?.value ? parseInt(document.getElementById('max-counts').value) : null;
+        const max_genes = document.getElementById('max-genes')?.value ? parseInt(document.getElementById('max-genes').value) : null;
+        const pct_mt_max = document.getElementById('pct-mt-max')?.value ? parseFloat(document.getElementById('pct-mt-max').value) : null;
+        const hvg_flavor = document.getElementById('hvg-flavor')?.value || 'seurat_v3';
+        const batch_key = document.getElementById('batch-key')?.value?.trim() || null;
+        const regress_out_keys_str = document.getElementById('regress-out-keys')?.value?.trim() || null;
+        const regress_out_keys = regress_out_keys_str ? regress_out_keys_str.split(',').map(k => k.trim()).filter(k => k) : null;
+        const use_combat = document.getElementById('use-combat')?.checked || false;
 
         const requestBody = {
             session_id: sessionId,
-            n_pcs: n_pcs,
             n_neighbors: n_neighbors,
             target_sum: target_sum,
             use_rep: use_rep,
-            save_raw: save_raw
+            save_raw: save_raw,
+            hvg_flavor: hvg_flavor
         };
+        
+        // Include n_pcs only if set (null means auto-select)
+        if (n_pcs !== null) requestBody.n_pcs = n_pcs;
         
         // Only include optional parameters if they are set
         if (n_top_genes !== null) requestBody.n_top_genes = n_top_genes;
         if (min_genes !== null) requestBody.min_genes = min_genes;
         if (min_cells !== null) requestBody.min_cells = min_cells;
+        if (min_counts !== null) requestBody.min_counts = min_counts;
+        if (max_counts !== null) requestBody.max_counts = max_counts;
+        if (max_genes !== null) requestBody.max_genes = max_genes;
+        if (pct_mt_max !== null) requestBody.pct_mt_max = pct_mt_max;
+        if (batch_key !== null) requestBody.batch_key = batch_key;
+        if (regress_out_keys !== null && regress_out_keys.length > 0) requestBody.regress_out_keys = regress_out_keys;
+        if (use_combat) requestBody.use_combat = use_combat;
 
         const response = await fetch(`${API_BASE}/preprocess`, {
             method: 'POST',
@@ -452,9 +1064,18 @@ async function runPreprocess() {
         }
 
         showStatus('✓ Preprocessing complete!', 'success');
-        // Enable core selection and cluster buttons (core selection is independent)
+        
+        // Display PCA variance ratio if available
+        if (data.pca_variance_ratio && data.pca_variance_ratio.length > 0) {
+            displayPCAVarianceRatio(data.pca_variance_ratio);
+        }
+        
+        // Enable core analysis and cluster buttons (core analysis is independent)
         document.getElementById('btn-core-selection').disabled = false;
         document.getElementById('btn-cluster').disabled = false;
+        
+        // Update button states based on rules (visualization/marker genes still disabled until clustering/core analysis)
+        updateButtonStates();
         
     } catch (error) {
         showStatus(`Error: ${error.message}`, 'error');
@@ -469,7 +1090,9 @@ async function runClustering() {
     showStatus('Running clustering...', 'info');
     const btn = document.getElementById('btn-cluster');
     const originalText = btn.textContent;
-    btn.disabled = true;
+    
+    // Disable all buttons during clustering
+    disableAllButtons();
     btn.innerHTML = '<span class="spinner"></span> Clustering...';
 
     try {
@@ -477,19 +1100,17 @@ async function runClustering() {
         const resolution = parseFloat(document.getElementById('cluster-resolution').value) || 1.2;
         const use_rep = document.getElementById('use-rep').value || null;
         const key_added = null; // Use default (method name)
-        const random_state = parseInt(document.getElementById('random-state')?.value) || 0;
         
         // cplearn-specific parameters
         const stable_core_frac = parseFloat(document.getElementById('stable-core-frac')?.value) || 0.25;
-        const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 4;
+        const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 8;
         const fine_grained = document.getElementById('fine-grained')?.checked || false;
         const propagate = document.getElementById('propagate')?.checked !== false;
 
         const requestBody = {
             session_id: sessionId,
             method: method,
-            resolution: resolution,
-            random_state: random_state
+            resolution: resolution
         };
         
         if (use_rep) requestBody.use_rep = use_rep;
@@ -516,20 +1137,78 @@ async function runClustering() {
         }
 
         showStatus(`✓ Clustering complete! Found ${data.n_clusters} clusters using ${data.cluster_key}.`, 'success');
-        document.getElementById('btn-visualize').disabled = false;
-        document.getElementById('btn-marker-genes').disabled = false;
-        document.getElementById('deg-step').style.display = 'block';
         
         // Store cluster info
+        // Preserve has_model from previous Core Analysis if it exists
+        // This prevents coremap option from disappearing when running scanpy clustering
+        const previousHasModel = clusterInfo && clusterInfo.has_model;
         clusterInfo = {
             cluster_key: data.cluster_key,
             clusters: data.clusters,
             cluster_counts: data.cluster_counts,
-            has_model: data.has_model || false
+            has_model: data.has_model || previousHasModel || false
         };
+        
+        // If cplearn clustering, automatically run Core Analysis with same parameters (without visualization)
+        if (method === 'cplearn' && data.has_model) {
+            try {
+                showStatus('Running Core Analysis with cplearn clustering parameters...', 'info');
+                
+                // Get parameters from Clustering form (same as used for clustering)
+                const use_rep = document.getElementById('use-rep').value || null;
+                const key_added = 'X_cplearn_coremap'; // Default coremap key
+                const cluster_resolution = resolution; // Use same resolution as clustering
+                const cluster_key = data.cluster_key; // Use the cluster key from clustering
+                
+                // Use same cplearn parameters from Clustering form
+                const stable_core_frac = parseFloat(document.getElementById('stable-core-frac')?.value) || 0.25;
+                const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 8;
+                const fine_grained = document.getElementById('fine-grained')?.checked || false;
+                const propagate = document.getElementById('propagate')?.checked !== false;
+                
+                // Call Core Analysis API with clustering parameters (without visualization)
+                const coreResponse = await fetch(`${API_BASE}/core-analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        use_rep: use_rep,
+                        key_added: key_added,
+                        cluster_resolution: cluster_resolution,
+                        cluster_key: cluster_key,
+                        stable_core_frac: stable_core_frac,
+                        stable_ng_num: stable_ng_num,
+                        fine_grained: fine_grained,
+                        propagate: propagate,
+                        visualize: false  // Don't generate visualization here, let Visualization module handle it
+                    })
+                });
+                
+                const coreData = await coreResponse.json();
+                
+                if (coreResponse.ok) {
+                    // Update has_model flag
+                    clusterInfo.has_model = true;
+                    showStatus('✓ Core Analysis complete! Coremap embedding available for visualization.', 'success');
+                } else {
+                    console.warn('[CLUSTER] Core Analysis failed:', coreData.error || 'Unknown error');
+                    showStatus('Clustering complete, but Core Analysis failed. You can run Core Analysis separately.', 'info');
+                }
+            } catch (coreError) {
+                console.error('[CLUSTER] Error running Core Analysis after cplearn clustering:', coreError);
+                // Don't fail the clustering operation if Core Analysis fails
+                showStatus('Clustering complete, but Core Analysis failed. You can run Core Analysis separately.', 'info');
+            }
+        }
+        
+        // Update button states based on rules (now we have clustering, so visualization/marker genes can be enabled)
+        updateButtonStates();
         
         // Update available cluster keys for DEG analysis (only existing ones)
         await updateAvailableClusterKeys();
+        
+        // Update visualization method selector (will show coremap if Core Analysis was run)
+        updateVisualizationMethodSelector();
         
         // Update color-by select to include cluster key
         updateMetadataSelect([data.cluster_key]);
@@ -539,34 +1218,187 @@ async function runClustering() {
         showStatus(`Error: ${error.message}`, 'error');
         console.error('Clustering error:', error);
     } finally {
+        // Restore button states
         btn.disabled = false;
         btn.textContent = originalText;
+        
+        // Re-enable buttons that should be available
+        // Clustering doesn't prevent re-running preprocessing or core analysis
+        // Users may want to compare different clustering parameters
+        document.getElementById('btn-preprocess').disabled = false;
+        document.getElementById('btn-core-selection').disabled = false;
+        
+        // Update button states based on rules (visualization/marker genes only if clustering/core analysis exists)
+        updateButtonStates();
     }
 }
 
 async function runVisualization() {
-    showStatus('Computing visualization...', 'info');
+    const params = getVisualizationParams();
+    
+    // For coremap, don't need cluster key
+    if (params.method === 'coremap') {
+        await runVisualizationForClusterKey(null);
+        return;
+    }
+    
+    // For UMAP, need cluster key
+    const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+    const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+    
+    if (selectedKey && selectedKey !== '') {
+        // Use selected cluster key
+        await runVisualizationForClusterKey(selectedKey);
+    } else {
+        // Use default cluster key
+        const defaultKey = clusterInfo.cluster_key || 'cplearn';
+        await runVisualizationForClusterKey(defaultKey);
+    }
+}
+
+async function runVisualizationForClusterKey(cluster_key) {
+    // Get current visualization parameters
+    const params = getVisualizationParams();
+    
+    // Handle coremap method - generate visualization via API
+    if (params.method === 'coremap') {
+        // Check if coremap embedding exists (by checking if Core Analysis was run)
+        if (!clusterInfo || !clusterInfo.has_model) {
+            showStatus('Error: Core Analysis not available. Please run Core Analysis or cplearn clustering first.', 'error');
+            return;
+        }
+        
     const btn = document.getElementById('btn-visualize');
     const originalText = btn.textContent;
-    btn.disabled = true;
+        
+        // Disable all buttons during visualization
+        disableAllButtons();
+        btn.innerHTML = '<span class="spinner"></span> Generating Coremap...';
+        
+        try {
+            showStatus('Generating coremap visualization...', 'info');
+            
+            // Get Ground Truth file if provided
+            const truthJsonFile = document.getElementById('viz-truth-json-file')?.files[0];
+            let requestBody = {
+                session_id: sessionId,
+                cluster_key: cluster_key || 'cplearn',
+                n_components: params.n_components,
+                method: 'coremap',
+                use_rep: 'X_cplearn_coremap'  // Default coremap key
+            };
+            
+            let headers = { 'Content-Type': 'application/json' };
+            let body;
+            
+            // If Ground Truth file is provided, use FormData
+            if (truthJsonFile) {
+                const formData = new FormData();
+                formData.append('session_id', sessionId);
+                formData.append('cluster_key', cluster_key || 'cplearn');
+                formData.append('n_components', params.n_components.toString());
+                formData.append('method', 'coremap');
+                formData.append('use_rep', 'X_cplearn_coremap');
+                formData.append('truth_json_file', truthJsonFile);
+                
+                headers = {}; // FormData sets Content-Type automatically
+                body = formData;
+            } else {
+                body = JSON.stringify(requestBody);
+            }
+            
+            // Call Visualization API to generate coremap visualization
+        const response = await fetch(`${API_BASE}/visualize`, {
+            method: 'POST',
+                headers: headers,
+                body: body
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Coremap visualization failed');
+            }
+            
+            // Display the visualization in iframe
+            const plotDiv = document.getElementById('plot');
+            plotDiv.innerHTML = ''; // Clear existing content
+            
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.srcdoc = data.html_content;
+            plotDiv.appendChild(iframe);
+            
+            // Store visualization for future use
+            if (data.file_url) {
+                coreAnalysisVisualization = {
+                    file_url: data.file_url,
+                    htmlContent: data.html_content
+                };
+            }
+            
+            // Show visualization controls
+            document.getElementById('visualization-section').style.display = 'block';
+            document.getElementById('search-section').style.display = 'block';
+            document.getElementById('stats-section').style.display = 'block';
+            
+            showStatus('✓ Coremap visualization generated!', 'success');
+            
+        } catch (error) {
+            console.error('[VIZ] Error generating coremap visualization:', error);
+            showStatus(`Error generating visualization: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+            
+            // Re-enable buttons that should be available
+            document.getElementById('btn-marker-genes').disabled = false;
+            document.getElementById('btn-cluster').disabled = false;
+            document.getElementById('btn-core-selection').disabled = false;
+            const btnPreprocess = document.getElementById('btn-preprocess');
+            const pipelineSection = document.getElementById('pipeline-section');
+            if (btnPreprocess && pipelineSection && pipelineSection.style.display !== 'none') {
+                btnPreprocess.disabled = false;
+            }
+        }
+        return;
+    }
+    
+    // Handle UMAP method - existing logic
+    const cacheKey = getVisualizationCacheKey(cluster_key, params.method, params.n_components, params.min_dist, params.spread);
+    
+    // Check if visualization is already cached with current parameters
+    if (visualizationCache[cacheKey]) {
+        vectors = visualizationCache[cacheKey].vectors;
+        metadata = visualizationCache[cacheKey].metadata;
+        updatePlot();
+        showStatus(`✓ Loaded cached visualization for ${cluster_key}`, 'success');
+        return;
+    }
+    
+    showStatus(`Computing UMAP visualization for ${cluster_key}...`, 'info');
+    const btn = document.getElementById('btn-visualize');
+    const originalText = btn.textContent;
+    
+    // Disable all buttons during visualization
+    disableAllButtons();
     btn.innerHTML = '<span class="spinner"></span> Computing UMAP...';
 
     try {
-        const cluster_key = clusterInfo.cluster_key || 'cplearn';
-        const n_components = document.getElementById('dimension').value === '3d' ? 3 : 2;
-        const min_dist = parseFloat(document.getElementById('umap-min-dist').value) || 0.5;
-        const spread = parseFloat(document.getElementById('umap-spread').value) || 1.0;
-
+        const requestBody = {
+                session_id: sessionId,
+                cluster_key: cluster_key,
+            n_components: params.n_components,
+            min_dist: params.min_dist,
+            spread: params.spread
+        };
+        
         const response = await fetch(`${API_BASE}/visualize`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: sessionId,
-                cluster_key: cluster_key,
-                n_components: n_components,
-                min_dist: min_dist,
-                spread: spread
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
@@ -575,19 +1407,68 @@ async function runVisualization() {
             throw new Error(data.error || 'Visualization failed');
         }
 
-        // Store data
+        // Store data in cache with parameters included
+        visualizationCache[cacheKey] = {
+            vectors: data.coordinates,
+            metadata: data.metadata,
+            params: params,
+            method: params.method
+        };
+        
+        // Update current vectors and metadata
         vectors = data.coordinates;
         metadata = data.metadata;
         
-        showStatus('✓ Visualization ready!', 'success');
+        // Update cluster key selector to show selected key
+        const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+        if (vizClusterKeySelect) {
+            vizClusterKeySelect.value = cluster_key;
+        }
+        
+        // Automatically update Color By to match the cluster key
+        const colorBySelect = document.getElementById('color-by');
+        if (colorBySelect) {
+            // Check if the cluster key exists in the color-by options
+            const optionExists = Array.from(colorBySelect.options).some(opt => opt.value === cluster_key);
+            if (!optionExists) {
+                // Add the cluster key to color-by options if it doesn't exist
+                const option = document.createElement('option');
+                option.value = cluster_key;
+                option.textContent = cluster_key;
+                colorBySelect.appendChild(option);
+            }
+            // Set color-by to the cluster key
+            colorBySelect.value = cluster_key;
+        }
+        
+        showStatus(`✓ Visualization ready for ${cluster_key}!`, 'success');
         updatePlot();
         
     } catch (error) {
         showStatus(`Error: ${error.message}`, 'error');
         console.error('Visualization error:', error);
     } finally {
+        // Restore button states
         btn.disabled = false;
         btn.textContent = originalText;
+        
+        // Re-enable buttons that should be available
+        document.getElementById('btn-cluster').disabled = false;
+        document.getElementById('btn-core-selection').disabled = false;
+        // Preprocess button should remain enabled if data is loaded
+        const btnPreprocess = document.getElementById('btn-preprocess');
+        if (btnPreprocess && !btnPreprocess.disabled) {
+            // If preprocess was enabled before, keep it enabled
+        } else {
+            // Otherwise, check if we have data (pipeline section is visible)
+            const pipelineSection = document.getElementById('pipeline-section');
+            if (pipelineSection && pipelineSection.style.display !== 'none') {
+                btnPreprocess.disabled = false;
+            }
+        }
+        
+        // Update button states based on rules (visualization/marker genes only if clustering/core analysis exists)
+        updateButtonStates();
     }
 }
 
@@ -665,7 +1546,7 @@ function updatePlot() {
 
     const layout = {
         title: {
-            text: `Embedding Visualization (${vectors.length} points)`,
+            text: `Visualization (${vectors.length} points)`,
             font: { size: 16 }
         },
         margin: { l: 50, r: 50, t: 50, b: 50 },
@@ -697,6 +1578,104 @@ function updatePlot() {
 
     // Update stats
     updateStats();
+}
+
+function displayPCAVarianceRatio(varianceRatio) {
+    /**
+     * Display PCA variance ratio plot in the visualization area
+     */
+    const plotDiv = document.getElementById('plot');
+    if (!plotDiv) return;
+    
+    // Create PC numbers (1-indexed)
+    const pcNumbers = varianceRatio.map((_, i) => i + 1);
+    
+    // Create trace for variance ratio
+    const trace = {
+        x: pcNumbers,
+        y: varianceRatio,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'Variance Ratio',
+        line: {
+            color: '#3b82f6',
+            width: 2
+        },
+        marker: {
+            color: '#3b82f6',
+            size: 6
+        }
+    };
+    
+    // Calculate cumulative variance
+    const cumulativeVariance = varianceRatio.reduce((acc, val, i) => {
+        acc.push((i === 0 ? 0 : acc[i - 1]) + val);
+        return acc;
+    }, []);
+    
+    // Add cumulative variance trace
+    const cumulativeTrace = {
+        x: pcNumbers,
+        y: cumulativeVariance,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Cumulative Variance',
+        yaxis: 'y2',
+        line: {
+            color: '#ef4444',
+            width: 2,
+            dash: 'dash'
+        }
+    };
+    
+    const layout = {
+        title: {
+            text: 'PCA Variance Ratio',
+            font: { size: 18, color: '#1e293b' }
+        },
+        xaxis: {
+            title: 'Principal Component',
+            titlefont: { size: 14 },
+            tickfont: { size: 12 }
+        },
+        yaxis: {
+            title: 'Variance Ratio',
+            titlefont: { size: 14 },
+            tickfont: { size: 12 },
+            type: 'log' // Log scale for better visualization
+        },
+        yaxis2: {
+            title: 'Cumulative Variance',
+            titlefont: { size: 14, color: '#ef4444' },
+            tickfont: { size: 12, color: '#ef4444' },
+            overlaying: 'y',
+            side: 'right',
+            range: [0, 1.1] // 0 to 110% for cumulative
+        },
+        hovermode: 'closest',
+        showlegend: true,
+        legend: {
+            x: 0.7,
+            y: 0.95
+        },
+        margin: { l: 60, r: 60, t: 60, b: 60 },
+        plot_bgcolor: 'white',
+        paper_bgcolor: 'white'
+    };
+    
+    const config = {
+        responsive: true,
+        displayModeBar: true,
+        modeBarButtonsToRemove: ['lasso2d', 'select2d']
+    };
+    
+    Plotly.newPlot('plot', [trace, cumulativeTrace], layout, config);
+    
+    // Show visualization section
+    const visualizationSection = document.getElementById('visualization-section');
+    if (visualizationSection) {
+        visualizationSection.style.display = 'block';
+    }
 }
 
 function handlePlotClick(data) {
@@ -831,68 +1810,45 @@ function updateStats() {
 }
 
 async function runCoreSelection() {
-    showStatus('Running core selection...', 'info');
+        showStatus('Running core analysis...', 'info');
     const btn = document.getElementById('btn-core-selection');
     const originalText = btn.textContent;
-    btn.disabled = true;
+    
+    // Disable all buttons during core analysis
+    disableAllButtons();
     btn.innerHTML = '<span class="spinner"></span> Computing...';
 
     try {
         const use_rep = document.getElementById('core-use-rep')?.value || null;
         const cluster_resolution = parseFloat(document.getElementById('core-cluster-resolution')?.value) || 1.2;
-        const fast_view = document.getElementById('core-fast-view')?.checked !== false; // default true
+        // Note: fast_view is now handled by Visualization module
         const key_added = 'X_cplearn_coremap'; // Use default
         const cluster_key = 'cplearn'; // Use default
         
         // cplearn clustering parameters (used when auto-running clustering)
         const stable_core_frac = parseFloat(document.getElementById('core-stable-core-frac')?.value) || 0.25;
-        const stable_ng_num = parseInt(document.getElementById('core-stable-ng-num')?.value) || 4;
+        const stable_ng_num = parseInt(document.getElementById('core-stable-ng-num')?.value) || 8;
         const fine_grained = document.getElementById('core-fine-grained')?.checked || false;
         const propagate = document.getElementById('core-propagate')?.checked !== false;
         
-        // Ground truth labels from JSON file only
-        const truth_json_file = document.getElementById('core-truth-json-file')?.files[0];
+        // Note: Ground Truth is now handled in Visualization module when using coremap
         
-        // Prepare request - use FormData if JSON file is provided, otherwise JSON
-        let requestBody;
-        let headers;
-        let body;
-        
-        if (truth_json_file) {
-            // Use FormData for file upload
-            const formData = new FormData();
-            formData.append('session_id', sessionId);
-            formData.append('use_rep', use_rep || '');
-            formData.append('key_added', key_added);
-            formData.append('cluster_key', cluster_key);
-            formData.append('cluster_resolution', cluster_resolution.toString());
-            formData.append('fast_view', fast_view.toString());
-            formData.append('stable_core_frac', stable_core_frac.toString());
-            formData.append('stable_ng_num', stable_ng_num.toString());
-            formData.append('fine_grained', fine_grained.toString());
-            formData.append('propagate', propagate.toString());
-            formData.append('truth_json_file', truth_json_file);
-            
-            headers = {}; // FormData sets Content-Type automatically
-            body = formData;
-        } else {
-            // Use JSON for regular request
-            requestBody = {
+        // Prepare JSON request
+        const requestBody = {
                 session_id: sessionId,
                 use_rep: use_rep,
                 key_added: key_added,
                 cluster_key: cluster_key,
                 cluster_resolution: cluster_resolution,
-                fast_view: fast_view,
+            // Note: fast_view is now handled by Visualization module
                 stable_core_frac: stable_core_frac,
                 stable_ng_num: stable_ng_num,
                 fine_grained: fine_grained,
                 propagate: propagate
             };
             
-            headers = { 'Content-Type': 'application/json' };
-            body = JSON.stringify(requestBody);
-        }
+        const headers = { 'Content-Type': 'application/json' };
+        const body = JSON.stringify(requestBody);
 
         // Add timeout and retry logic for long-running operations
         const controller = new AbortController();
@@ -905,7 +1861,7 @@ async function runCoreSelection() {
         
         while (retryCount <= maxRetries) {
             try {
-                response = await fetch(`${API_BASE}/core-selection`, {
+                response = await fetch(`${API_BASE}/core-analyze`, {
                     method: 'POST',
                     headers: headers,
                     body: body,
@@ -951,7 +1907,7 @@ async function runCoreSelection() {
                 }
                 
                 if (!response.ok) {
-                    throw new Error(data.error || `Core selection failed with status ${response.status}`);
+                    throw new Error(data.error || `Core analysis failed with status ${response.status}`);
                 }
                 
                 // Success - break out of retry loop
@@ -978,7 +1934,7 @@ async function runCoreSelection() {
             }
         }
 
-        let statusMessage = `✓ Core selection complete! Embedding stored in ${data.key_added}`;
+        let statusMessage = `✓ Core analysis complete! Embedding stored in ${data.key_added}`;
         if (data.assigned_points !== undefined) {
             statusMessage += ` (${data.assigned_points}/${data.total_points} points assigned`;
             if (data.core_cells !== undefined) {
@@ -988,63 +1944,10 @@ async function runCoreSelection() {
         }
         
         showStatus(statusMessage, 'success');
-        console.log('Core selection result:', data);
+        console.log('Core analysis result:', data);
         
-        // Handle visualization result - load and display directly
-        if (data.visualization) {
-            if (data.visualization.success && data.visualization.file_url) {
-                // Load visualization HTML and display in plot container
-                try {
-                    const vizUrl = data.visualization.file_url;
-                    console.log('[CORE] Loading visualization from:', vizUrl);
-                    
-                    // Fetch the HTML file
-                    const vizResponse = await fetch(vizUrl);
-                    if (vizResponse.ok) {
-                        const htmlContent = await vizResponse.text();
-                        
-                        // Create an iframe to display the Plotly HTML
-                        const plotDiv = document.getElementById('plot');
-                        plotDiv.innerHTML = ''; // Clear existing content
-                        
-                        const iframe = document.createElement('iframe');
-                        iframe.style.width = '100%';
-                        iframe.style.height = '100%';
-                        iframe.style.border = 'none';
-                        iframe.srcdoc = htmlContent;
-                        plotDiv.appendChild(iframe);
-                        
-                        // Show visualization controls
-                        document.getElementById('visualization-section').style.display = 'block';
-                        document.getElementById('search-section').style.display = 'block';
-                        document.getElementById('stats-section').style.display = 'block';
-                        
-                        showStatus('✓ Visualization loaded and displayed!', 'success');
-                    } else {
-                        throw new Error('Failed to load visualization file');
-                    }
-                } catch (error) {
-                    console.error('[CORE] Error loading visualization:', error);
-                    showStatus(`Visualization generated but could not be loaded: ${error.message}. File available at: ${data.visualization.file_url}`, 'info');
-                    
-                    // Fallback: try to load coremap embedding data instead
-                    if (data.key_added && data.obsm_keys && data.obsm_keys.includes(data.key_added)) {
-                        console.log('[CORE] Attempting to load coremap embedding data...');
-                        // Trigger visualization with coremap data
-                        loadCoremapVisualization(data.key_added, data.cluster_key);
-                    }
-                }
-            } else if (data.visualization.error) {
-                console.warn('Visualization warning:', data.visualization.error);
-                // Try to load coremap embedding if available
-                if (data.key_added && data.obsm_keys && data.obsm_keys.includes(data.key_added)) {
-                    loadCoremapVisualization(data.key_added, data.cluster_key);
-                }
-            }
-        } else if (data.key_added && data.obsm_keys && data.obsm_keys.includes(data.key_added)) {
-            // If visualization wasn't requested but coremap was generated, load it
-            loadCoremapVisualization(data.key_added, data.cluster_key);
-        }
+        // Note: Visualization is now handled by Visualization module
+        // No need to store visualization data here
         
         // Update cluster info if clustering was auto-run
         if (data.clustering_auto_run && data.cluster_key) {
@@ -1065,17 +1968,37 @@ async function runCoreSelection() {
             }
         }
         
-        // Enable downstream steps
-        document.getElementById('btn-visualize').disabled = false;
-        document.getElementById('btn-marker-genes').disabled = false;
-        document.getElementById('deg-step').style.display = 'block';
+        // Update button states based on rules (now we have core analysis, so visualization/marker genes can be enabled)
+        updateButtonStates();
+        
+        // Update visualization method selector to show coremap option
+        updateVisualizationMethodSelector();
         
     } catch (error) {
         showStatus(`Error: ${error.message}`, 'error');
-        console.error('Core selection error:', error);
+        console.error('Core analysis error:', error);
     } finally {
+        // Restore button states
         btn.disabled = false;
         btn.textContent = originalText;
+        
+        // Re-enable buttons that should be available
+        // Core Analysis can run independently
+        document.getElementById('btn-cluster').disabled = false;
+        // Preprocess button should remain enabled if data is loaded
+        const btnPreprocess = document.getElementById('btn-preprocess');
+        if (btnPreprocess && !btnPreprocess.disabled) {
+            // If preprocess was enabled before, keep it enabled
+        } else {
+            // Otherwise, check if we have data (pipeline section is visible)
+            const pipelineSection = document.getElementById('pipeline-section');
+            if (pipelineSection && pipelineSection.style.display !== 'none') {
+                btnPreprocess.disabled = false;
+            }
+        }
+        
+        // Update button states based on rules (visualization/marker genes only if clustering/core analysis exists)
+        updateButtonStates();
     }
 }
 
@@ -1083,7 +2006,9 @@ async function runMarkerGenes() {
     showStatus('Finding marker genes...', 'info');
     const btn = document.getElementById('btn-marker-genes');
     const originalText = btn.textContent;
-    btn.disabled = true;
+    
+    // Disable all buttons during marker genes analysis
+    disableAllButtons();
     btn.innerHTML = '<span class="spinner"></span> Analyzing...';
 
     try {
@@ -1131,8 +2056,27 @@ async function runMarkerGenes() {
         showStatus(`Error: ${error.message}`, 'error');
         console.error('Marker genes error:', error);
     } finally {
+        // Restore button states
         btn.disabled = false;
         btn.textContent = originalText;
+        
+        // Re-enable buttons that should be available
+        document.getElementById('btn-cluster').disabled = false;
+        document.getElementById('btn-core-selection').disabled = false;
+        // Preprocess button should remain enabled if data is loaded
+        const btnPreprocess = document.getElementById('btn-preprocess');
+        if (btnPreprocess && !btnPreprocess.disabled) {
+            // If preprocess was enabled before, keep it enabled
+        } else {
+            // Otherwise, check if we have data (pipeline section is visible)
+            const pipelineSection = document.getElementById('pipeline-section');
+            if (pipelineSection && pipelineSection.style.display !== 'none') {
+                btnPreprocess.disabled = false;
+            }
+        }
+        
+        // Update button states based on rules (visualization/marker genes only if clustering/core analysis exists)
+        updateButtonStates();
     }
 }
 
@@ -1277,14 +2221,65 @@ async function loadCoremapVisualization(coremapKey, clusterKey) {
 }
 
 function showStatus(message, type) {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = `status ${type}`;
-    statusDiv.style.display = 'block';
-    
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    // Add icon based on type
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
     if (type === 'success') {
+        icon.textContent = '✓';
+    } else if (type === 'error') {
+        icon.textContent = '✗';
+    } else {
+        icon.textContent = 'ℹ';
+    }
+
+    // Add message
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'toast-message';
+    messageSpan.textContent = message;
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.onclick = () => removeToast(toast);
+
+    // Assemble toast
+    toast.appendChild(icon);
+    toast.appendChild(messageSpan);
+    toast.appendChild(closeBtn);
+
+    // Add to container
+    toastContainer.appendChild(toast);
+
+    // Auto-remove after delay (errors don't auto-remove, only success/info)
+    if (type !== 'error') {
+        const delay = type === 'info' ? 5000 : 4000;
         setTimeout(() => {
-            statusDiv.style.display = 'none';
-        }, 5000);
+            removeToast(toast);
+        }, delay);
+    }
+}
+
+function removeToast(toast) {
+    if (toast && toast.parentNode) {
+        toast.classList.add('slide-out');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
     }
 }

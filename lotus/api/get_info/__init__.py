@@ -7,7 +7,7 @@ from pathlib import Path
 from ..utils import load_adata, get_session_dir
 from ..config import LOTUS_AVAILABLE
 
-bp = Blueprint('info', __name__, url_prefix='/api')
+bp = Blueprint('get_info', __name__, url_prefix='/api')
 
 
 @bp.route('/health')
