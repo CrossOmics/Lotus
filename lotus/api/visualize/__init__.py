@@ -79,7 +79,7 @@ def run_visualization():
             
             return _generate_coremap_visualization_api(adata, session_id, cluster_key, n_components, use_rep, truth_key, truth_json_content, fast_view)
         
-        # Handle UMAP visualization (existing logic)
+        # Handle standard visualization methods (umap, tsne, diffmap, draw_graph)
         # If use_rep is specified and exists, use it directly
         if use_rep and use_rep in adata.obsm:
             print(f"[VISUALIZE] Using existing embedding: {use_rep}")
@@ -93,32 +93,73 @@ def run_visualization():
                 # Pad or use available dimensions
                 coords = embedding.tolist()
         else:
-            # Compute UMAP if not exists - Always use Lotus if available
-            if 'X_umap' not in adata.obsm or adata.obsm['X_umap'].shape[1] != n_components:
-                if LOTUS_AVAILABLE:
-                    print(f"[VISUALIZE] Using Lotus UMAP computation")
-                    lt.tl.umap(
-                        adata,
-                        n_components=n_components,
-                        min_dist=min_dist,
-                        spread=spread
-                    )
-                else:
-                    if sc is None:
-                        return jsonify({'error': 'scanpy not available for UMAP computation'}), 500
-                    print(f"[VISUALIZE] Using scanpy UMAP (Lotus not available)")
-                    sc.tl.umap(
-                        adata,
-                        n_components=n_components,
-                        min_dist=min_dist,
-                        spread=spread
-                    )
+            # Compute embedding based on method
+            if method == 'umap':
+                # Compute UMAP if not exists - Always use Lotus if available
+                if 'X_umap' not in adata.obsm or adata.obsm['X_umap'].shape[1] != n_components:
+                    if LOTUS_AVAILABLE:
+                        print(f"[VISUALIZE] Using Lotus UMAP computation")
+                        lt.tl.umap(
+                            adata,
+                            n_components=n_components,
+                            min_dist=min_dist,
+                            spread=spread
+                        )
+                    else:
+                        if sc is None:
+                            return jsonify({'error': 'scanpy not available for UMAP computation'}), 500
+                        print(f"[VISUALIZE] Using scanpy UMAP (Lotus not available)")
+                        sc.tl.umap(
+                            adata,
+                            n_components=n_components,
+                            min_dist=min_dist,
+                            spread=spread
+                        )
+                coords = adata.obsm['X_umap'].tolist()
+            elif method == 'tsne':
+                # Compute t-SNE if not exists
+                if 'X_tsne' not in adata.obsm or adata.obsm['X_tsne'].shape[1] != n_components:
+                    if LOTUS_AVAILABLE:
+                        print(f"[VISUALIZE] Using Lotus t-SNE computation")
+                        lt.tl.tsne(adata, n_components=n_components)
+                    else:
+                        if sc is None:
+                            return jsonify({'error': 'scanpy not available for t-SNE computation'}), 500
+                        print(f"[VISUALIZE] Using scanpy t-SNE (Lotus not available)")
+                        sc.tl.tsne(adata, n_components=n_components)
+                coords = adata.obsm['X_tsne'].tolist()
+            elif method == 'diffmap':
+                # Compute diffusion map if not exists
+                if 'X_diffmap' not in adata.obsm or adata.obsm['X_diffmap'].shape[1] < n_components:
+                    if LOTUS_AVAILABLE:
+                        print(f"[VISUALIZE] Using Lotus diffusion map computation")
+                        lt.tl.diffmap(adata, n_comps=n_components)
+                    else:
+                        if sc is None:
+                            return jsonify({'error': 'scanpy not available for diffusion map computation'}), 500
+                        print(f"[VISUALIZE] Using scanpy diffusion map (Lotus not available)")
+                        sc.tl.diffmap(adata, n_comps=n_components)
+                # Use first n_components dimensions
+                coords = adata.obsm['X_diffmap'][:, :n_components].tolist()
+            elif method == 'draw_graph':
+                # Compute force-directed graph if not exists
+                layout = data.get('layout', 'fa')
+                basis_key = f'X_draw_graph_{layout}'
+                if basis_key not in adata.obsm or adata.obsm[basis_key].shape[1] != n_components:
+                    if LOTUS_AVAILABLE:
+                        print(f"[VISUALIZE] Using Lotus draw_graph computation (layout={layout})")
+                        lt.tl.draw_graph(adata, layout=layout)
+                    else:
+                        if sc is None:
+                            return jsonify({'error': 'scanpy not available for draw_graph computation'}), 500
+                        print(f"[VISUALIZE] Using scanpy draw_graph (Lotus not available)")
+                        sc.tl.draw_graph(adata, layout=layout)
+                coords = adata.obsm[basis_key].tolist()
+            else:
+                return jsonify({'error': f'Unknown visualization method: {method}'}), 400
             
             # Save updated AnnData
             save_adata(adata, session_id)
-            
-            # Extract coordinates
-            coords = adata.obsm['X_umap'].tolist()
         
         # Extract metadata
         metadata = {}

@@ -18,8 +18,11 @@ let coreAnalysisVisualization = null; // Store Core Analysis visualization data:
 function getVisualizationCacheKey(cluster_key, method, n_components, min_dist, spread) {
     if (method === 'coremap') {
         return `${cluster_key}_coremap_${n_components}`;
-    } else {
+    } else if (method === 'umap') {
         return `${cluster_key}_umap_${n_components}_${min_dist}_${spread}`;
+    } else {
+        // For tsne, diffmap, draw_graph - use method and n_components
+        return `${cluster_key}_${method}_${n_components}`;
     }
 }
 
@@ -69,11 +72,11 @@ function updateVisualizationMethodSelector() {
         methodSelect.value = 'umap';
     }
     
-    // Update UMAP parameters visibility
+    // Update parameters visibility
     updateUMAPParamsVisibility();
 }
 
-// Function to update UMAP parameters visibility based on selected method
+// Function to update parameters visibility based on selected method
 function updateUMAPParamsVisibility() {
     const methodSelect = document.getElementById('viz-method');
     const umapParamsGroup = document.getElementById('umap-params-group');
@@ -95,12 +98,20 @@ function updateUMAPParamsVisibility() {
             if (coremapFastViewGroup) coremapFastViewGroup.style.display = 'block';
             if (coremapGroundTruthGroup) coremapGroundTruthGroup.style.display = 'block';
         } else {
-            // Show all parameters for UMAP
-            if (umapParamsGroup) umapParamsGroup.style.display = 'block';
-            if (umapSpreadGroup) umapSpreadGroup.style.display = 'block';
+            // Show parameters for standard methods (umap, tsne, diffmap, draw_graph)
+            // UMAP-specific parameters only shown for UMAP
+            if (method === 'umap') {
+                if (umapParamsGroup) umapParamsGroup.style.display = 'block';
+                if (umapSpreadGroup) umapSpreadGroup.style.display = 'block';
+            } else {
+                // Hide UMAP-specific parameters for other methods
+                if (umapParamsGroup) umapParamsGroup.style.display = 'none';
+                if (umapSpreadGroup) umapSpreadGroup.style.display = 'none';
+            }
+            // Show Cluster Key and Dimension for all standard methods
             if (vizClusterKeyGroup) vizClusterKeyGroup.style.display = 'block';
             if (dimensionGroup) dimensionGroup.style.display = 'block';
-            // Hide Fast View and Ground Truth upload for UMAP
+            // Hide Fast View and Ground Truth upload for standard methods
             if (coremapFastViewGroup) coremapFastViewGroup.style.display = 'none';
             if (coremapGroundTruthGroup) coremapGroundTruthGroup.style.display = 'none';
         }
@@ -1366,7 +1377,7 @@ async function runVisualizationForClusterKey(cluster_key) {
         return;
     }
     
-    // Handle UMAP method - existing logic
+    // Handle standard visualization methods (umap, tsne, diffmap, draw_graph)
     const cacheKey = getVisualizationCacheKey(cluster_key, params.method, params.n_components, params.min_dist, params.spread);
     
     // Check if visualization is already cached with current parameters
@@ -1378,22 +1389,37 @@ async function runVisualizationForClusterKey(cluster_key) {
         return;
     }
     
-    showStatus(`Computing UMAP visualization for ${cluster_key}...`, 'info');
+    const methodLabels = {
+        'umap': 'UMAP',
+        'tsne': 't-SNE',
+        'diffmap': 'Diffusion Map',
+        'draw_graph': 'Force-Directed Graph'
+    };
+    const methodLabel = methodLabels[params.method] || params.method.toUpperCase();
+    
+    showStatus(`Computing ${methodLabel} visualization for ${cluster_key}...`, 'info');
     const btn = document.getElementById('btn-visualize');
     const originalText = btn.textContent;
     
     // Disable all buttons during visualization
     disableAllButtons();
-    btn.innerHTML = '<span class="spinner"></span> Computing UMAP...';
+    btn.innerHTML = `<span class="spinner"></span> Computing ${methodLabel}...`;
 
     try {
         const requestBody = {
-                session_id: sessionId,
-                cluster_key: cluster_key,
+            session_id: sessionId,
+            cluster_key: cluster_key,
             n_components: params.n_components,
-            min_dist: params.min_dist,
-            spread: params.spread
+            method: params.method
         };
+        
+        // Add method-specific parameters
+        if (params.method === 'umap') {
+            requestBody.min_dist = params.min_dist;
+            requestBody.spread = params.spread;
+        } else if (params.method === 'draw_graph') {
+            requestBody.layout = 'fa'; // Default layout
+        }
         
         const response = await fetch(`${API_BASE}/visualize`, {
             method: 'POST',
