@@ -23,7 +23,15 @@ from .preprocessing import (
     scrublet,
     scrublet_simulate_doublets,
 )
-from .visualization import coremap, render_visualizations, umap
+from .visualization import (
+    coremap,
+    diffmap,
+    draw_graph,
+    render_visualizations,
+    tsne,
+    umap,
+    visualization,
+)
 
 __all__ = [
     # Preprocessing steps
@@ -47,7 +55,11 @@ __all__ = [
     "recipe_seurat",
     # Visualization
     "umap",
+    "tsne",
+    "diffmap",
+    "draw_graph",
     "coremap",
+    "visualization",
     "render_visualizations",
     # Clustering
     "cluster",

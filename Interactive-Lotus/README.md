@@ -1,26 +1,18 @@
 # Lotus Web Demo
 
-Web application for Lotus.
+Web application for Lotus Embedding Projector and provide a [lightweight web demo](https://huggingface.co/spaces/zzq1zh/Lotus-hf). Due to computational resource limitations, this web demo only supports small datasets. We encourage you to deploy locally using the following method.
+
 
 ## Features
 
 - Upload and visualize single-cell RNA-seq data
-- Interactive visualization
+- Interactive embedding visualization
 - Clustering and preprocessing workflows
 
 ## Quick Start
 
-### Method 1: Using run.sh (Recommended)
-
 ```bash
-cd web_demo
-./run.sh
-```
-
-### Method 2: Manual Setup
-
-```bash
-cd web_demo
+cd Interactive-Lotus
 
 # Create virtual environment
 python3 -m venv venv
@@ -51,21 +43,7 @@ If the server is already running, you may need to stop it first:
 lsof -ti:5000 | xargs kill -9
 
 # Then restart
-cd web_demo
-./run.sh
-```
-
-## Requirements
-
-See `requirements.txt` for full list of dependencies. Main requirements:
-- Flask >= 2.3.0
-- numpy >= 1.24.0
-- pandas >= 2.0.0
-- anndata >= 0.9.0
-- scanpy >= 1.9.0
-- lotus (from parent directory)
-
-## License
-
-See parent repository for license information.
+cd Lotus-Web-Demo
+source venv/bin/activate
+python3 app.py
 

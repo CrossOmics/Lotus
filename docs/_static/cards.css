@@ -18,7 +18,7 @@
 }
 
 .lotus-card:hover {
-    border-color: var(--color-brand-primary, #0066cc);
+    border-color: rgba(128, 128, 128, 0.5);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
     text-decoration: none;
@@ -49,7 +49,7 @@
 /* Citation section */
 .lotus-citation {
     background: var(--color-background-secondary, #f8f9fa);
-    border-left: 4px solid var(--color-brand-primary, #0066cc);
+    border-left: 4px solid rgba(128, 128, 128, 0.4);
     padding: 1rem 1.5rem;
     margin: 2rem 0;
     border-radius: 4px;
@@ -75,5 +75,147 @@
     display: block;
     margin-top: 0.5rem;
     border: 1px solid var(--color-background-border, #e1e4e8);
+}
+
+/* Highlight Parameters, Returns, Return type sections */
+/* Style for section headers like "Parameters", "Returns", "Return type" */
+.field-list > dt {
+    font-size: 1.15em;
+    font-weight: 700;
+    color: var(--color-foreground-primary, #1a1a1a);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(90deg, rgba(128, 128, 128, 0.15) 0%, transparent 100%);
+    background-color: rgba(128, 128, 128, 0.08);
+    border-left: 4px solid rgba(128, 128, 128, 0.4);
+    border-radius: 4px;
+}
+
+.field-list > dt:first-of-type {
+    margin-top: 0;
+}
+
+/* Style for individual parameter/return items */
+.field-list dt:not(:first-of-type) {
+    font-weight: 600;
+    color: var(--color-foreground-primary, #1a1a1a);
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-background-border, #e1e4e8);
+}
+
+/* Highlight parameter names */
+.field-list dt strong,
+.field-list dt .field-name {
+    color: rgba(80, 80, 80, 0.9);
+    font-weight: 600;
+}
+
+/* Style for parameter/return descriptions */
+.field-list dd {
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+    padding-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    border-left: 2px solid var(--color-background-border, #e1e4e8);
+}
+
+/* Highlight type annotations */
+.field-list dt em,
+.field-list dt code {
+    color: rgba(100, 100, 100, 0.85);
+    font-weight: 500;
+}
+
+/* Sidebar dropdown menu styles for API Reference */
+.sidebar-tree li {
+    position: relative;
+}
+
+.api-ref-toggle {
+    position: absolute;
+    left: -1.5rem;
+    top: 0.3rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.3rem 0.4rem;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 1.2rem;
+    height: 1.2rem;
+    color: var(--color-foreground-secondary, #6a737d) !important;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    z-index: 100;
+    line-height: 1;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.api-ref-toggle:hover {
+    color: var(--color-foreground-primary, #1a1a1a) !important;
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.08));
+    border-radius: 4px;
+}
+
+.api-ref-toggle:focus {
+    outline: 2px solid var(--color-accent, #0066cc);
+    outline-offset: 2px;
+}
+
+.api-ref-toggle .toggle-icon {
+    font-size: 0.7rem;
+    line-height: 1;
+    display: inline-block;
+    font-weight: bold;
+}
+
+.sidebar-tree li.expanded .api-ref-toggle .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.sidebar-tree li:not(.expanded) .api-ref-toggle .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.api-ref-submenu {
+    margin-left: 1.25rem;
+    margin-top: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--color-background-border, rgba(0, 0, 0, 0.1));
+    list-style: none;
+}
+
+.api-ref-submenu li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.api-ref-submenu a {
+    font-size: 0.9em;
+    color: var(--color-foreground-secondary, #6a737d);
+    padding: 0.25rem 0.5rem;
+    display: block;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    text-decoration: none;
+}
+
+.api-ref-submenu a:hover {
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05));
+    color: var(--color-foreground-primary, #1a1a1a);
+}
+
+.api-ref-submenu a.current {
+    color: var(--color-foreground-primary, #1a1a1a);
+    font-weight: 500;
+}
+
+/* Ensure the API Reference link has proper spacing when toggle button is present */
+.sidebar-tree li:has(.api-ref-toggle) > a,
+.sidebar-tree li .api-ref-toggle + a {
+    padding-left: 0.5rem;
 }
 

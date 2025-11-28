@@ -363,9 +363,12 @@ def render_visualizations(
     finally:
         lt.settings.figdir = old_figdir
 
-
 __all__ = [
     "umap",
+    "tsne",
+    "diffmap",
+    "draw_graph",
     "coremap",
+    "visualization",
     "render_visualizations",
 ]

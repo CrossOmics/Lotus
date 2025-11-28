@@ -1,6 +1,10 @@
-# Installation Guide
 
-## Install as a Package
+
+# Lotus
+
+A single-cell RNA sequencing analysis package for preprocessing, clustering, visualization, and differential expression analysis.
+
+## Installation
 
 Install the lotus package in development mode:
 
@@ -10,16 +14,12 @@ pip install -e .
 
 This will make the `lotus` package available system-wide without needing to set `PYTHONPATH`.
 
-Documentation is avilable at https://crossomics.github.io/Lotus/. 
-=======
----
-title: Lotus
-emoji: 🏆
-colorFrom: purple
-colorTo: indigo
-sdk: docker
-pinned: false
-license: apache-2.0
----
+## Lotus Embedding Projector
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+We developed an interactive analysis tool, available at `Interactive-Lotus/`. See the [Interactive-Lotus README](Interactive-Lotus/README.md) for setup instructions. We also support a [lightweight web demo](https://lotus.zeabur.app/) for demonstration. 
+
+**Note:** The web demo has computational resource limitations and only supports very small datasets.
+
+## Documentation
+
+Full documentation is available at https://crossomics.github.io/Lotus/.

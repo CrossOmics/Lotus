@@ -8,6 +8,10 @@ Overview
 
 Differential expression analysis is used to identify differentially expressed genes between different cell populations, which are often called "marker genes".
 
+**Citation:** 
+
+* **Wilcoxon Rank-Sum Test**: F. Wilcoxon. *Individual comparisons by ranking methods.* Biometrics Bulletin 1, 80-83 (1945).
+
 Main Functions
 --------------
 
@@ -16,21 +20,9 @@ Marker Gene Identification
 
 .. autofunction:: lotus.workflows.deg.deg.marker_genes
 
-   **Biological Background:**
-   
-   Marker genes are:
-   - Genes highly expressed in specific cell types
-   - Used to identify and distinguish different cell types
-   - Help understand cell function and characteristics
-   
-   Differential expression analysis identifies by comparing gene expression between different cell populations:
-   - Upregulated genes: Highly expressed in the target population
-   - Downregulated genes: Lowly expressed in the target population
-   - Significance: Determined through statistical tests
-   
    **Compatibility:**
-   - Works with cluster labels from both Lotus cplearn (``"cplearn_labels"``) and scanpy (``"leiden"``, ``"louvain"``)
-   - Auto-detects cluster keys if not specified
+   
+   This function works with cluster labels from both Lotus cplearn (``"cplearn_labels"``) and scanpy (``"leiden"``, ``"louvain"``), and auto-detects cluster keys if not specified.
 
    **Usage Example:**
 
@@ -57,18 +49,7 @@ Marker Gene Identification
 
    **Result Interpretation:**
 
-   The result DataFrame contains the following columns:
-   - ``gene``: Gene name
-   - ``log2fc``: log2 fold change (> 0 means upregulated, < 0 means downregulated)
-   - ``z_score``: Z score
-   - ``pvalue``: p value
-   - ``p_adj``: Adjusted p value (FDR, more reliable)
-   - ``mean_a``, ``mean_b``: Mean expression in the two groups
-   - ``pct_expr_a``, ``pct_expr_b``: Expression percentage
-
-.. autofunction:: lotus.workflows.deg.deg.run_differential_expression
-
-   This is an alias for ``marker_genes()`` for backward compatibility.
+   The result DataFrame contains the following columns: ``gene`` (gene name), ``log2fc`` (log2 fold change, where > 0 means upregulated and < 0 means downregulated), ``z_score`` (Z score), ``pvalue`` (p value), ``p_adj`` (adjusted p value using FDR, more reliable), ``mean_a`` and ``mean_b`` (mean expression in the two groups), and ``pct_expr_a`` and ``pct_expr_b`` (expression percentage).
 
 Helper Functions
 ----------------

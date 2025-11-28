@@ -18,28 +18,28 @@ Complete API reference documentation for Lotus. All functions and classes are or
                <span class="lotus-card-icon">🔧</span>
                <span>Preprocessing Module</span>
            </div>
-           <p class="lotus-card-description">Preprocessing functions: QC, filtering, normalization, HVG, scaling, PCA, and neighbors.</p>
+           <p class="lotus-card-description">Preprocessing functions.</p>
        </a>
        <a href="core_selection.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🎯</span>
-               <span>Core Selection Module</span>
+               <span>Core Analysis Module</span>
            </div>
-           <p class="lotus-card-description">Core selection functions for identifying core cells and computing core map embeddings.</p>
+           <p class="lotus-card-description">Core analysis functions for identifying core cells and computing core map embeddings.</p>
        </a>
        <a href="clustering.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🔀</span>
                <span>Clustering Module</span>
            </div>
-           <p class="lotus-card-description">Clustering analysis functions using cplearn or scanpy-compatible methods.</p>
+           <p class="lotus-card-description">Clustering analysis functions.</p>
        </a>
        <a href="visualization.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">📊</span>
                <span>Visualization Module</span>
            </div>
-           <p class="lotus-card-description">Visualization functions for UMAP plots and marker gene visualizations.</p>
+           <p class="lotus-card-description">Visualization functions.</p>
        </a>
        <a href="deg.html" class="lotus-card">
            <div class="lotus-card-title">
@@ -48,19 +48,38 @@ Complete API reference documentation for Lotus. All functions and classes are or
            </div>
            <p class="lotus-card-description">Differential expression analysis functions for finding marker genes.</p>
        </a>
+       <a href="tools.html" class="lotus-card">
+           <div class="lotus-card-title">
+               <span class="lotus-card-icon">🔧</span>
+               <span>Tools Module</span>
+           </div>
+           <p class="lotus-card-description">Tools functions for clustering, dimensionality reduction, trajectory inference, and more.</p>
+       </a>
+       <a href="preprocessing_compat.html" class="lotus-card">
+           <div class="lotus-card-title">
+               <span class="lotus-card-icon">⚙️</span>
+               <span>Preprocessing Module</span>
+           </div>
+           <p class="lotus-card-description">Preprocessing functions: QC, filtering, normalization, batch correction, and more.</p>
+       </a>
    </div>
 
 Overview
 --------
 
-Lotus API is mainly divided into two parts:
+Lotus API is organized into two main layers. The **Workflows Module** provides high-level, workflow-oriented functions with complete analysis pipelines covering standard single-cell analysis steps including preprocessing, clustering, visualization, differential expression analysis, and core analysis. These functions offer a clean interface with smart defaults and are recommended for most users. The workflows module internally uses Tools Module(``lotus.tl``) and Preprocessing Module(``lotus.pp``) as building blocks to implement its functionality.
 
-1. **Workflows Module** (Main API): Provides high-level, workflow-oriented functions
-2. **Compatibility API**: Low-level functions compatible with scanpy
+The **Building Blocks API** is consists of Tools Module(``lotus.tl``) and Preprocessing Module(``lotus.pp``). These modules serve as low-level building blocks that can be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and trajectory inference (PAGA, DPT).  For standard analysis workflows, we recommend using the Workflows Module functions such as ``lotus.workflows.preprocess()``, ``lotus.workflows.clustering()``, ``lotus.workflows.umap()``, and ``lotus.workflows.marker_genes()``. For advanced features, use the Building Blocks API directly.
 
-For most users, we recommend using functions from the Workflows module, which provide a cleaner interface and smart defaults.
+.. toctree::
+   :maxdepth: 1
 
-Compatibility API
------------------
+   workflows
+   preprocess
+   core_selection
+   clustering
+   visualization
+   deg
+   tools
+   preprocessing_compat 
 
-Lotus also provides scanpy-compatible APIs in the main ``lotus`` module. These functions are wrappers around scanpy and are used exactly the same way as scanpy. For detailed API documentation, please refer to the `scanpy official documentation <https://scanpy.readthedocs.io/>`__.

@@ -6,15 +6,7 @@ The ``lotus.workflows`` module provides complete single-cell analysis workflow f
 Overview
 --------
 
-The Workflows module includes the following submodules:
-
-- **Preprocessing**: Data quality control, filtering, normalization, and dimensionality reduction
-- **CoreSelection**: Core map embedding (typically before clustering)
-- **Clustering**: Cell clustering analysis
-  - Supports multiple methods: Lotus cplearn (default) or scanpy (Leiden/Louvain)
-  - Easy to switch between methods
-- **Visualization**: Result visualization
-- **DEG (Differential Expression Analysis)**: Marker gene identification
+The Workflows module includes several submodules organized according to standard single-cell analysis steps. The **Preprocessing** submodule provides data quality control, filtering, normalization, and dimensionality reduction functionality. The **CoreAnalysis** submodule performs core map embedding before clustering to identify core cells. The **Clustering** submodule provides cell clustering analysis with support for multiple methods, including Lotus cplearn (default) and scanpy methods (Leiden/Louvain), with easy switching between methods. The **Visualization** submodule generates result visualizations, and the **DEG (Differential Expression Analysis)** submodule identifies marker genes.
 
 All Functions
 -------------
@@ -32,10 +24,10 @@ Preprocessing Functions
    :undoc-members:
    :show-inheritance:
 
-Core Selection Functions
+Core Analysis Functions
 ------------------------
 
-.. automodule:: lotus.workflows.core_selection.core_selection
+.. automodule:: lotus.workflows.core_analysis.core_analysis
    :members:
    :undoc-members:
    :show-inheritance:

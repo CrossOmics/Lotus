@@ -7,6 +7,22 @@ All example outputs shown below are **real outputs** from running ``examples/lot
 
 For a complete runnable example, see the `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_ script in the examples directory.
 
+Lotus Analysis Pipeline
+-----------------------
+
+The standard Lotus analysis pipeline consists of the following steps in order:
+
+1. **Load Data** - Load single-cell data (AnnData format)
+2. **Preprocessing** - Quality control, filtering, normalization, HVG selection, scaling, PCA, and neighbor graph construction
+3. **Core Analysis** (optional, before clustering) - Identify core cells and compute core map embedding using cplearn
+4. **Clustering** - Cluster cells using cplearn (default), Leiden, or Louvain algorithms
+5. **Visualization** - Generate UMAP embeddings and visualization plots
+6. **Differential Expression Analysis** - Identify marker genes between clusters
+
+**Key Points:**
+
+Core analysis is optional. It can be performed before clustering to identify stable cell populations, but clustering works without it. Clustering methods can be switched between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter. All methods are compatible, meaning cluster labels from any method can be used with subsequent visualization and DEG analysis functions. The pipeline is flexible, allowing you to use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed.
+
 First, import the necessary modules:
 
 .. code-block:: python
@@ -17,7 +33,7 @@ First, import the necessary modules:
         clustering,
         umap,
         marker_genes,
-        core_selection,
+        core_analysis,
     )
     from anndata import AnnData
     import numpy as np
@@ -55,13 +71,7 @@ Preprocessing includes quality control, filtering, normalization, highly variabl
         save_raw=True,
     )
 
-This step performs:
-- Calculate quality control metrics (QC metrics)
-- Filter low-quality cells and genes
-- Data normalization and log transformation
-- Select highly variable genes (HVG)
-- Principal component analysis (PCA)
-- Build neighbor graph
+This step performs quality control metrics (QC metrics) calculation, filters low-quality cells and genes, normalizes data and applies log transformation, selects highly variable genes (HVG), performs principal component analysis (PCA), and builds the neighbor graph.
 
 After preprocessing, you can check the results:
 
@@ -85,14 +95,14 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
     2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
 
-3. Core Selection (before clustering)
--------------------------------------
+3. Core Analysis (optional, before clustering)
+-----------------------------------------------
 
-Core selection is performed before clustering to identify core cells for stable clustering. The neighbors graph is already constructed in the preprocessing step:
+Core analysis is an optional step that can be performed before clustering to identify core cells and compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
 
 .. code-block:: python
 
-    # Core selection preparation (neighbors graph is already constructed in preprocessing)
+    # Core analysis preparation (neighbors graph is already constructed in preprocessing)
     print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
     print(f"Using representation: adata.obsm['X_latent'] (shape: {adata.obsm['X_latent'].shape})")
 
@@ -103,7 +113,7 @@ Example output:
     Neighbors graph ready: True
     Using representation: adata.obsm['X_latent'] (shape: (180, 32))
 
-This step prepares the data for stable clustering by ensuring the neighbors graph is ready. The actual core map embedding computation will be performed after clustering (as shown in the complete workflow output below).
+This step identifies core cells and computes core map embedding before clustering. The core analysis helps prepare the data for stable clustering by identifying stable cell populations.
 
 4. Clustering
 -----------
@@ -123,10 +133,7 @@ Lotus supports multiple clustering methods through a unified interface:
         print_summary=True,
     )
 
-This method:
-- Auto-detects best representation (X_latent, X_pca, or X)
-- Generates stable clustering results
-- Outputs cluster labels to adata.obs
+This method auto-detects the best representation (X_latent, X_pca, or X), generates stable clustering results, and outputs cluster labels to adata.obs.
 
 Example output (from running ``examples/lotus_workflow.py``):
 
@@ -150,6 +157,9 @@ Example output (from running ``examples/lotus_workflow.py``):
         cluster_resolution=0.5,
         key_added="leiden",  # auto-set if None
     )
+    
+    # View clustering results
+    print(adata.obs["leiden"].value_counts())
 
 **Option C: Using scanpy Louvain algorithm**
 
@@ -161,6 +171,29 @@ Example output (from running ``examples/lotus_workflow.py``):
         cluster_resolution=0.5,
         key_added="louvain",  # auto-set if None
     )
+    
+    # View clustering results
+    print(adata.obs["louvain"].value_counts())
+
+**Switching between methods:**
+
+You can easily switch between clustering methods in the same workflow:
+
+.. code-block:: python
+
+    # First, try Leiden clustering
+    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
+    
+    # Then try Louvain with different resolution
+    clustering(adata, method="louvain", cluster_resolution=0.8, key_added="louvain")
+    
+    # Compare results
+    print("Leiden clusters:", adata.obs["leiden"].value_counts())
+    print("Louvain clusters:", adata.obs["louvain"].value_counts())
+    
+    # Use either cluster key for visualization
+    umap(adata, cluster_key="leiden", output_dir="./results", save="_leiden.png")
+    umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
 
 All methods output cluster labels in scanpy-compatible format and can be used with subsequent Lotus functions.
 
@@ -178,9 +211,7 @@ Generate UMAP visualization of clustering results:
         save="_clusters.png",
     )
 
-This step:
-- Computes UMAP dimensionality reduction
-- Generates visualization plots of clustering results
+This step computes UMAP dimensionality reduction and generates visualization plots of clustering results.
 
 The visualization is saved as a PNG file:
 
@@ -201,11 +232,7 @@ Example output (from running ``examples/lotus_workflow.py``):
 
 The output file contains a UMAP plot colored by cluster labels, showing the cell type separation.
 
-The visualization shows:
-
-- **UMAP embedding**: 2D representation of cells in the UMAP space
-- **Color coding**: Each cluster is colored differently
-- **Cell distribution**: Shows how cells are grouped and separated by cell type
+The visualization shows a UMAP embedding as a 2D representation of cells in the UMAP space, with color coding where each cluster is colored differently, and cell distribution that shows how cells are grouped and separated by cell type.
 
 Example UMAP visualization:
 
@@ -218,12 +245,7 @@ Example UMAP visualization:
    
    *To generate this image, run: ``python examples/lotus_workflow.py --clusters 3 --cells-per-cluster 60``, then copy ``result_*/umap_clusters.png`` to ``docs/_static/umap_clusters_example.png``*
 
-The UMAP plot shows:
-- **X-axis**: UMAP dimension 1
-- **Y-axis**: UMAP dimension 2  
-- **Colors**: Different clusters (e.g., cluster 0 in blue, cluster 1 in red, cluster 2 in green)
-- **Points**: Each point represents a single cell
-- **Separation**: Well-separated clusters indicate distinct cell types
+The UMAP plot shows the X-axis as UMAP dimension 1, the Y-axis as UMAP dimension 2, colors representing different clusters (e.g., cluster 0 in blue, cluster 1 in red, cluster 2 in green), points where each point represents a single cell, and separation where well-separated clusters indicate distinct cell types.
 
 .. note::
 
@@ -251,10 +273,7 @@ Find marker genes between clusters:
         auto_pick_groups=True,
     )
 
-This step:
-- Identifies differentially expressed genes between clusters
-- Auto-selects comparison groups (if not specified)
-- Outputs marker gene list
+This step identifies differentially expressed genes between clusters, auto-selects comparison groups if not specified, and outputs a marker gene list.
 
 Check the results:
 
@@ -308,7 +327,7 @@ Here's a complete workflow example that you can run. For the full example script
         clustering,
         umap,
         marker_genes,
-        core_selection,
+        core_analysis,
     )
     import numpy as np
     
@@ -319,24 +338,35 @@ Here's a complete workflow example that you can run. For the full example script
     preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
     print(f"Preprocessing complete. Data shape: {adata.shape}")
     
-    # 2. Core Selection (before clustering)
-    print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    print("Core selection preparation complete")
+    # 2. Core Analysis (optional, before clustering)
+    # Skip this step if you don't need core analysis
+    # print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
+    # from lotus.methods.cplearn.external import cplearn
+    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+    # core_analysis(adata, model=model, key_added="X_cplearn_coremap")
+    # print("Core analysis complete")
     
     # 3. Clustering
-    # Using cplearn (default)
-    model = clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
-    # Or use scanpy methods:
-    # clustering(adata, method="leiden", cluster_resolution=0.5)
-    # clustering(adata, method="louvain", cluster_resolution=0.5)
-    print(f"Clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
+    # Option 1: Using Leiden (scanpy)
+    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
+    print(f"Leiden clustering complete. Found {len(adata.obs['leiden'].unique())} clusters")
+    
+    # Option 2: Using Louvain (scanpy)
+    # clustering(adata, method="louvain", cluster_resolution=0.5, key_added="louvain")
+    # print(f"Louvain clustering complete. Found {len(adata.obs['louvain'].unique())} clusters")
+    
+    # Option 3: Using cplearn (requires core analysis)
+    # from lotus.methods.cplearn.external import cplearn
+    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+    # clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
+    # print(f"Cplearn clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
     
     # 4. Visualization
-    umap(adata, cluster_key="cplearn_labels", output_dir="./results", save="_clusters.png")
+    umap(adata, cluster_key="leiden", output_dir="./results", save="_clusters.png")
     print("UMAP visualization saved to ./results/umap_clusters.png")
     
     # 5. Differential Expression
-    de_result = marker_genes(adata, cluster_key="cplearn_labels", layer="raw_counts", auto_pick_groups=True)
+    de_result = marker_genes(adata, cluster_key="leiden", layer="raw_counts", auto_pick_groups=True)
     print(f"DEG analysis complete. Found {len(de_result)} differentially expressed genes")
     print(f"Top 5 marker genes: {de_result['gene'].head(5).tolist()}")
     
@@ -384,7 +414,7 @@ Example output (from running ``examples/lotus_workflow.py``):
     2025-11-23 00:13:48,497 - INFO -   - Visualization saved to: /tmp/lotus_real_output/umap_clusters.png
     2025-11-23 00:13:48,497 - INFO - 
     ============================================================
-    2025-11-23 00:13:48,497 - INFO - CoreSelection: Neighbors → CoreSelection
+    2025-11-23 00:13:48,497 - INFO - CoreAnalysis: Neighbors → CoreAnalysis
     2025-11-23 00:13:48,497 - INFO - ============================================================
     2025-11-23 00:13:48,497 - INFO - Computing core map embedding...
     Total number of clusters= 3
@@ -398,7 +428,7 @@ Example output (from running ``examples/lotus_workflow.py``):
     Shape of embedding after round 4 is (177, 32)
     Shape of embedding after round 5 is (180, 32)
     Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-    2025-11-23 00:13:51,072 - INFO - ✓ CoreSelection complete
+    2025-11-23 00:13:51,072 - INFO - ✓ CoreAnalysis complete
     2025-11-23 00:13:51,072 - INFO -   - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 32))
     2025-11-23 00:13:51,072 - INFO -   - Assigned points: 180/180 (100.0%)
     2025-11-23 00:13:51,072 - INFO - 
@@ -455,14 +485,9 @@ Example output (from running ``examples/lotus_workflow.py``):
 Output Files
 ------------
 
-After running the complete workflow, you'll find the following output files in the ``./results/`` directory:
-
-- ``umap_clusters.png`` - UMAP visualization colored by cluster labels
-- ``deg_results.csv`` - Complete differential expression results (if saved)
+After running the complete workflow, you'll find the following output files in the ``./results/`` directory: ``umap_clusters.png`` (UMAP visualization colored by cluster labels) and ``deg_results.csv`` (complete differential expression results, if saved).
 
 Next Steps
 ----------
 
-* See :doc:`api/index` for the complete API reference
-* Run the example script: ``examples/lotus_workflow.py`` for a more detailed example with logging
-* View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_
+See :doc:`api/index` for the complete API reference. Run the example script ``examples/lotus_workflow.py`` for a more detailed example with logging. View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_.

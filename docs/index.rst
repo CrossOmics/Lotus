@@ -49,12 +49,16 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
        <h3 class="lotus-citation-title">Citation</h3>
        <p class="lotus-citation-content">
            <strong>Lotus</strong> is built upon excellent open-source packages in the single-cell analysis ecosystem.
-           If you use Lotus in your research, please cite the underlying packages that Lotus depends on:
+           If you use Lotus in your research, please cite the underlying packages and algorithms that Lotus depends on.
+           For detailed citation information, please see the <a href="citations.html">Citations</a> page.
        </p>
-       <ul class="lotus-citation-content" style="margin: 0.5rem 0; padding-left: 1.5rem;">
-           <li><strong>anndata</strong> for annotated data objects</li>
-           <li><strong>scanpy</strong> for single-cell analysis</li>
-           <li><strong>cplearn</strong> for core-periphery learning</li>
-           <li>and other packages including pandas, numpy, scikit-learn, and umap-learn as appropriate</li>
-       </ul>
    </div>
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+   :caption: Documentation
+
+   getting_started
+   api/index
+   citations

@@ -1,52 +1,47 @@
-Core Selection Module
-======================
+Core Analysis Module
+=====================
 
-The ``lotus.workflows.core_selection`` module provides core map embedding functionality.
+The ``lotus.workflows.core_analysis`` module provides core map embedding functionality.
 
 Overview
 --------
 
-Core selection is used to compute core map embedding, a special dimensionality reduction representation that can be used for further analysis and visualization.
+Core analysis is used to compute core map embedding, a special dimensionality reduction representation that can be used for further analysis and visualization.
 
-**Note on workflow order:** Core selection can be performed before clustering (to identify core cells) in the cplearn workflow. It is also compatible with scanpy clustering.
+**Note on workflow order:** Core analysis is performed before clustering to identify core cells and prepare for stable clustering.
 
+**Citation:** If you use core analysis features, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the following papers:
+
+* **CoreSPECT**: Chandra Sekhar Mukherjee, Joonyoung Bae, and Jiapeng Zhang. *CoreSPECT: Enhancing Clustering Algorithms via an Interplay of Density and Geometry.* `arXiv:2507.08243 <https://arxiv.org/abs/2507.08243>`_
+
+* **Balanced Ranking**: Chandra Sekhar Mukherjee and Jiapeng Zhang. *Balanced Ranking with Relative Centrality: A Multi-Core Periphery Perspective.* ICLR 2025. 
 Main Functions
 --------------
 
-Core Selection
+Core Analysis
 ~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.core_selection.core_selection.core_selection
-
-   **Biological Background:**
-   
-   Core map embedding:
-   - A special embedding computed based on clustering results
-   - Can highlight core features of cells
-   - Used for further analysis and visualization
-   
-   Note: This function needs to be used after clustering analysis and requires a neighbor graph.
+.. autofunction:: lotus.workflows.core_analysis.core_analysis.core_analysis
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import clustering, core_selection
+      from lotus.workflows import core_analysis
+      from lotus.methods.cplearn.external import cplearn
       
-      # First perform clustering
-      model = clustering(adata, key_added="cplearn_labels")
-      
-      # Then compute core map embedding
-      core_selection(
+      # First compute core map embedding (before clustering)
+      # Note: This requires a neighbors graph from preprocessing
+      model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
+      core_analysis(
           adata,
           model=model,
           use_rep="X_latent",
           key_added="X_cplearn_coremap",
       )
       
+      # Then perform clustering using the core analysis results
+      # (clustering can use the core map embedding for better results)
+      
       # View results
       print(adata.obsm["X_cplearn_coremap"].shape)
-
-.. autofunction:: lotus.workflows.core_selection.core_selection.compute_coremap_embedding
-
-   This is an alias for ``core_selection()`` for backward compatibility.

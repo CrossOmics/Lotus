@@ -3,7 +3,7 @@
 /write/
 
 # Docs
-/docs/
+# /docs/  # Documentation should be tracked
 
 # tests
 /*cache/
