@@ -606,13 +606,6 @@
                                 </div>
                                 <div class="form-group">
                                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                        <input type="checkbox" id="use-combat" style="cursor: pointer;">
-                                        <span class="form-label" style="margin: 0;">Use ComBat for Batch Correction</span>
-                                    </label>
-                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px; margin-left: 24px;">Requires batch_key to be set</div>
-                                </div>
-                                <div class="form-group">
-                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                         <input type="checkbox" id="save-raw" checked style="cursor: pointer;">
                                         <span class="form-label" style="margin: 0;">Save Raw Counts</span>
                                     </label>
@@ -643,6 +636,13 @@
                             <label class="form-label">Batch Key (for batch correction)</label>
                             <input type="text" id="batch-key" class="form-input" value="" placeholder="batch">
                             <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Key in obs for batch information</div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="use-combat" style="cursor: pointer;">
+                                <span class="form-label" style="margin: 0;">Use ComBat for Batch Correction</span>
+                            </label>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; margin-left: 24px;">Requires batch_key to be set</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Neighbors</label>
