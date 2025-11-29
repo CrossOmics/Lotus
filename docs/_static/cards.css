@@ -221,3 +221,14 @@
     padding-left: 0.5rem;
 }
 
+/* Hide the toctree content at the bottom of the page (but keep it in sidebar) */
+.toctree-wrapper {
+    display: none;
+}
+
+/* Alternative selector for toctree */
+.rst-content .toctree-wrapper,
+.rst-content > .toctree-wrapper {
+    display: none;
+}
+
