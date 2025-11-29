@@ -21,12 +21,10 @@ Visualization is an important way to display analysis results and help understan
 Main Functions
 --------------
 
-UMAP Visualization
-~~~~~~~~~~~~~~~~~~~
 Unified Visualization Function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.visualization
+.. autofunction:: lotus.workflows.visualization.visualization
 
    **Usage Example:**
 
@@ -35,25 +33,27 @@ Unified Visualization Function
       from lotus.workflows import visualization
       
       # Use different visualization methods
-      visualization(adata, method="umap", cluster_key="leiden")
-      visualization(adata, method="tsne", perplexity=50)
-      visualization(adata, method="diffmap", n_comps=20)
-      visualization(adata, method="draw_graph", layout="fa")
-      visualization(adata, method="coremap", model=model)
+      visualization.visualization(adata, method="umap", cluster_key="leiden")
+      visualization.visualization(adata, method="tsne", perplexity=50)
+      visualization.visualization(adata, method="diffmap", n_comps=20)
+      visualization.visualization(adata, method="draw_graph", layout="fa")
+      visualization.visualization(adata, method="coremap", model=model)
 
+UMAP Visualization
+~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.umap
+.. autofunction:: lotus.workflows.visualization.umap
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import umap
+      from lotus.workflows import visualization
       
       # Basic usage (with Lotus cplearn clustering)
-      umap(
+      visualization.umap(
           adata,
-          cluster_key="cplearn_labels",  # Can also use "leiden" or "louvain" if using scanpy
+          cluster_key="cplearn",  # Can also use "leiden" or "louvain" if using scanpy
           truth_key="truth",
           output_dir="./results",
           save="_clusters.png",
@@ -67,15 +67,15 @@ Unified Visualization Function
 t-SNE Visualization
 ~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.tsne
+.. autofunction:: lotus.workflows.visualization.tsne
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import tsne
+      from lotus.workflows import visualization
       
-      tsne(
+      visualization.tsne(
           adata,
           cluster_key="leiden",
           truth_key="truth",
@@ -87,15 +87,15 @@ t-SNE Visualization
 Diffusion Map Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.diffmap
+.. autofunction:: lotus.workflows.visualization.diffmap
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import diffmap
+      from lotus.workflows import visualization
       
-      diffmap(
+      visualization.diffmap(
           adata,
           cluster_key="leiden",
           truth_key="truth",
@@ -107,15 +107,15 @@ Diffusion Map Visualization
 Force-Directed Graph Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.draw_graph
+.. autofunction:: lotus.workflows.visualization.draw_graph
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import draw_graph
+      from lotus.workflows import visualization
       
-      draw_graph(
+      visualization.draw_graph(
           adata,
           cluster_key="leiden",
           truth_key="truth",
@@ -127,44 +127,44 @@ Force-Directed Graph Visualization
 Marker Gene Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.render_visualizations
+.. autofunction:: lotus.workflows.visualization.render_visualizations
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import render_visualizations
+      from lotus.workflows import visualization
       
       # Assume you have already found marker genes
       marker_genes = ["CD3D", "CD79A", "MS4A1", "CD14", "FCGR3A"]
       
-      render_visualizations(
+      visualization.render_visualizations(
           adata,
           marker_genes=marker_genes,
           output_dir="./results",
-          cluster_key="cplearn_labels",  # Can also use "leiden" or "louvain" if using scanpy
+          cluster_key="cplearn",  # Can also use "leiden" or "louvain" if using scanpy
       )
 
 CoreMap Visualization
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.visualization.visualization.coremap
+.. autofunction:: lotus.workflows.visualization.coremap
 
    **Usage Example:**
    
    .. code-block:: python
    
-      from lotus.workflows import coremap, core_analysis
+      from lotus.workflows import visualization, core_analyze
       from lotus.methods.cplearn.external import cplearn
       
-      # First perform core analysis (before clustering)
+      # First perform clustering to get a model
       model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
-      core_analysis(adata, model=model, key_added="X_cplearn_coremap")
       
-      # Then perform clustering using the core analysis results
+      # Then perform core analysis (after clustering)
+      core_analyze(adata, model=model, key_added="X_cplearn_coremap")
       
       # Then visualize the core map
-      coremap(
+      visualization.coremap(
           adata,
           coremap_key="X_cplearn_coremap",
           cluster_key="cplearn",
