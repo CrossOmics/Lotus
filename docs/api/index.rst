@@ -48,28 +48,12 @@ Complete API reference documentation for Lotus. All functions and classes are or
            </div>
            <p class="lotus-card-description">Differential expression analysis functions for finding marker genes.</p>
        </a>
-       <a href="tools.html" class="lotus-card">
-           <div class="lotus-card-title">
-               <span class="lotus-card-icon">🔧</span>
-               <span>Tools Module</span>
-           </div>
-           <p class="lotus-card-description">Tools functions for clustering, dimensionality reduction, trajectory inference, and more.</p>
-       </a>
-       <a href="preprocessing_compat.html" class="lotus-card">
-           <div class="lotus-card-title">
-               <span class="lotus-card-icon">⚙️</span>
-               <span>Preprocessing Module</span>
-           </div>
-           <p class="lotus-card-description">Preprocessing functions: QC, filtering, normalization, batch correction, and more.</p>
-       </a>
    </div>
 
 Overview
 --------
 
-Lotus API is organized into two main layers. The **Workflows Module** provides high-level, workflow-oriented functions with complete analysis pipelines covering standard single-cell analysis steps including preprocessing, clustering, visualization, differential expression analysis, and core analysis. These functions offer a clean interface with smart defaults and are recommended for most users. The workflows module internally uses Tools Module(``lotus.tl``) and Preprocessing Module(``lotus.pp``) as building blocks to implement its functionality.
-
-The **Building Blocks API** is consists of Tools Module(``lotus.tl``) and Preprocessing Module(``lotus.pp``). These modules serve as low-level building blocks that can be used directly when you need fine-grained control or want to access advanced features not covered by the workflows module, such as batch correction and trajectory inference (PAGA, DPT).  For standard analysis workflows, we recommend using the Workflows Module functions such as ``lotus.workflows.preprocess()``, ``lotus.workflows.clustering()``, ``lotus.workflows.umap()``, and ``lotus.workflows.marker_genes()``. For advanced features, use the Building Blocks API directly.
+Lotus API provides high-level, workflow-oriented functions with complete analysis pipelines covering standard single-cell analysis steps including preprocessing, clustering, visualization, differential expression analysis, and core analysis. These functions offer a clean interface with smart defaults and are recommended for most users.
 
 .. toctree::
    :maxdepth: 1
@@ -79,7 +63,5 @@ The **Building Blocks API** is consists of Tools Module(``lotus.tl``) and Prepro
    core_selection
    clustering
    visualization
-   deg
-   tools
-   preprocessing_compat 
+   deg 
 
