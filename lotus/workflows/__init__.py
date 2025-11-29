@@ -37,8 +37,10 @@ from .preprocessing import (
 )
 from .visualization import (
     coremap,
+    diffmap,
     draw_graph,
     render_visualizations,
+    tsne,
     umap,
     visualization,
 )
@@ -65,6 +67,8 @@ __all__ = [
     "recipe_seurat",
     # Visualization
     "umap",
+    "tsne",
+    "diffmap",
     "draw_graph",
     "coremap",
     "visualization",
