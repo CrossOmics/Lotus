@@ -1,89 +1,78 @@
 Preprocessing Module
 =====================
 
-The ``lotus.workflows.preprocess`` module provides data preprocessing related functions.
+.. autofunction:: lotus.workflows.preprocessing.preprocess
 
-Overview
---------
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Preprocessing is the first step in single-cell data analysis, encompassing quality control (QC) to calculate quality metrics, filtering to remove low-quality cells and genes, normalization to eliminate technical variation, highly variable genes (HVG) selection for subsequent analysis, scaling to standardize data, principal component analysis (PCA) for dimensionality reduction, and neighbor graph construction to prepare for clustering and visualization.
+.. autofunction:: lotus.workflows.preprocessing.input
 
-**Citation:** Preprocessing functions are based on `scanpy <https://scanpy.readthedocs.io/>`_. Please cite:
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-* **scanpy**: F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
+.. autofunction:: lotus.workflows.preprocessing.qc
 
-Complete Preprocessing Pipeline
---------------------------------
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.preprocess
+.. autofunction:: lotus.workflows.preprocessing.filtering
 
-   **Usage Example:**
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-   .. code-block:: python
+.. autofunction:: lotus.workflows.preprocessing.normalization
 
-      from lotus.workflows import preprocess
-      import scanpy as sc
-      
-      # Load data
-      adata = sc.datasets.pbmc3k()
-      
-      # Complete preprocessing pipeline
-      preprocess(
-          adata,
-          n_pcs=20,
-          target_sum=1e4,
-          n_top_genes=2000,
-          n_neighbors=15,
-      )
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Step-by-Step Preprocessing Functions
--------------------------------------
+.. autofunction:: lotus.workflows.preprocessing.hvg
 
-Quality Control
-~~~~~~~~~~~~~~~
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.qc
+.. autofunction:: lotus.workflows.preprocessing.scaling
 
-   Calculate quality control metrics to help identify low-quality cells.
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Filtering
-~~~~~~~~~
+.. autofunction:: lotus.workflows.preprocessing.pca
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.filtering
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-   Filter low-quality cells and genes based on QC metrics.
+.. autofunction:: lotus.workflows.preprocessing.neighbors
 
-Normalization
-~~~~~~~~~~~~~
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.normalization
+.. autofunction:: lotus.workflows.preprocessing.log1p
 
-   Normalize data to eliminate the effects of sequencing depth.
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Highly Variable Genes Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: lotus.workflows.preprocessing.regress_out
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.hvg
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-   Select highly variable genes for subsequent analysis.
+.. autofunction:: lotus.workflows.preprocessing.combat
 
-Scaling
-~~~~~~~
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.scaling
+.. autofunction:: lotus.workflows.preprocessing.scrublet
 
-   Scale data (z-score standardization).
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Principal Component Analysis
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: lotus.workflows.preprocessing.scrublet_simulate_doublets
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.pca
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-   Perform principal component analysis for dimensionality reduction.
+.. autofunction:: lotus.workflows.preprocessing.sample
 
-Neighbor Graph Construction
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.neighbors
+.. autofunction:: lotus.workflows.preprocessing.downsample_counts
 
-   Build neighbor graph between cells.
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_zheng17
+
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_weinreb17
+
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_seurat
+
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_

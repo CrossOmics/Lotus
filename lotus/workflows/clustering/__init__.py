@@ -18,6 +18,219 @@ def summarize_clusters(labels: Iterable[int]) -> str:
     return ", ".join(pieces)
 
 
+def leiden(
+    adata: AnnData,
+    *,
+    resolution: float = 1.2,
+    key_added: str = "leiden",
+    neighbors_key: str | None = None,
+    obsp: str | None = None,
+    print_summary: bool = True,
+    **kwargs,
+) -> None:
+    """
+    Leiden clustering step: Perform clustering analysis using Leiden algorithm.
+    
+    Compatible with scanpy workflow:
+    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
+    - Works with scanpy neighbors graph (stored in adata.obsp)
+    - Outputs cluster labels compatible with scanpy format
+    
+    Parameters:
+        adata: AnnData object (compatible with scanpy AnnData)
+        resolution: Clustering resolution. Default: 1.2
+        key_added: Key name for cluster labels in adata.obs. Default: "leiden"
+        neighbors_key: Key in adata.uns where neighbors are stored. Default: None
+        obsp: Key in adata.obsp to use as adjacency matrix. Default: None
+        print_summary: Whether to print cluster summary. Default: True
+        **kwargs: Additional arguments passed to scanpy's leiden function
+    
+    Returns:
+        None
+    """
+    # Ensure neighbors graph exists (required for scanpy clustering)
+    if "neighbors" not in adata.uns and neighbors_key is None:
+        import warnings
+        warnings.warn(
+            "Neighbors graph not found. Please run preprocessing with neighbors() first, "
+            "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
+            UserWarning,
+        )
+    
+    # Call scanpy clustering function
+    sc_tl.leiden(
+        adata,
+        resolution=resolution,
+        key_added=key_added,
+        neighbors_key=neighbors_key,
+        obsp=obsp,
+        **kwargs,
+    )
+    
+    # Ensure output is categorical (scanpy already does this, but ensure it)
+    if key_added in adata.obs:
+        if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
+            adata.obs[key_added] = adata.obs[key_added].astype("category")
+    
+    if print_summary:
+        print(
+            "Cluster summary:",
+            summarize_clusters(adata.obs[key_added]),
+        )
+        print(f"Stored clustering labels: `adata.obs['{key_added}']`")
+
+
+def louvain(
+    adata: AnnData,
+    *,
+    resolution: float = 1.2,
+    key_added: str = "louvain",
+    neighbors_key: str | None = None,
+    obsp: str | None = None,
+    print_summary: bool = True,
+    **kwargs,
+) -> None:
+    """
+    Louvain clustering step: Perform clustering analysis using Louvain algorithm.
+    
+    Compatible with scanpy workflow:
+    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
+    - Works with scanpy neighbors graph (stored in adata.obsp)
+    - Outputs cluster labels compatible with scanpy format
+    
+    Parameters:
+        adata: AnnData object (compatible with scanpy AnnData)
+        resolution: Clustering resolution. Default: 1.2
+        key_added: Key name for cluster labels in adata.obs. Default: "louvain"
+        neighbors_key: Key in adata.uns where neighbors are stored. Default: None
+        obsp: Key in adata.obsp to use as adjacency matrix. Default: None
+        print_summary: Whether to print cluster summary. Default: True
+        **kwargs: Additional arguments passed to scanpy's louvain function
+    
+    Returns:
+        None
+    """
+    # Ensure neighbors graph exists (required for scanpy clustering)
+    if "neighbors" not in adata.uns and neighbors_key is None:
+        import warnings
+        warnings.warn(
+            "Neighbors graph not found. Please run preprocessing with neighbors() first, "
+            "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
+            UserWarning,
+        )
+    
+    # Call scanpy clustering function
+    sc_tl.louvain(
+        adata,
+        resolution=resolution,
+        key_added=key_added,
+        neighbors_key=neighbors_key,
+        obsp=obsp,
+        **kwargs,
+    )
+    
+    # Ensure output is categorical (scanpy already does this, but ensure it)
+    if key_added in adata.obs:
+        if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
+            adata.obs[key_added] = adata.obs[key_added].astype("category")
+    
+    if print_summary:
+        print(
+            "Cluster summary:",
+            summarize_clusters(adata.obs[key_added]),
+        )
+        print(f"Stored clustering labels: `adata.obs['{key_added}']`")
+
+
+def cplearn_cluster(
+    adata: AnnData,
+    *,
+    use_rep: str | None = None,
+    key_added: str = "cplearn",
+    cluster_resolution: float = 1.2,
+    stable_core_frac: float = 0.25,
+    stable_ng_num: int = 8,
+    fine_grained: bool = False,
+    propagate: bool = True,
+    print_summary: bool = True,
+) -> cplearn.CorespectModel:
+    """
+    Cplearn clustering step: Perform clustering analysis using CoreSPECT algorithm.
+    
+    This function uses the cplearn (CoreSPECT) algorithm for core-periphery learning,
+    which identifies stable core cells before clustering for more robust results.
+    
+    Compatible with scanpy workflow:
+    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
+    - Works with scanpy neighbors graph (stored in adata.obsp)
+    - Outputs cluster labels compatible with scanpy format
+    
+    Parameters:
+        adata: AnnData object (compatible with scanpy AnnData)
+        use_rep: Representation to use for clustering. If None, auto-detects: "X_latent" > "X_pca" > "X". Default: None
+        key_added: Key name for cluster labels in adata.obs. Default: "cplearn"
+        cluster_resolution: Clustering resolution. Default: 1.2
+        stable_core_frac: Stable core fraction. Default: 0.25
+        stable_ng_num: Number of neighbors for stable core. Default: 8
+        fine_grained: Whether to use fine-grained clustering. Default: False
+        propagate: Whether to propagate labels. Default: True
+        print_summary: Whether to print cluster summary. Default: True
+    
+    Returns:
+        CorespectModel: The cplearn model object
+    """
+    # Auto-detect representation if not specified
+    if use_rep is None:
+        if "X_latent" in adata.obsm:
+            use_rep = "X_latent"
+        elif "X_pca" in adata.obsm:
+            use_rep = "X_pca"
+        else:
+            use_rep = "X"
+    
+    # Ensure neighbors graph exists (required for cplearn)
+    if "neighbors" not in adata.uns:
+        import warnings
+        warnings.warn(
+            "Neighbors graph not found. Please run preprocessing with neighbors() first, "
+            "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
+            UserWarning,
+        )
+    
+    model = cplearn.corespect(
+        adata,
+        use_rep=use_rep,
+        stable={
+            "auto_select_core_frac": False,
+            "core_frac": stable_core_frac,
+            "ng_num": stable_ng_num,
+            "densification": "k-nn",
+        },
+        cluster={
+            "resolution": cluster_resolution,
+            "auto_select_resolution": False,
+            "densification": False,
+        },
+        fine_grained=fine_grained,
+        propagate=propagate,
+        key_added=key_added,
+    )
+    
+    # Ensure output is compatible with scanpy format (categorical)
+    if key_added in adata.obs:
+        if not isinstance(adata.obs[key_added].dtype, pd.CategoricalDtype):
+            adata.obs[key_added] = adata.obs[key_added].astype("category")
+    
+    if print_summary:
+        print(
+            "Cluster summary:",
+            summarize_clusters(adata.obs[key_added]),
+        )
+        print(f"Stored clustering labels: `adata.obs['{key_added}']`")
+    
+    return model
+
+
 def cluster(
     adata: AnnData,
     *,
@@ -37,15 +250,7 @@ def cluster(
     print_summary: bool = True,
 ) -> cplearn.CorespectModel | None:
     """
-    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain)
-    
-    This function primarily implements scanpy clustering methods.
-    For cplearn clustering, please use the cplearn API directly:
-    
-    .. code-block:: python
-    
-        from lotus.methods.cplearn.external import cplearn
-        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
+    Unified clustering function: Perform clustering analysis using different methods.
     
     Supports clustering methods:
     - "leiden" (default): Scanpy Leiden algorithm
@@ -206,4 +411,8 @@ run_clustering = cluster
 __all__ = [
     "cluster",
     "run_clustering",
+    "leiden",
+    "louvain",
+    "cplearn_cluster",
+    "summarize_clusters",
 ]

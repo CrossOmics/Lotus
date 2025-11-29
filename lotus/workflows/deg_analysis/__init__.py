@@ -7,6 +7,7 @@ import pandas as pd
 from anndata import AnnData
 
 from lotus.methods.cplearn.external import cplearn
+from lotus.methods.scanpy import tl as sc_tl
 
 
 def pick_groups(labels: Sequence[int]) -> tuple[set[int], set[int]]:
@@ -166,7 +167,152 @@ def marker_genes(
 # Alias for backward compatibility
 run_differential_expression = marker_genes
 
+
+def rank_genes_groups(
+    adata: AnnData,
+    groupby: str,
+    *,
+    groups: str | Sequence[str] = "all",
+    reference: str = "rest",
+    n_genes: int | None = None,
+    method: str | None = None,
+    use_raw: bool | None = None,
+    layer: str | None = None,
+    key_added: str | None = None,
+    **kwargs,
+) -> None:
+    """
+    Rank genes for characterizing groups (differential expression analysis).
+    
+    This function performs differential expression analysis using scanpy's rank_genes_groups,
+    which supports multiple statistical methods (wilcoxon, t-test, logreg, etc.) and can
+    compare multiple groups simultaneously.
+    
+    Parameters:
+        adata: AnnData object
+        groupby: Key in adata.obs that contains group labels
+        groups: Subset of groups to compare. Default: "all"
+        reference: Reference group for comparison. Default: "rest" (compare each group to all others)
+        n_genes: Number of genes to rank. Default: None (all genes)
+        method: Statistical method to use. Options: "wilcoxon" (default), "t-test", "logreg", etc.
+        use_raw: Whether to use raw data. Default: None (auto-detect)
+        layer: Layer to use for analysis. Default: None (use X)
+        key_added: Key name for results in adata.uns. Default: None ("rank_genes_groups")
+        **kwargs: Additional arguments passed to scanpy's rank_genes_groups
+    
+    Returns:
+        None (results stored in adata.uns)
+    """
+    sc_tl.rank_genes_groups(
+        adata,
+        groupby=groupby,
+        groups=groups,
+        reference=reference,
+        n_genes=n_genes,
+        method=method,
+        use_raw=use_raw,
+        layer=layer,
+        key_added=key_added,
+        **kwargs,
+    )
+
+
+def filter_rank_genes_groups(
+    adata: AnnData,
+    *,
+    key: str | None = None,
+    groupby: str | None = None,
+    use_raw: bool | None = None,
+    key_added: str = "rank_genes_groups_filtered",
+    min_in_group_fraction: float = 0.25,
+    min_fold_change: float = 1,
+    max_out_group_fraction: float = 0.5,
+    compare_abs: bool = False,
+) -> None:
+    """
+    Filter ranked genes groups based on expression criteria.
+    
+    This function filters the results from rank_genes_groups based on expression
+    fraction, fold change, and other criteria to identify high-quality marker genes.
+    
+    Parameters:
+        adata: AnnData object
+        key: Key in adata.uns containing rank_genes_groups results. Default: None ("rank_genes_groups")
+        groupby: Key in adata.obs that contains group labels. Default: None (auto-detect from key)
+        use_raw: Whether to use raw data. Default: None (auto-detect)
+        key_added: Key name for filtered results in adata.uns. Default: "rank_genes_groups_filtered"
+        min_in_group_fraction: Minimum fraction of cells expressing gene in group. Default: 0.25
+        min_fold_change: Minimum fold change. Default: 1
+        max_out_group_fraction: Maximum fraction of cells expressing gene outside group. Default: 0.5
+        compare_abs: Whether to compare absolute values. Default: False
+    
+    Returns:
+        None (filtered results stored in adata.uns)
+    """
+    sc_tl.filter_rank_genes_groups(
+        adata,
+        key=key,
+        groupby=groupby,
+        use_raw=use_raw,
+        key_added=key_added,
+        min_in_group_fraction=min_in_group_fraction,
+        min_fold_change=min_fold_change,
+        max_out_group_fraction=max_out_group_fraction,
+        compare_abs=compare_abs,
+    )
+
+
+def marker_gene_overlap(
+    adata: AnnData,
+    reference_markers: dict[str, set[int] | list[int]],
+    *,
+    key: str = "rank_genes_groups",
+    method: str = "overlap_count",
+    normalize: str | None = None,
+    top_n_markers: int | None = None,
+    adj_pval_threshold: float | None = None,
+    key_added: str = "marker_gene_overlap",
+    inplace: bool = False,
+) -> pd.DataFrame | None:
+    """
+    Analyze marker gene overlap between data and reference markers.
+    
+    This function compares marker genes identified in the data with reference marker
+    genes (e.g., from literature or other datasets) to assess similarity and validate
+    cell type annotations.
+    
+    Parameters:
+        adata: AnnData object
+        reference_markers: Dictionary mapping group names to sets/lists of marker gene names
+        key: Key in adata.uns containing rank_genes_groups results. Default: "rank_genes_groups"
+        method: Method for computing overlap. Options: "overlap_count", "jaccard", etc. Default: "overlap_count"
+        normalize: Normalization method. Options: "reference", "data", or None. Default: None
+        top_n_markers: Number of top markers to consider. Default: None (all)
+        adj_pval_threshold: Adjusted p-value threshold for filtering. Default: None
+        key_added: Key name for results in adata.uns. Default: "marker_gene_overlap"
+        inplace: Whether to modify adata in place. Default: False
+    
+    Returns:
+        pd.DataFrame | None: Overlap analysis results (if inplace=False)
+    """
+    return sc_tl.marker_gene_overlap(
+        adata,
+        reference_markers,
+        key=key,
+        method=method,
+        normalize=normalize,
+        top_n_markers=top_n_markers,
+        adj_pval_threshold=adj_pval_threshold,
+        key_added=key_added,
+        inplace=inplace,
+    )
+
+
 __all__ = [
     "marker_genes",
     "run_differential_expression",
+    "pick_groups",
+    "rank_genes_groups",
+    "filter_rank_genes_groups",
+    "marker_gene_overlap",
 ]

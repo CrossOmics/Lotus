@@ -1,11 +1,18 @@
 Lotus Documentation
 ===================
 
-Lotus is a scalable toolkit for analyzing single-cell gene expression data built jointly with anndata. It includes preprocessing, visualization, clustering, trajectory inference and differential expression testing. The Python-based implementation efficiently deals with datasets of more than one million cells.
+Lotus is a scalable toolkit for analyzing single-cell gene expression data built jointly with anndata. It includes preprocessing, visualization, clustering, trajectory inference and differential expression testing. Lotus provides high-level workflow wrappers that simplify common analysis tasks, while maintaining seamless compatibility with scanpy's API for easy migration. Lotus also features the Lotus Embedding Projector, an interactive web-based tool for real-time data exploration and visualization.
 
 .. raw:: html
 
    <div class="lotus-cards">
+       <a href="why_lotus.html" class="lotus-card">
+           <div class="lotus-card-title">
+               <span class="lotus-card-icon">💡</span>
+               <span>Why Lotus?</span>
+           </div>
+           <p class="lotus-card-description">Learn about the key features and advantages that make Lotus a powerful choice for single-cell analysis.</p>
+       </a>
        <a href="getting_started.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">▶</span>
@@ -34,7 +41,7 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
            </div>
            <p class="lotus-card-description">Find a bug? Interested in improving Lotus? Checkout our GitHub for the latest developments.</p>
        </a>
-       <a href="https://lotus.zeabur.app/" class="lotus-card">
+       <a href="https://huggingface.co/spaces/zzq1zh/Lotus-hf" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">🌐</span>
                <span>Web Demo</span>
@@ -55,10 +62,10 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
    </div>
 
 .. toctree::
-   :hidden:
    :maxdepth: 2
    :caption: Documentation
 
+   why_lotus
    getting_started
    api/index
    citations

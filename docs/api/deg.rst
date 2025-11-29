@@ -1,59 +1,20 @@
 Differential Expression Analysis Module
 ========================================
 
-The ``lotus.workflows.deg`` module provides differential expression analysis (DEG) and marker gene identification functionality.
+.. autofunction:: lotus.workflows.deg_analysis.marker_genes
 
-Overview
---------
+   **Citation:** If you use cplearn-based marker gene identification, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the CoreSPECT paper (see :doc:`../citations`).
 
-Differential expression analysis is used to identify differentially expressed genes between different cell populations, which are often called "marker genes".
+.. autofunction:: lotus.workflows.deg_analysis.rank_genes_groups
 
-**Citation:** 
+   **Citation:** F. Wilcoxon. *Individual comparisons by ranking methods.* Biometrics Bulletin 1, 80-83 (1945).
 
-* **Wilcoxon Rank-Sum Test**: F. Wilcoxon. *Individual comparisons by ranking methods.* Biometrics Bulletin 1, 80-83 (1945).
+.. autofunction:: lotus.workflows.deg_analysis.filter_rank_genes_groups
 
-Main Functions
---------------
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-Marker Gene Identification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: lotus.workflows.deg_analysis.marker_gene_overlap
 
-.. autofunction:: lotus.workflows.deg.deg.marker_genes
+   **Citation:** Based on `scanpy <https://scanpy.readthedocs.io/>`_. F. Alexander Wolf, Philipp Angerer, and Fabian J. Theis. *SCANPY: large-scale single-cell gene expression data analysis.* Genome Biology 19, 15 (2018). `doi:10.1186/s13059-017-1382-0 <https://doi.org/10.1186/s13059-017-1382-0>`_
 
-   **Compatibility:**
-   
-   This function works with cluster labels from both Lotus cplearn (``"cplearn_labels"``) and scanpy (``"leiden"``, ``"louvain"``), and auto-detects cluster keys if not specified.
-
-   **Usage Example:**
-
-   .. code-block:: python
-
-      from lotus.workflows import marker_genes
-      
-      # Auto-select comparison groups
-      de_result = marker_genes(
-          adata,
-          cluster_key="cplearn_labels",
-          layer="raw_counts",
-          auto_pick_groups=True,
-      )
-      
-      # View results
-      print(de_result.head())
-      
-      # Filter significant genes
-      significant = de_result[
-          (de_result["p_adj"] < 0.05) & 
-          (abs(de_result["log2fc"]) > 1)
-      ]
-
-   **Result Interpretation:**
-
-   The result DataFrame contains the following columns: ``gene`` (gene name), ``log2fc`` (log2 fold change, where > 0 means upregulated and < 0 means downregulated), ``z_score`` (Z score), ``pvalue`` (p value), ``p_adj`` (adjusted p value using FDR, more reliable), ``mean_a`` and ``mean_b`` (mean expression in the two groups), and ``pct_expr_a`` and ``pct_expr_b`` (expression percentage).
-
-Helper Functions
-----------------
-
-.. autofunction:: lotus.workflows.deg.deg.pick_groups
-
-   Automatically select two comparison groups (first two non-negative clusters).
+.. autofunction:: lotus.workflows.deg_analysis.pick_groups

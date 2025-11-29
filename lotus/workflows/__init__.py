@@ -1,8 +1,20 @@
 from __future__ import annotations
 
-from .clustering import cluster, run_clustering
+from .clustering import (
+    cluster,
+    run_clustering,
+    leiden,
+    louvain,
+    cplearn_cluster,
+)
 from .core_analysis import core_analyze
-from .deg_analysis import marker_genes, run_differential_expression
+from .deg_analysis import (
+    marker_genes,
+    run_differential_expression,
+    rank_genes_groups,
+    filter_rank_genes_groups,
+    marker_gene_overlap,
+)
 from .preprocessing import (
     combat,
     downsample_counts,
@@ -64,9 +76,15 @@ __all__ = [
     # Clustering
     "cluster",
     "run_clustering",
+    "leiden",
+    "louvain",
+    "cplearn_cluster",
     # DEG
     "marker_genes",
     "run_differential_expression",
+    "rank_genes_groups",
+    "filter_rank_genes_groups",
+    "marker_gene_overlap",
     # CoreAnalysis
     "core_analyze",
 ]
