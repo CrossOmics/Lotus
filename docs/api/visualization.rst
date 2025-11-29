@@ -1,26 +1,24 @@
 Visualization Module
 ====================
 
-**Citation:**
-
-* **UMAP**: L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
-
-* **t-SNE**: L. van der Maaten and G. Hinton. *Visualizing Data using t-SNE.* Journal of Machine Learning Research 9, 2579-2605 (2008).
-
-* **Diffusion Maps**: R. R. Coifman and S. Lafon. *Diffusion maps.* Applied and Computational Harmonic Analysis 21, 5-30 (2006).
-
-* **CoreMap**: If you use CoreMap visualization, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the CoreSPECT paper (see :doc:`../citations`).
-
 .. autofunction:: lotus.workflows.visualization.visualization
 
 .. autofunction:: lotus.workflows.visualization.umap
 
+   **Citation:** L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
+
 .. autofunction:: lotus.workflows.visualization.tsne
 
+   **Citation:** L. van der Maaten and G. Hinton. *Visualizing Data using t-SNE.* Journal of Machine Learning Research 9, 2579-2605 (2008).
+
 .. autofunction:: lotus.workflows.visualization.diffmap
+
+   **Citation:** R. R. Coifman and S. Lafon. *Diffusion maps.* Applied and Computational Harmonic Analysis 21, 5-30 (2006).
 
 .. autofunction:: lotus.workflows.visualization.draw_graph
 
 .. autofunction:: lotus.workflows.visualization.coremap
+
+   **Citation:** If you use CoreMap visualization, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the CoreSPECT paper: Chandra Sekhar Mukherjee, Joonyoung Bae, and Jiapeng Zhang. *CoreSPECT: Enhancing Clustering Algorithms via an Interplay of Density and Geometry.* `arXiv:2507.08243 <https://arxiv.org/abs/2507.08243>`_ (see also :doc:`../citations`).
 
 .. autofunction:: lotus.workflows.visualization.render_visualizations
