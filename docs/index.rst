@@ -62,7 +62,6 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
    </div>
 
 .. toctree::
-   :hidden:
    :maxdepth: 2
    :caption: Documentation
 
