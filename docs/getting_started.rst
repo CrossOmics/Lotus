@@ -1,45 +1,82 @@
 Quick Start
 ============
 
-This guide will walk you through a complete single-cell RNA sequencing data analysis workflow, from data loading to final visualization results.
+This guide provides three quick start paths for using Lotus:
 
-All example outputs shown below are **real outputs** from running ``examples/lotus_workflow.py`` with default parameters (``--clusters 3 --cells-per-cluster 60``).
+1. **Installation** - Install Lotus package and Interactive Lotus Embedding Projector
+2. **Standard Scanpy Workflow** - Preprocess → Clustering → Visualization → DEG Analysis
+3. **Alternating Methods** - Switch between core analysis + cplearn vs scanpy methods
 
-For a complete runnable example, see the `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_ script in the examples directory.
+.. _installation:
 
-Lotus Analysis Pipeline
------------------------
+1. Installation
+---------------
 
-The standard Lotus analysis pipeline consists of the following steps in order:
+Install Lotus Package
+~~~~~~~~~~~~~~~~~~~~~
 
-1. **Load Data** - Load single-cell data (AnnData format)
-2. **Preprocessing** - Quality control, filtering, normalization, HVG selection, scaling, PCA, and neighbor graph construction
-3. **Core Analysis** (optional, before clustering) - Identify core cells and compute core map embedding using cplearn
-4. **Clustering** - Cluster cells using cplearn (default), Leiden, or Louvain algorithms
-5. **Visualization** - Generate UMAP embeddings and visualization plots
-6. **Differential Expression Analysis** - Identify marker genes between clusters
+Install the Lotus package in development mode:
 
-**Key Points:**
+.. code-block:: bash
 
-Core analysis is optional. It can be performed before clustering to identify stable cell populations, but clustering works without it. Clustering methods can be switched between cplearn (default), Leiden, and Louvain by changing the ``method`` parameter. All methods are compatible, meaning cluster labels from any method can be used with subsequent visualization and DEG analysis functions. The pipeline is flexible, allowing you to use scanpy methods (Leiden/Louvain) or Lotus cplearn methods, and switch between them as needed.
+    pip install -e .
 
-First, import the necessary modules:
+This will make the `lotus` package available system-wide without needing to set `PYTHONPATH`.
+
+Install Interactive Lotus Embedding Projector
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Interactive Lotus Embedding Projector is a web-based tool for real-time data exploration and visualization. To set it up locally:
+
+.. code-block:: bash
+
+    cd Interactive-Lotus
+
+    # Create virtual environment
+    python3 -m venv venv
+
+    # Activate virtual environment
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+    # Install dependencies
+    pip install -r requirements.txt
+
+    # Install Lotus (in development mode from parent directory)
+    pip install -e .. --no-deps
+
+    # Run the application
+    python3 app.py
+
+Then open your browser and navigate to: http://localhost:5000
+
+.. note::
+
+   We also provide a `lightweight web demo <https://huggingface.co/spaces/zzq1zh/Lotus-hf>`_ for demonstration. 
+   However, due to computational resource limitations, the web demo only supports very small datasets.
+
+.. _standard_workflow:
+
+2. Standard Scanpy Workflow
+-----------------------------
+
+This section demonstrates the standard single-cell analysis workflow using Lotus's high-level wrappers, which are compatible with scanpy's API.
+
+Import Required Modules
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
     import lotus as lt
     from lotus.workflows import (
         preprocess,
-        clustering,
+        leiden,  # or louvain
         umap,
-        marker_genes,
-        core_analysis,
+        rank_genes_groups,  # or marker_genes
     )
     from anndata import AnnData
-    import numpy as np
 
-1. Load Data
------------
+Step 1: Load Data
+~~~~~~~~~~~~~~~~~
 
 Load your single-cell data. Lotus supports various data formats through anndata:
 
@@ -55,8 +92,8 @@ Load your single-cell data. Lotus supports various data formats through anndata:
     # import scanpy as sc
     # adata = sc.read_10x_mtx("path/to/folder")
 
-2. Preprocessing
----------------
+Step 2: Preprocessing
+~~~~~~~~~~~~~~~~~~~~~~
 
 Preprocessing includes quality control, filtering, normalization, highly variable gene selection, scaling, PCA, and neighbor graph construction:
 
@@ -71,134 +108,56 @@ Preprocessing includes quality control, filtering, normalization, highly variabl
         save_raw=True,
     )
 
-This step performs quality control metrics (QC metrics) calculation, filters low-quality cells and genes, normalizes data and applies log transformation, selects highly variable genes (HVG), performs principal component analysis (PCA), and builds the neighbor graph.
+This step performs:
+- Quality control metrics (QC metrics) calculation
+- Filters low-quality cells and genes
+- Normalizes data and applies log transformation
+- Selects highly variable genes (HVG)
+- Performs principal component analysis (PCA)
+- Builds the neighbor graph
 
-After preprocessing, you can check the results:
+After preprocessing, check the results:
 
 .. code-block:: python
 
     print(f"✓ Preprocessing complete")
     print(f"  - Data shape: {adata.shape}")
-    print(f"  - PCA stored in: `adata.obsm['X_pca']` (shape: {adata.obsm['X_pca'].shape})")
-    print(f"  - Latent representation stored in: `adata.obsm['X_latent']` (shape: {adata.obsm['X_latent'].shape})")
-    print(f"  - Raw counts saved in: `adata.layers['raw_counts']`")
-    print(f"  - Neighbors graph constructed: {adata.obsp.get('distances') is not None}")
+    print(f"  - PCA stored in: `adata.obsm['X_pca']`")
+    print(f"  - Neighbors graph constructed: {'neighbors' in adata.uns}")
 
-Example output (from running ``examples/lotus_workflow.py``):
+Step 3: Clustering
+~~~~~~~~~~~~~~~~~~
 
-.. code-block:: text
+Lotus supports multiple clustering methods. For the standard scanpy workflow, use Leiden or Louvain:
 
-    2025-11-23 00:13:39,358 - INFO - ✓ Preprocessing complete
-    2025-11-23 00:13:39,358 - INFO -   - Data shape: (180, 50)
-    2025-11-23 00:13:39,358 - INFO -   - PCA stored in: `adata.obsm['X_pca']` (shape: (180, 20))
-    2025-11-23 00:13:39,358 - INFO -   - Latent representation stored in: `adata.obsm['X_latent']` (shape: (180, 32))
-    2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
-    2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
-
-3. Core Analysis (optional, before clustering)
------------------------------------------------
-
-Core analysis is an optional step that can be performed before clustering to identify core cells and compute core map embedding. The neighbors graph is already constructed in the preprocessing step:
+**Option A: Leiden Clustering (Recommended)**
 
 .. code-block:: python
 
-    # Core analysis preparation (neighbors graph is already constructed in preprocessing)
-    print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    print(f"Using representation: adata.obsm['X_latent'] (shape: {adata.obsm['X_latent'].shape})")
-
-Example output:
-
-.. code-block:: text
-
-    Neighbors graph ready: True
-    Using representation: adata.obsm['X_latent'] (shape: (180, 32))
-
-This step identifies core cells and computes core map embedding before clustering. The core analysis helps prepare the data for stable clustering by identifying stable cell populations.
-
-4. Clustering
------------
-
-Lotus supports multiple clustering methods through a unified interface:
-
-**Option A: Using Lotus cplearn (default)**
-
-.. code-block:: python
-
-    model = clustering(
+    leiden(
         adata,
-        method="cplearn",  # or omit for default
-        use_rep="X_latent",
-        key_added="cplearn_labels",
-        cluster_resolution=1.2,
-        print_summary=True,
-    )
-
-This method auto-detects the best representation (X_latent, X_pca, or X), generates stable clustering results, and outputs cluster labels to adata.obs.
-
-Example output (from running ``examples/lotus_workflow.py``):
-
-.. code-block:: text
-
-    Initiating FlowRank with r= 10
-    Original average degree: 20.0
-    Cluster summary: 0: 60, 1: 60, 2: 60
-    2025-11-23 00:13:47,577 - INFO - ✓ Clustering complete
-    2025-11-23 00:13:47,577 - INFO -   - Cluster labels stored in: `adata.obs['cplearn_labels']`
-    2025-11-23 00:13:47,577 - INFO -   - Number of clusters: 3
-    2025-11-23 00:13:47,577 - INFO -   - Cluster IDs: [0, 1, 2]
-
-**Option B: Using scanpy Leiden algorithm**
-
-.. code-block:: python
-
-    clustering(
-        adata,
-        method="leiden",
-        cluster_resolution=0.5,
-        key_added="leiden",  # auto-set if None
+        resolution=0.5,
+        key_added="leiden",
     )
     
-    # View clustering results
-    print(adata.obs["leiden"].value_counts())
+    print(f"Found {adata.obs['leiden'].nunique()} clusters")
 
-**Option C: Using scanpy Louvain algorithm**
+**Option B: Louvain Clustering**
 
 .. code-block:: python
 
-    clustering(
+    from lotus.workflows import louvain
+    
+    louvain(
         adata,
-        method="louvain",
-        cluster_resolution=0.5,
-        key_added="louvain",  # auto-set if None
+        resolution=0.5,
+        key_added="louvain",
     )
     
-    # View clustering results
-    print(adata.obs["louvain"].value_counts())
+    print(f"Found {adata.obs['louvain'].nunique()} clusters")
 
-**Switching between methods:**
-
-You can easily switch between clustering methods in the same workflow:
-
-.. code-block:: python
-
-    # First, try Leiden clustering
-    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
-    
-    # Then try Louvain with different resolution
-    clustering(adata, method="louvain", cluster_resolution=0.8, key_added="louvain")
-    
-    # Compare results
-    print("Leiden clusters:", adata.obs["leiden"].value_counts())
-    print("Louvain clusters:", adata.obs["louvain"].value_counts())
-    
-    # Use either cluster key for visualization
-    umap(adata, cluster_key="leiden", output_dir="./results", save="_leiden.png")
-    umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
-
-All methods output cluster labels in scanpy-compatible format and can be used with subsequent Lotus functions.
-
-5. Visualization
---------------
+Step 4: Visualization
+~~~~~~~~~~~~~~~~~~~~~
 
 Generate UMAP visualization of clustering results:
 
@@ -206,288 +165,214 @@ Generate UMAP visualization of clustering results:
 
     umap(
         adata,
-        cluster_key="cplearn_labels",  # Use "leiden" or "louvain" if using scanpy
+        cluster_key="leiden",  # or "louvain"
         output_dir="./results",
         save="_clusters.png",
     )
 
-This step computes UMAP dimensionality reduction and generates visualization plots of clustering results.
+This step computes UMAP dimensionality reduction and generates visualization plots. The UMAP embedding is stored in `adata.obsm['X_umap']`.
 
-The visualization is saved as a PNG file:
+Step 5: Differential Expression Analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
-
-    print(f"✓ UMAP visualization complete")
-    print(f"  - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: {adata.obsm['X_umap'].shape})")
-    print(f"  - Visualization saved to: ./results/umap_clusters.png")
-
-Example output (from running ``examples/lotus_workflow.py``):
-
-.. code-block:: text
-
-    WARNING: saving figure to file figures/umap_clusters.png
-    2025-11-23 00:13:48,497 - INFO - ✓ UMAP visualization complete
-    2025-11-23 00:13:48,497 - INFO -   - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: (180, 2))
-    2025-11-23 00:13:48,497 - INFO -   - Visualization saved to: /tmp/lotus_real_output/umap_clusters.png
-
-The output file contains a UMAP plot colored by cluster labels, showing the cell type separation.
-
-The visualization shows a UMAP embedding as a 2D representation of cells in the UMAP space, with color coding where each cluster is colored differently, and cell distribution that shows how cells are grouped and separated by cell type.
-
-Example UMAP visualization:
-
-.. figure:: _static/umap_clusters_example.png
-   :alt: UMAP visualization colored by cluster labels
-   :width: 600px
-   :align: center
-
-   UMAP plot showing cell clusters. Each color represents a different cell type/cluster identified by the clustering algorithm. The plot displays cells in 2D UMAP space, with well-separated clusters indicating distinct cell types.
-   
-   *To generate this image, run: ``python examples/lotus_workflow.py --clusters 3 --cells-per-cluster 60``, then copy ``result_*/umap_clusters.png`` to ``docs/_static/umap_clusters_example.png``*
-
-The UMAP plot shows the X-axis as UMAP dimension 1, the Y-axis as UMAP dimension 2, colors representing different clusters (e.g., cluster 0 in blue, cluster 1 in red, cluster 2 in green), points where each point represents a single cell, and separation where well-separated clusters indicate distinct cell types.
-
-.. note::
-
-   To generate the visualization images yourself, run the example script:
-   
-   .. code-block:: bash
-   
-      python examples/lotus_workflow.py --clusters 3 --cells-per-cluster 60
-   
-   This will create the UMAP plot (``umap_clusters.png``) and marker gene violin plot (``violin_markers.png``) in the output directory.
-   
-   The generated PNG file (``./results/umap_clusters.png``) can be opened in any image viewer to see the visualization.
-
-6. Differential Expression Analysis
------------------------------------
-
-Find marker genes between clusters:
+Find marker genes between clusters using scanpy's method:
 
 .. code-block:: python
 
-    de_result = marker_genes(
+    from lotus.workflows.deg_analysis import rank_genes_groups
+    
+    rank_genes_groups(
         adata,
-        cluster_key="cplearn_labels",  # Use "leiden" or "louvain" if using scanpy
-        layer="raw_counts",
-        auto_pick_groups=True,
+        groupby="leiden",  # or "louvain"
+        method="wilcoxon",
+        key_added="rank_genes_groups",
     )
+    
+    # View top marker genes for each cluster
+    import pandas as pd
+    result = pd.DataFrame(adata.uns['rank_genes_groups']['names']).head(5)
+    print(result)
 
-This step identifies differentially expressed genes between clusters, auto-selects comparison groups if not specified, and outputs a marker gene list.
-
-Check the results:
-
-.. code-block:: python
-
-    print(f"✓ DEG analysis complete")
-    print(f"  - Total differentially expressed genes: {len(de_result)}")
-    print(f"  - Significant genes (p_adj < 0.05): {(de_result['p_adj'] < 0.05).sum()}")
-    print(f"  - Significant genes (p_adj < 0.01): {(de_result['p_adj'] < 0.01).sum()}")
-    print("\nTop 10 differentially expressed genes:")
-    cols = ['gene', 'log2fc', 'z_score', 'pvalue', 'p_adj', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b']
-    print(de_result[cols].head(10).to_string(index=False))
-
-Example output (from running ``examples/lotus_workflow.py``):
-
-.. code-block:: text
-
-    Comparing groups {0} vs {1}
-    2025-11-23 00:13:51,088 - INFO - ✓ DEG analysis complete
-    2025-11-23 00:13:51,088 - INFO -   - Total differentially expressed genes: 50
-    2025-11-23 00:13:51,088 - INFO -   - Significant genes (p_adj < 0.05): 41
-    2025-11-23 00:13:51,088 - INFO -   - Significant genes (p_adj < 0.01): 39
-    2025-11-23 00:13:51,088 - INFO - 
-    Top 10 differentially expressed genes:
-    2025-11-23 00:13:51,091 - INFO - 
-        gene   log2fc   z_score       pvalue        p_adj   mean_a   mean_b  pct_expr_a  pct_expr_b
-    gene_002 2.187279 18.400315 2.021035e-20 3.368391e-19 6.666667 0.683333    1.000000    0.500000
-    gene_027 2.102686 19.505699 4.567841e-21 1.170854e-19 7.733333 1.033333    1.000000    0.600000
-    gene_021 2.078502 16.554285 4.683415e-21 1.170854e-19 9.700000 1.533333    1.000000    0.733333
-    gene_029 1.939962 12.955106 7.978928e-18 4.432738e-17 4.883333 0.533333    0.966667    0.366667
-    gene_032 1.911840 13.144602 6.643614e-18 4.152259e-17 5.083333 0.616667    0.966667    0.433333
-    gene_031 1.902821 15.913483 3.142358e-20 3.927948e-19 7.850000 1.366667    1.000000    0.750000
-    gene_045 1.866375 14.216678 6.965233e-19 4.975166e-18 6.900000 1.166667    1.000000    0.716667
-    gene_004 1.847075 14.939477 2.073976e-19 1.728313e-18 4.216667 0.450000    0.983333    0.350000
-    gene_023 1.603167 10.278753 1.255096e-15 4.827291e-15 4.316667 0.750000    0.983333    0.500000
-    gene_044 1.584963 12.506953 1.768928e-17 8.040582e-17 5.950000 1.316667    1.000000    0.666667
-    2025-11-23 00:13:51,093 - INFO -   - DEG results saved to: /tmp/lotus_real_output/deg_results.csv
-
-The result is a pandas DataFrame containing gene names, log2 fold changes, z-scores, p-values, adjusted p-values, and expression statistics (mean expression in each group, percentage of cells expressing the gene).
-
-Complete Example
-----------------
-
-Here's a complete workflow example that you can run. For the full example script with logging and error handling, see `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_:
+Complete Standard Workflow Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import (
-        preprocess,
-        clustering,
-        umap,
-        marker_genes,
-        core_analysis,
-    )
-    import numpy as np
+    from lotus.workflows import preprocess, leiden, umap
+    from lotus.workflows.deg_analysis import rank_genes_groups
     
-    # Load your data (example with synthetic data)
-    # adata = lt.read("path/to/your/data.h5ad")
+    # 1. Load data
+    # adata = lt.read("path/to/data.h5ad")
     
-    # 1. Preprocessing
-    preprocess(adata, n_pcs=20, target_sum=1e4, n_top_genes=2000, n_neighbors=15, save_raw=True)
-    print(f"Preprocessing complete. Data shape: {adata.shape}")
+    # 2. Preprocessing
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Core Analysis (optional, before clustering)
-    # Skip this step if you don't need core analysis
-    # print(f"Neighbors graph ready: {'neighbors' in adata.uns}")
-    # from lotus.methods.cplearn.external import cplearn
-    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
-    # core_analysis(adata, model=model, key_added="X_cplearn_coremap")
-    # print("Core analysis complete")
-    
-    # 3. Clustering
-    # Option 1: Using Leiden (scanpy)
-    clustering(adata, method="leiden", cluster_resolution=0.5, key_added="leiden")
-    print(f"Leiden clustering complete. Found {len(adata.obs['leiden'].unique())} clusters")
-    
-    # Option 2: Using Louvain (scanpy)
-    # clustering(adata, method="louvain", cluster_resolution=0.5, key_added="louvain")
-    # print(f"Louvain clustering complete. Found {len(adata.obs['louvain'].unique())} clusters")
-    
-    # Option 3: Using cplearn (requires core analysis)
-    # from lotus.methods.cplearn.external import cplearn
-    # model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
-    # clustering(adata, method="cplearn", use_rep="X_latent", key_added="cplearn_labels", cluster_resolution=1.2)
-    # print(f"Cplearn clustering complete. Found {len(adata.obs['cplearn_labels'].unique())} clusters")
+    # 3. Clustering (Leiden)
+    leiden(adata, resolution=0.5, key_added="leiden")
     
     # 4. Visualization
     umap(adata, cluster_key="leiden", output_dir="./results", save="_clusters.png")
-    print("UMAP visualization saved to ./results/umap_clusters.png")
     
-    # 5. Differential Expression
-    de_result = marker_genes(adata, cluster_key="leiden", layer="raw_counts", auto_pick_groups=True)
-    print(f"DEG analysis complete. Found {len(de_result)} differentially expressed genes")
-    print(f"Top 5 marker genes: {de_result['gene'].head(5).tolist()}")
+    # 5. Differential Expression Analysis
+    rank_genes_groups(adata, groupby="leiden", method="wilcoxon")
     
-    print("\n✓ Analysis complete! Check ./results/ for output files.")
+    print("✓ Standard workflow complete!")
 
-Example output (from running ``examples/lotus_workflow.py``):
+.. _alternating_methods:
 
-.. code-block:: text
+3. Alternating Methods: Core Analysis + Cplearn vs Scanpy
+----------------------------------------------------------
 
-    2025-11-23 00:13:35,955 - INFO - ============================================================
-    2025-11-23 00:13:35,955 - INFO - Lotus Workflow - Starting Analysis
-    2025-11-23 00:13:35,955 - INFO - ============================================================
-    2025-11-23 00:13:35,957 - INFO - Generated AnnData with shape (180, 50) and 50 genes.
-    2025-11-23 00:13:35,957 - INFO - 
-    ============================================================
-    2025-11-23 00:13:35,957 - INFO - Preprocessing Pipeline
-    2025-11-23 00:13:35,957 - INFO - ============================================================
-    2025-11-23 00:13:35,958 - INFO - Running complete preprocessing pipeline...
-    2025-11-23 00:13:39,358 - INFO - ✓ Preprocessing complete
-    2025-11-23 00:13:39,358 - INFO -   - Data shape: (180, 50)
-    2025-11-23 00:13:39,358 - INFO -   - PCA stored in: `adata.obsm['X_pca']` (shape: (180, 20))
-    2025-11-23 00:13:39,358 - INFO -   - Latent representation stored in: `adata.obsm['X_latent']` (shape: (180, 32))
-    2025-11-23 00:13:39,358 - INFO -   - Raw counts saved in: `adata.layers['raw_counts']`
-    2025-11-23 00:13:39,358 - INFO -   - Neighbors graph constructed: True
-    2025-11-23 00:13:39,358 - INFO - 
-    ============================================================
-    2025-11-23 00:13:39,358 - INFO - Clustering
-    2025-11-23 00:13:39,358 - INFO - ============================================================
-    2025-11-23 00:13:39,358 - INFO - Performing clustering analysis...
-    Initiating FlowRank with r= 10
-    Original average degree: 20.0
-    Cluster summary: 0: 60, 1: 60, 2: 60
-    2025-11-23 00:13:47,577 - INFO - ✓ Clustering complete
-    2025-11-23 00:13:47,577 - INFO -   - Cluster labels stored in: `adata.obs['cplearn_labels']`
-    2025-11-23 00:13:47,577 - INFO -   - Number of clusters: 3
-    2025-11-23 00:13:47,577 - INFO -   - Cluster IDs: [0, 1, 2]
-    2025-11-23 00:13:47,577 - INFO - 
-    ============================================================
-    2025-11-23 00:13:47,577 - INFO - Visualization: UMAP
-    2025-11-23 00:13:47,577 - INFO - ============================================================
-    2025-11-23 00:13:47,577 - INFO - Computing UMAP embedding and generating visualization...
-    WARNING: saving figure to file figures/umap_clusters.png
-    2025-11-23 00:13:48,497 - INFO - ✓ UMAP visualization complete
-    2025-11-23 00:13:48,497 - INFO -   - UMAP embedding stored in: `adata.obsm['X_umap']` (shape: (180, 2))
-    2025-11-23 00:13:48,497 - INFO -   - Visualization saved to: /tmp/lotus_real_output/umap_clusters.png
-    2025-11-23 00:13:48,497 - INFO - 
-    ============================================================
-    2025-11-23 00:13:48,497 - INFO - CoreAnalysis: Neighbors → CoreAnalysis
-    2025-11-23 00:13:48,497 - INFO - ============================================================
-    2025-11-23 00:13:48,497 - INFO - Computing core map embedding...
-    Total number of clusters= 3
-    [60, 52, 48]
-    Fitting GMM anchors: 100%|██████████| 3/3 [00:00<00:00, 10.31it/s]
-    GMM time=0.292 seconds (corrected)
-    Shape of embedding after round 0 is (160, 32)
-    Shape of embedding after round 1 is (165, 32)
-    Shape of embedding after round 2 is (170, 32)
-    Shape of embedding after round 3 is (174, 32)
-    Shape of embedding after round 4 is (177, 32)
-    Shape of embedding after round 5 is (180, 32)
-    Stored anchored map embedding in `adata.obsm['X_cplearn_coremap']` (180/180 points assigned).
-    2025-11-23 00:13:51,072 - INFO - ✓ CoreAnalysis complete
-    2025-11-23 00:13:51,072 - INFO -   - Core map embedding stored in: `adata.obsm['X_cplearn_coremap']` (shape: (180, 32))
-    2025-11-23 00:13:51,072 - INFO -   - Assigned points: 180/180 (100.0%)
-    2025-11-23 00:13:51,072 - INFO - 
-    ============================================================
-    2025-11-23 00:13:51,072 - INFO - DEG: Marker Genes
-    2025-11-23 00:13:51,072 - INFO - ============================================================
-    2025-11-23 00:13:51,072 - INFO - Identifying differentially expressed genes (marker genes)...
-    Comparing groups {0} vs {1}
-    2025-11-23 00:13:51,088 - INFO - ✓ DEG analysis complete
-    2025-11-23 00:13:51,088 - INFO -   - Total differentially expressed genes: 50
-    2025-11-23 00:13:51,088 - INFO -   - Significant genes (p_adj < 0.05): 41
-    2025-11-23 00:13:51,088 - INFO -   - Significant genes (p_adj < 0.01): 39
-    2025-11-23 00:13:51,088 - INFO - 
-    Top 10 differentially expressed genes:
-    2025-11-23 00:13:51,091 - INFO - 
-        gene   log2fc   z_score       pvalue        p_adj   mean_a   mean_b  pct_expr_a  pct_expr_b
-    gene_002 2.187279 18.400315 2.021035e-20 3.368391e-19 6.666667 0.683333    1.000000    0.500000
-    gene_027 2.102686 19.505699 4.567841e-21 1.170854e-19 7.733333 1.033333    1.000000    0.600000
-    gene_021 2.078502 16.554285 4.683415e-21 1.170854e-19 9.700000 1.533333    1.000000    0.733333
-    gene_029 1.939962 12.955106 7.978928e-18 4.432738e-17 4.883333 0.533333    0.966667    0.366667
-    gene_032 1.911840 13.144602 6.643614e-18 4.152259e-17 5.083333 0.616667    0.966667    0.433333
-    gene_031 1.902821 15.913483 3.142358e-20 3.927948e-19 7.850000 1.366667    1.000000    0.750000
-    gene_045 1.866375 14.216678 6.965233e-19 4.975166e-18 6.900000 1.166667    1.000000    0.716667
-    gene_004 1.847075 14.939477 2.073976e-19 1.728313e-18 4.216667 0.450000    0.983333    0.350000
-    gene_023 1.603167 10.278753 1.255096e-15 4.827291e-15 4.316667 0.750000    0.983333    0.500000
-    gene_044 1.584963 12.506953 1.768928e-17 8.040582e-17 5.950000 1.316667    1.000000    0.666667
-    2025-11-23 00:13:51,093 - INFO -   - DEG results saved to: /tmp/lotus_real_output/deg_results.csv
-    2025-11-23 00:13:51,093 - INFO - 
-    ============================================================
-    2025-11-23 00:13:51,093 - INFO - Visualization: Rendering all visualizations
-    2025-11-23 00:13:51,093 - INFO - ============================================================
-    WARNING: saving figure to file figures/umap_clusters.png
-    WARNING: saving figure to file figures/violin_markers.png
-    2025-11-23 00:13:51,487 - INFO -   - Moved violin_markers.png to output directory
-    2025-11-23 00:13:51,487 - INFO -   - Moved umap_clusters.png to output directory
-    2025-11-23 00:13:51,487 - INFO - ✓ All visualizations complete
-    2025-11-23 00:13:51,487 - INFO -   - UMAP clusters plot: /tmp/lotus_real_output/umap_clusters.png
-    2025-11-23 00:13:51,487 - INFO -   - Marker genes violin plot: /tmp/lotus_real_output/violin_markers.png
-    2025-11-23 00:13:51,487 - INFO -   - Top 5 marker genes visualized: gene_002, gene_027, gene_021, gene_029, gene_032
-    2025-11-23 00:13:51,487 - INFO - 
-    ============================================================
-    2025-11-23 00:13:51,487 - INFO - Workflow Summary
-    2025-11-23 00:13:51,487 - INFO - ============================================================
-    2025-11-23 00:13:51,487 - INFO - ✓ All results saved to: /private/tmp/lotus_real_output
-    2025-11-23 00:13:51,487 - INFO - ✓ Output directory: lotus_real_output
-    2025-11-23 00:13:51,487 - INFO -   - Log file: /tmp/lotus_real_output/workflow_20251123_001335.log
-    2025-11-23 00:13:51,487 - INFO -   - DEG results: /tmp/lotus_real_output/deg_results.csv
-    2025-11-23 00:13:51,487 - INFO -   - UMAP plot: /tmp/lotus_real_output/umap_clusters.png
-    2025-11-23 00:13:51,487 - INFO -   - Violin plot: /tmp/lotus_real_output/violin_markers.png
-    2025-11-23 00:13:51,487 - INFO - ============================================================
-    2025-11-23 00:13:51,487 - INFO - Workflow completed successfully!
-    2025-11-23 00:13:51,487 - INFO - ============================================================
+This section demonstrates how to alternate between different analysis methods:
+- **Core Analysis + Cplearn**: Use cplearn for clustering and coremap for visualization
+- **Scanpy Methods**: Use Leiden/Louvain for clustering and UMAP for visualization
 
-Output Files
-------------
+You can switch between these methods in the same workflow to compare results.
 
-After running the complete workflow, you'll find the following output files in the ``./results/`` directory: ``umap_clusters.png`` (UMAP visualization colored by cluster labels) and ``deg_results.csv`` (complete differential expression results, if saved).
+Workflow A: Core Analysis + Cplearn Clustering + Coremap Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This workflow uses cplearn's core-periphery learning approach:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.visualization import coremap
+    from lotus.methods.cplearn.external import cplearn
+    
+    # 1. Preprocessing (same as standard workflow)
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 2. Core Analysis: Identify core cells and compute core map embedding
+    model = cplearn.corespect(
+        adata,
+        use_rep="X_latent",  # or "X_pca"
+        key_added="cplearn",
+        stable={"core_frac": 0.25, "ng_num": 8},
+        cluster={"resolution": 1.2},
+    )
+    
+    # 3. Compute core map embedding
+    core_analyze(
+        adata,
+        model=model,
+        use_rep="X_latent",
+        key_added="X_cplearn_coremap",
+    )
+    
+    # 4. Visualization: Use coremap instead of UMAP
+    coremap(
+        adata,
+        coremap_key="X_cplearn_coremap",
+        cluster_key="cplearn",
+        output_dir="./results",
+        save="_cplearn_coremap.html",
+    )
+    
+    print("✓ Cplearn workflow complete!")
+    print(f"  - Clusters: {adata.obs['cplearn'].nunique()}")
+    print(f"  - Core map embedding: adata.obsm['X_cplearn_coremap']")
+
+Workflow B: Scanpy Louvain + UMAP Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This workflow uses standard scanpy methods:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess, umap, louvain
+    
+    # 1. Preprocessing (same as standard workflow)
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 2. Clustering: Use Louvain (scanpy)
+    louvain(
+        adata,
+        resolution=0.5,
+        key_added="louvain",
+    )
+    
+    # 3. Visualization: Use UMAP (scanpy)
+    umap(
+        adata,
+        cluster_key="louvain",
+        output_dir="./results",
+        save="_louvain_umap.png",
+    )
+    
+    print("✓ Scanpy workflow complete!")
+    print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
+    print(f"  - UMAP embedding: adata.obsm['X_umap']")
+
+Alternating Between Methods in the Same Workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can run both workflows on the same data to compare results:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess, umap, leiden, louvain
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.visualization import coremap
+    from lotus.methods.cplearn.external import cplearn
+    
+    # 1. Preprocessing (shared by both workflows)
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # === Workflow A: Cplearn ===
+    # Core analysis + cplearn clustering
+    model = cplearn.corespect(
+        adata,
+        use_rep="X_latent",
+        key_added="cplearn",
+        stable={"core_frac": 0.25, "ng_num": 8},
+        cluster={"resolution": 1.2},
+    )
+    core_analyze(adata, model=model, use_rep="X_latent", key_added="X_cplearn_coremap")
+    
+    # Cplearn visualization (coremap)
+    coremap(adata, coremap_key="X_cplearn_coremap", cluster_key="cplearn", 
+            output_dir="./results", save="_cplearn.html")
+    
+    # === Workflow B: Scanpy ===
+    # Louvain clustering
+    louvain(adata, resolution=0.5, key_added="louvain")
+    
+    # Scanpy visualization (UMAP)
+    umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
+    
+    # === Compare Results ===
+    print("Cplearn clusters:", adata.obs['cplearn'].value_counts())
+    print("Louvain clusters:", adata.obs['louvain'].value_counts())
+    
+    # Both cluster keys can be used for DEG analysis
+    from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
+    
+    # Use scanpy method with Louvain clusters
+    rank_genes_groups(adata, groupby="louvain", method="wilcoxon")
+    
+    # Or use cplearn method with cplearn clusters
+    marker_genes(adata, cluster_key="cplearn", layer="raw_counts")
+
+Key Points
+~~~~~~~~~~
+
+- **Preprocessing is shared**: Both workflows use the same preprocessing step
+- **Clustering methods are independent**: You can run multiple clustering methods on the same data
+- **Visualization methods match clustering**: 
+  - Use `coremap()` with cplearn clusters
+  - Use `umap()` with scanpy clusters (Leiden/Louvain)
+- **DEG analysis is flexible**: Both `rank_genes_groups` (scanpy) and `marker_genes` (cplearn) can be used with any cluster key
+- **All results are stored separately**: Each method stores results in different keys (e.g., `adata.obs['cplearn']`, `adata.obs['louvain']`)
 
 Next Steps
 ----------
 
-See :doc:`api/index` for the complete API reference. Run the example script ``examples/lotus_workflow.py`` for a more detailed example with logging. View the complete example on GitHub: `lotus_workflow.py <https://github.com/CrossOmics/Lotus/blob/main/examples/lotus_workflow.py>`_.
+- See :doc:`api/index` for the complete API reference
+- Check out the `examples <https://github.com/CrossOmics/Lotus/tree/main/examples>`_ directory for more detailed examples
+- Visit the `Interactive Lotus Embedding Projector <https://huggingface.co/spaces/zzq1zh/Lotus-hf>`_ to try Lotus interactively
