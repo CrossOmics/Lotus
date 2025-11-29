@@ -47,4 +47,5 @@ jobs:
           publish_dir: ./docs/_build/html
           cname: false
           force_orphan: true
+          keep_files: false
 
