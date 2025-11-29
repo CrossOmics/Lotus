@@ -297,8 +297,14 @@ Example output visualization:
 
 .. note::
 
-   The coremap visualization is an interactive HTML file. See the generated file for interactive exploration.
-   For a static example, refer to the cplearn workflow output in the alternating methods section below.
+   The coremap visualization generates an interactive HTML file with Plotly. 
+   The HTML file is self-contained (includes all Plotly.js libraries) and can be 
+   directly hosted on GitHub Pages.
+   
+   View the interactive visualization: 
+   `coremap_cplearn_workflow.html <_static/examples/coremap_cplearn_workflow.html>`_
+   
+   The HTML file works directly in GitHub Pages - no additional setup needed!
 
 Workflow B: Scanpy Louvain + UMAP Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

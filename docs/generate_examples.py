@@ -67,9 +67,11 @@ def example_1_standard_workflow(output_dir: Path) -> None:
     print("Example 1: Standard Scanpy Workflow")
     print("=" * 60)
     
-    # Create synthetic data
-    adata = build_demo_dataset(n_clusters=3, cells_per_cluster=60, random_state=42)
-    print(f"Created dataset: {adata.shape}")
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
     
     # 1. Preprocessing
     print("\n1. Preprocessing...")
@@ -104,9 +106,11 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
     print("Example 2: Core Analysis + Cplearn Workflow")
     print("=" * 60)
     
-    # Create synthetic data
-    adata = build_demo_dataset(n_clusters=3, cells_per_cluster=60, random_state=42)
-    print(f"Created dataset: {adata.shape}")
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
     
     # 1. Preprocessing
     print("\n1. Preprocessing...")
@@ -140,14 +144,42 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
     
     # 4. Visualization: Coremap
     print("\n4. Visualization (Coremap)...")
-    coremap(
-        adata,
-        coremap_key="X_cplearn_coremap",
-        cluster_key="cplearn",
-        output_dir=str(output_dir),
-        save="_cplearn_workflow.html",
-    )
-    print(f"   Saved: {output_dir}/coremap_cplearn_workflow.html")
+    # Set figdir to ensure files are saved in output_dir
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        coremap(
+            adata,
+            coremap_key="X_cplearn_coremap",
+            cluster_key="cplearn",
+            output_dir=str(output_dir),
+            save="coremap_cplearn_workflow.html",
+            model=model,  # Pass model for proper visualization
+        )
+        html_path = output_dir / "coremap_cplearn_workflow.html"
+        if html_path.exists():
+            print(f"   Saved: {html_path}")
+        else:
+            print(f"   Warning: HTML file not found at {html_path}")
+    finally:
+        lt.settings.figdir = old_figdir
+    
+    # Try to convert HTML to PNG for GitHub Pages compatibility
+    try:
+        import plotly.graph_objects as go
+        from plotly.io import from_json, to_image
+        import json
+        
+        # Read the HTML file and extract the Plotly figure JSON
+        with open(html_path, 'r') as f:
+            html_content = f.read()
+        
+        # Try to extract Plotly figure from HTML (basic approach)
+        # For a more robust solution, we could use kaleido or orca
+        # For now, we'll keep the HTML and add a note in the documentation
+        print("   Note: HTML file can be viewed locally or converted to PNG using kaleido")
+    except Exception as e:
+        print(f"   Note: HTML file saved. For static image, install kaleido: pip install kaleido")
     
     print("\n✓ Cplearn workflow complete!")
 
@@ -158,9 +190,11 @@ def example_3_alternating_methods(output_dir: Path) -> None:
     print("Example 3: Alternating Methods")
     print("=" * 60)
     
-    # Create synthetic data
-    adata = build_demo_dataset(n_clusters=3, cells_per_cluster=60, random_state=42)
-    print(f"Created dataset: {adata.shape}")
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
     
     # 1. Preprocessing (shared)
     print("\n1. Preprocessing (shared)...")
@@ -182,13 +216,25 @@ def example_3_alternating_methods(output_dir: Path) -> None:
         print(f"   Warning: Cplearn workflow failed: {e}")
         print("   Skipping cplearn visualization...")
         return
-    coremap(
-        adata,
-        coremap_key="X_cplearn_coremap",
-        cluster_key="cplearn",
-        output_dir=str(output_dir),
-        save="_alternating_cplearn.html",
-    )
+    # Set figdir to output_dir
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        coremap(
+            adata,
+            coremap_key="X_cplearn_coremap",
+            cluster_key="cplearn",
+            output_dir=str(output_dir),
+            save="coremap_alternating_cplearn.html",
+            model=model,  # Pass model for proper visualization
+        )
+        html_path = output_dir / "coremap_alternating_cplearn.html"
+        if html_path.exists():
+            print(f"   Saved: {html_path}")
+        else:
+            print(f"   Warning: HTML file not found at {html_path}")
+    finally:
+        lt.settings.figdir = old_figdir
     print(f"   Cplearn clusters: {adata.obs['cplearn'].nunique()}")
     
     # === Workflow B: Scanpy Louvain ===
