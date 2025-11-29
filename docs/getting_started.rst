@@ -204,14 +204,18 @@ Find marker genes between clusters using scanpy's method:
 Complete Standard Workflow Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+This example uses the demo dataset included in the repository:
+
 .. code-block:: python
 
     import lotus as lt
     from lotus.workflows import preprocess, leiden, umap
     from lotus.workflows.deg_analysis import rank_genes_groups
     
-    # 1. Load data
-    # adata = lt.read("path/to/data.h5ad")
+    # 1. Load data (using demo dataset from repository)
+    adata = lt.read("data/demo_data.h5ad")
+    # Or load your own data:
+    # adata = lt.read("path/to/your/data.h5ad")
     
     # 2. Preprocessing
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
@@ -229,12 +233,14 @@ Complete Standard Workflow Example
 
 Example output visualization:
 
+The visualization below was generated using the demo dataset (`data/demo_data.h5ad`) with the standard workflow:
+
 .. figure:: _static/examples/umap_standard_workflow.png
    :alt: UMAP visualization from standard workflow
    :width: 600px
    :align: center
 
-   UMAP visualization colored by Leiden clusters from the standard workflow example.
+   UMAP visualization colored by Leiden clusters from the standard workflow example, generated using `data/demo_data.h5ad`.
 
 .. _alternating_methods:
 
@@ -260,10 +266,13 @@ This workflow uses cplearn's core-periphery learning approach:
     from lotus.workflows.visualization import coremap
     from lotus.methods.cplearn.external import cplearn
     
-    # 1. Preprocessing (same as standard workflow)
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing (same as standard workflow)
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Core Analysis: Identify core cells and compute core map embedding
+    # 3. Core Analysis: Identify core cells and compute core map embedding
     model = cplearn.corespect(
         adata,
         use_rep="X_latent",  # or "X_pca"
@@ -272,7 +281,7 @@ This workflow uses cplearn's core-periphery learning approach:
         cluster={"resolution": 1.2},
     )
     
-    # 3. Compute core map embedding
+    # 4. Compute core map embedding
     core_analyze(
         adata,
         model=model,
@@ -280,7 +289,7 @@ This workflow uses cplearn's core-periphery learning approach:
         key_added="X_cplearn_coremap",
     )
     
-    # 4. Visualization: Use coremap instead of UMAP
+    # 5. Visualization: Use coremap instead of UMAP
     coremap(
         adata,
         coremap_key="X_cplearn_coremap",
@@ -295,16 +304,20 @@ This workflow uses cplearn's core-periphery learning approach:
 
 Example output visualization:
 
+The interactive coremap visualization below was generated using the demo dataset (`data/demo_data.h5ad`):
+
 .. note::
 
    The coremap visualization generates an interactive HTML file with Plotly. 
-   The HTML file is self-contained (includes all Plotly.js libraries) and can be 
-   directly hosted on GitHub Pages.
+   The HTML file is self-contained (includes all Plotly.js libraries) and works directly on GitHub Pages.
    
-   View the interactive visualization: 
+   **View the interactive visualization:** 
    `coremap_cplearn_workflow.html <_static/examples/coremap_cplearn_workflow.html>`_
    
-   The HTML file works directly in GitHub Pages - no additional setup needed!
+   The HTML file is accessible at: 
+   ``https://crossomics.github.io/Lotus/_static/examples/coremap_cplearn_workflow.html``
+   
+   You can also download and open it locally in your browser for full interactivity.
 
 Workflow B: Scanpy Louvain + UMAP Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -316,7 +329,10 @@ This workflow uses standard scanpy methods:
     import lotus as lt
     from lotus.workflows import preprocess, umap, louvain
     
-    # 1. Preprocessing (same as standard workflow)
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing (same as standard workflow)
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
     # 2. Clustering: Use Louvain (scanpy)
@@ -340,12 +356,14 @@ This workflow uses standard scanpy methods:
 
 Example output visualization:
 
+The visualization below was generated using the demo dataset (`data/demo_data.h5ad`) with the Louvain workflow:
+
 .. figure:: _static/examples/umap_alternating_louvain.png
    :alt: UMAP visualization from Louvain workflow
    :width: 600px
    :align: center
 
-   UMAP visualization colored by Louvain clusters from the scanpy workflow example.
+   UMAP visualization colored by Louvain clusters from the scanpy workflow example, generated using `data/demo_data.h5ad`.
 
 Alternating Between Methods in the Same Workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -360,11 +378,14 @@ You can run both workflows on the same data to compare results:
     from lotus.workflows.visualization import coremap
     from lotus.methods.cplearn.external import cplearn
     
-    # 1. Preprocessing (shared by both workflows)
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing (shared by both workflows)
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
     # === Workflow A: Cplearn ===
-    # Core analysis + cplearn clustering
+    # 3. Core analysis + cplearn clustering
     model = cplearn.corespect(
         adata,
         use_rep="X_latent",
@@ -379,10 +400,10 @@ You can run both workflows on the same data to compare results:
             output_dir="./results", save="_cplearn.html")
     
     # === Workflow B: Scanpy ===
-    # Louvain clustering
+    # 4. Louvain clustering
     louvain(adata, resolution=0.5, key_added="louvain")
     
-    # Scanpy visualization (UMAP)
+    # 5. Scanpy visualization (UMAP)
     umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
     
     # === Compare Results ===
