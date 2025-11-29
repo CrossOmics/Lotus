@@ -277,157 +277,6 @@ def coremap(
         fig.show()
 
 
-def tsne(
-    adata: AnnData,
-    *,
-    cluster_key: str = "cplearn",
-    truth_key: str | None = "truth",
-    output_dir: Path | None = None,
-    save: str | bool = "_tsne.png",
-    show: bool = False,
-    compute_tsne: bool = True,
-    n_pcs: int | None = None,
-    use_rep: str | None = None,
-    perplexity: float = 30,
-    random_state: int = 0,
-    early_exaggeration: float = 12,
-    learning_rate: float = 1000,
-) -> None:
-    """
-    Compute t-SNE embedding and generate t-SNE plot.
-    
-    Parameters:
-        adata: AnnData object
-        cluster_key: Key name for cluster labels in adata.obs. Default: "cplearn"
-        truth_key: Key name for truth labels in adata.obs. Default: None
-        output_dir: Output directory. Default: None
-        save: Save filename or False to not save. Default: "_tsne.png"
-        show: Whether to show the plot. Default: False
-        compute_tsne: Compute t-SNE embedding if not already computed. Default: True
-        n_pcs: Number of PCs to use. Default: None
-        use_rep: Representation to use. Default: None
-        perplexity: Perplexity parameter. Default: 30
-        random_state: Random seed. Default: 0
-        early_exaggeration: Early exaggeration parameter. Default: 12
-        learning_rate: Learning rate. Default: 1000
-    """
-    # Compute t-SNE embedding if needed
-    if compute_tsne and "X_tsne" not in adata.obsm:
-        lt.tl.tsne(
-            adata,
-            n_pcs=n_pcs,
-            use_rep=use_rep,
-            perplexity=perplexity,
-            random_state=random_state,
-            early_exaggeration=early_exaggeration,
-            learning_rate=learning_rate,
-        )
-    
-    if output_dir is not None:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        old_figdir = lt.settings.figdir
-        abs_output_dir = str(output_dir.resolve())
-        lt.settings.figdir = abs_output_dir
-        try:
-            colors = [cluster_key]
-            if truth_key and truth_key in adata.obs:
-                colors.append(truth_key)
-            
-            lt.pl.tsne(
-                adata,
-                color=colors,
-                wspace=0.35,
-                show=show,
-                save=save,
-            )
-        finally:
-            lt.settings.figdir = old_figdir
-    else:
-        colors = [cluster_key]
-        if truth_key and truth_key in adata.obs:
-            colors.append(truth_key)
-        
-        lt.pl.tsne(
-            adata,
-            color=colors,
-            wspace=0.35,
-            show=show,
-            save=save,
-        )
-
-
-def diffmap(
-    adata: AnnData,
-    *,
-    cluster_key: str = "cplearn",
-    truth_key: str | None = "truth",
-    output_dir: Path | None = None,
-    save: str | bool = "_diffmap.png",
-    show: bool = False,
-    compute_diffmap: bool = True,
-    n_comps: int = 15,
-    neighbors_key: str | None = None,
-    random_state: int = 0,
-) -> None:
-    """
-    Compute diffusion map embedding and generate diffusion map plot.
-    
-    Parameters:
-        adata: AnnData object
-        cluster_key: Key name for cluster labels in adata.obs. Default: "cplearn"
-        truth_key: Key name for truth labels in adata.obs. Default: None
-        output_dir: Output directory. Default: None
-        save: Save filename or False to not save. Default: "_diffmap.png"
-        show: Whether to show the plot. Default: False
-        compute_diffmap: Compute diffusion map embedding if not already computed. Default: True
-        n_comps: Number of components. Default: 15
-        neighbors_key: Key for neighbors in adata.uns. Default: None
-        random_state: Random seed. Default: 0
-    """
-    # Compute diffusion map embedding if needed
-    if compute_diffmap and "X_diffmap" not in adata.obsm:
-        lt.tl.diffmap(
-            adata,
-            n_comps=n_comps,
-            neighbors_key=neighbors_key,
-            random_state=random_state,
-        )
-    
-    if output_dir is not None:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        old_figdir = lt.settings.figdir
-        abs_output_dir = str(output_dir.resolve())
-        lt.settings.figdir = abs_output_dir
-        try:
-            colors = [cluster_key]
-            if truth_key and truth_key in adata.obs:
-                colors.append(truth_key)
-            
-            lt.pl.diffmap(
-                adata,
-                color=colors,
-                wspace=0.35,
-                show=show,
-                save=save,
-            )
-        finally:
-            lt.settings.figdir = old_figdir
-    else:
-        colors = [cluster_key]
-        if truth_key and truth_key in adata.obs:
-            colors.append(truth_key)
-        
-        lt.pl.diffmap(
-            adata,
-            color=colors,
-            wspace=0.35,
-            show=show,
-            save=save,
-        )
-
-
 def draw_graph(
     adata: AnnData,
     *,
@@ -514,7 +363,7 @@ def draw_graph(
 def visualization(
     adata: AnnData,
     *,
-    method: Literal["umap", "tsne", "diffmap", "draw_graph", "coremap"] = "umap",
+    method: Literal["umap", "draw_graph", "coremap"] = "umap",
     cluster_key: str = "cplearn",
     truth_key: str | None = "truth",
     output_dir: Path | None = None,
@@ -535,8 +384,6 @@ def visualization(
         show: Whether to show the plot. Default: False
         **kwargs: Method-specific parameters:
             - umap: min_dist, spread, n_components, compute_umap
-            - tsne: n_pcs, use_rep, perplexity, random_state, early_exaggeration, learning_rate, compute_tsne
-            - diffmap: n_comps, neighbors_key, random_state, compute_diffmap
             - draw_graph: layout, init_pos, root, random_state, neighbors_key, compute_draw_graph, **kwargs
             - coremap: coremap_key, model, use_webgl, **kwargs
     """
@@ -544,10 +391,6 @@ def visualization(
     if save is None:
         if method == "umap":
             save = "_umap.png"
-        elif method == "tsne":
-            save = "_tsne.png"
-        elif method == "diffmap":
-            save = "_diffmap.png"
         elif method == "draw_graph":
             save = "_draw_graph.png"
         elif method == "coremap":
@@ -558,26 +401,6 @@ def visualization(
     # Call method-specific function
     if method == "umap":
         umap(
-            adata,
-            cluster_key=cluster_key,
-            truth_key=truth_key,
-            output_dir=output_dir,
-            save=save,
-            show=show,
-            **kwargs,
-        )
-    elif method == "tsne":
-        tsne(
-            adata,
-            cluster_key=cluster_key,
-            truth_key=truth_key,
-            output_dir=output_dir,
-            save=save,
-            show=show,
-            **kwargs,
-        )
-    elif method == "diffmap":
-        diffmap(
             adata,
             cluster_key=cluster_key,
             truth_key=truth_key,
@@ -609,7 +432,7 @@ def visualization(
     else:
         raise ValueError(
             f"Unknown visualization method: {method}. "
-            f"Supported methods: 'umap', 'tsne', 'diffmap', 'draw_graph', 'coremap'"
+            f"Supported methods: 'umap', 'draw_graph', 'coremap'"
         )
 
 
@@ -701,8 +524,6 @@ def render_visualizations(
 
 __all__ = [
     "umap",
-    "tsne",
-    "diffmap",
     "draw_graph",
     "coremap",
     "visualization",

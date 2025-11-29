@@ -12,10 +12,6 @@ Visualization is an important way to display analysis results and help understan
 
 * **UMAP**: L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
 
-* **t-SNE**: L. van der Maaten and G. Hinton. *Visualizing Data using t-SNE.* Journal of Machine Learning Research 9, 2579-2605 (2008).
-
-* **Diffusion Maps**: R. R. Coifman and S. Lafon. *Diffusion maps.* Applied and Computational Harmonic Analysis 21, 5-30 (2006).
-
 * **CoreMap**: If you use CoreMap visualization, please cite the `cplearn <https://github.com/csmukherjee/cplearn>`_ package and the CoreSPECT paper (see :doc:`../citations`).
 
 Main Functions
@@ -34,8 +30,6 @@ Unified Visualization Function
       
       # Use different visualization methods
       visualization.visualization(adata, method="umap", cluster_key="leiden")
-      visualization.visualization(adata, method="tsne", perplexity=50)
-      visualization.visualization(adata, method="diffmap", n_comps=20)
       visualization.visualization(adata, method="draw_graph", layout="fa")
       visualization.visualization(adata, method="coremap", model=model)
 
@@ -63,46 +57,6 @@ UMAP Visualization
       # cluster_key="leiden"  # if using sc.tl.leiden()
       # cluster_key="louvain"  # if using sc.tl.louvain()
 
-
-t-SNE Visualization
-~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: lotus.workflows.visualization.tsne
-
-   **Usage Example:**
-
-   .. code-block:: python
-
-      from lotus.workflows import visualization
-      
-      visualization.tsne(
-          adata,
-          cluster_key="leiden",
-          truth_key="truth",
-          output_dir="./results",
-          save="_tsne.png",
-          perplexity=50,
-      )
-
-Diffusion Map Visualization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: lotus.workflows.visualization.diffmap
-
-   **Usage Example:**
-
-   .. code-block:: python
-
-      from lotus.workflows import visualization
-      
-      visualization.diffmap(
-          adata,
-          cluster_key="leiden",
-          truth_key="truth",
-          output_dir="./results",
-          save="_diffmap.png",
-          n_comps=20,
-      )
 
 Force-Directed Graph Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
