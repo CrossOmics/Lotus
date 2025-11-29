@@ -14,6 +14,12 @@ def input(adata: AnnData, *, save_raw: bool = True, raw_layer: str = "raw_counts
         adata: AnnData object
         save_raw: Whether to save the raw count matrix
         raw_layer: Name of the layer to save raw count matrix
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     if save_raw:
         adata.layers[raw_layer] = adata.X.copy()
@@ -44,6 +50,12 @@ def qc(
         use_raw: Whether to use raw data
         inplace: Whether to modify adata in place
         log1p: Whether to apply log1p transformation
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Auto-adjust percent_top based on number of genes
     if percent_top is None:
@@ -86,6 +98,12 @@ def filtering(
         max_genes: Maximum number of genes per cell
         min_cells: Minimum number of cells expressing a gene
         inplace: Whether to modify adata in place
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Filter cells
     if min_counts is not None or min_genes is not None or max_counts is not None or max_genes is not None:
@@ -114,6 +132,12 @@ def normalization(adata: AnnData, *, target_sum: float = 1e4) -> None:
     Parameters:
         adata: AnnData object
         target_sum: Target sum for normalization
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Normalize total counts (this is safe to repeat)
     lt.pp.normalize_total(adata, target_sum=target_sum)
@@ -158,6 +182,12 @@ def hvg(adata: AnnData, *, n_top_genes: int | None = None) -> None:
     Parameters:
         adata: AnnData object
         n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     if n_top_genes is None:
         n_top_genes = min(2000, adata.n_vars)
@@ -177,6 +207,12 @@ def scaling(adata: AnnData, *, zero_center: bool = True, max_value: float = 10) 
         adata: AnnData object
         zero_center: Whether to zero center
         max_value: Maximum value for clipping
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.scale(adata, zero_center=zero_center, max_value=max_value)
 
@@ -190,6 +226,12 @@ def pca(adata: AnnData, *, n_pcs: int | None = None, svd_solver: str = "arpack")
         n_pcs: Number of principal components. If None, automatically determined by scanpy
                (default: min(50, n_obs, n_vars))
         svd_solver: SVD solver to use ('arpack', 'randomized', 'auto')
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.tl.pca(adata, n_comps=n_pcs, svd_solver=svd_solver)
     
@@ -216,6 +258,12 @@ def neighbors(adata: AnnData, *, use_rep: str = "X_pca", n_neighbors: int = 15) 
         adata: AnnData object
         use_rep: Representation to use for neighbor graph construction, default is "X_pca"
         n_neighbors: Number of neighbors
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors)
 
@@ -228,6 +276,12 @@ def log1p(adata: AnnData, *, base: float | None = None, layer: str | None = None
         adata: AnnData object
         base: Base of logarithm. If None, uses natural logarithm
         layer: Layer to transform. If None, transforms X
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.log1p(adata, base=base, layer=layer)
 
@@ -247,6 +301,12 @@ def regress_out(
         keys: Keys of observations to regress out
         layer: Layer to use for regression. If None, uses X
         n_jobs: Number of jobs for parallel processing
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.regress_out(adata, keys, layer=layer, n_jobs=n_jobs)
 
@@ -264,6 +324,12 @@ def combat(
         adata: AnnData object
         key: Key in adata.obs that contains batch information
         covariates: Additional covariates to preserve
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.combat(adata, key, covariates=covariates)
 
@@ -287,6 +353,12 @@ def scrublet(
         expected_doublet_rate: Expected doublet rate
         threshold: Doublet score threshold. If None, automatically determined
         random_state: Random seed
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.scrublet(
         adata,
@@ -316,6 +388,9 @@ def scrublet_simulate_doublets(
     
     Returns:
         AnnData object with simulated doublets
+    
+    Return type:
+        AnnData
     """
     return lt.pp.scrublet_simulate_doublets(
         adata,
@@ -347,6 +422,9 @@ def sample(
     
     Returns:
         Sampled AnnData object
+    
+    Return type:
+        AnnData
     """
     return lt.pp.sample(
         adata,
@@ -376,6 +454,9 @@ def downsample_counts(
     
     Returns:
         AnnData object with downsampled counts
+    
+    Return type:
+        AnnData
     """
     return lt.pp.downsample_counts(
         adata,
@@ -398,6 +479,12 @@ def recipe_zheng17(
         adata: AnnData object
         n_top_genes: Number of highly variable genes
         log: Whether to apply log transformation
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.recipe_zheng17(adata, n_top_genes=n_top_genes, log=log)
 
@@ -421,6 +508,12 @@ def recipe_weinreb17(
         cv_threshold: Coefficient of variation threshold
         n_pcs: Number of principal components
         random_state: Random seed
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.recipe_weinreb17(
         adata,
@@ -443,6 +536,12 @@ def recipe_seurat(
     Parameters:
         adata: AnnData object
         log: Whether to apply log transformation
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     lt.pp.recipe_seurat(adata, log=log)
 
@@ -502,6 +601,12 @@ def preprocess(
         batch_key: Key in adata.obs for batch information (for batch correction)
         regress_out_keys: Keys in adata.obs to regress out (e.g., ['total_counts', 'pct_counts_mt'])
         use_combat: Whether to use ComBat for batch effect correction (requires batch_key)
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Check if data has already been preprocessed and restore from raw if needed
     # This prevents errors when re-running preprocessing on already processed data

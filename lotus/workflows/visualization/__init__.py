@@ -39,6 +39,12 @@ def umap(
         min_dist: Minimum distance parameter for UMAP
         spread: Spread parameter for UMAP
         n_components: Number of components for UMAP
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Compute UMAP embedding if needed
     if compute_umap and "X_umap" not in adata.obsm:
@@ -123,6 +129,12 @@ def coremap(
                from adata.uns. Required for proper layer visualization.
         use_webgl: Whether to use WebGL for rendering (faster for large datasets)
         **kwargs: Additional arguments (currently unused, kept for compatibility)
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     
     Examples:
         >>> # Basic usage with auto-detection
@@ -310,6 +322,12 @@ def tsne(
         random_state: Random seed. Default: 0
         early_exaggeration: Early exaggeration parameter. Default: 12
         learning_rate: Learning rate. Default: 1000
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Compute t-SNE embedding if needed
     if compute_tsne and "X_tsne" not in adata.obsm:
@@ -384,6 +402,12 @@ def diffmap(
         n_comps: Number of components. Default: 15
         neighbors_key: Key for neighbors in adata.uns. Default: None
         random_state: Random seed. Default: 0
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Compute diffusion map embedding if needed
     if compute_diffmap and "X_diffmap" not in adata.obsm:
@@ -461,6 +485,12 @@ def draw_graph(
         random_state: Random seed. Default: 0
         neighbors_key: Key for neighbors in adata.uns. Default: None
         **kwargs: Additional arguments passed to lt.tl.draw_graph
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Compute graph layout if needed
     basis_key = f"X_draw_graph_{layout}"
@@ -539,6 +569,12 @@ def visualization(
             - diffmap: n_comps, neighbors_key, random_state, compute_diffmap
             - draw_graph: layout, init_pos, root, random_state, neighbors_key, compute_draw_graph, **kwargs
             - coremap: coremap_key, model, use_webgl, **kwargs
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Set default save filename based on method
     if save is None:
@@ -636,6 +672,12 @@ def render_visualizations(
         include_coremap: Whether to include coremap visualization if available
         coremap_key: Key name for coremap embedding in adata.obsm
         model: CorespectModel object from cplearn clustering. Required for coremap visualization.
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     output_dir = Path(output_dir)
     # Scanpy requires the directory to exist before saving

@@ -12,7 +12,18 @@ from lotus.methods.scanpy import tl as sc_tl
 
 
 def summarize_clusters(labels: Iterable[int]) -> str:
-    """Summarize cluster label statistics"""
+    """
+    Summarize cluster label statistics
+    
+    Parameters:
+        labels: Iterable of cluster labels
+    
+    Returns:
+        String summary of cluster label statistics
+    
+    Return type:
+        str
+    """
     histogram = Counter(labels)
     pieces = [f"{label}: {count}" for label, count in sorted(histogram.items())]
     return ", ".join(pieces)
@@ -46,6 +57,9 @@ def leiden(
         **kwargs: Additional arguments passed to scanpy's leiden function
     
     Returns:
+        None
+    
+    Return type:
         None
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
@@ -108,6 +122,9 @@ def louvain(
         **kwargs: Additional arguments passed to scanpy's louvain function
     
     Returns:
+        None
+    
+    Return type:
         None
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
@@ -178,6 +195,9 @@ def cplearn_cluster(
     
     Returns:
         CorespectModel: The cplearn model object
+    
+    Return type:
+        cplearn.CorespectModel
     """
     # Auto-detect representation if not specified
     if use_rep is None:
@@ -279,6 +299,9 @@ def cluster(
     
     Returns:
         None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
+    
+    Return type:
+        cplearn.CorespectModel | None
     """
     # Set default key_added based on method
     if key_added is None:

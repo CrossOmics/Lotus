@@ -45,6 +45,12 @@ def core_analyze(
                      If None, auto-detects: "cplearn_labels" > "leiden" > "louvain"
                      Default is None (auto-detect)
         print_summary: Whether to print assignment summary
+    
+    Returns:
+        None
+    
+    Return type:
+        None
     """
     # Auto-detect representation if not specified
     if use_rep is None:

@@ -18,7 +18,10 @@ def pick_groups(labels: Sequence[int]) -> tuple[set[int], set[int]]:
         labels: Sequence of cluster labels
     
     Returns:
-        Two sets of group labels
+        Two sets of group labels (groups_a, groups_b)
+    
+    Return type:
+        tuple[set[int], set[int]]
     """
     unique = [label for label in sorted(set(labels)) if label != -1]
     if len(unique) < 2:
@@ -52,6 +55,9 @@ def marker_genes(
     
     Returns:
         pd.DataFrame: Differential expression analysis results
+    
+    Return type:
+        pd.DataFrame
     """
     # Auto-detect cluster key if not specified
     if cluster_key is None:
@@ -202,6 +208,9 @@ def rank_genes_groups(
     
     Returns:
         None (results stored in adata.uns)
+    
+    Return type:
+        None
     """
     sc_tl.rank_genes_groups(
         adata,
@@ -248,6 +257,9 @@ def filter_rank_genes_groups(
     
     Returns:
         None (filtered results stored in adata.uns)
+    
+    Return type:
+        None
     """
     sc_tl.filter_rank_genes_groups(
         adata,
@@ -294,6 +306,9 @@ def marker_gene_overlap(
     
     Returns:
         pd.DataFrame | None: Overlap analysis results (if inplace=False)
+    
+    Return type:
+        pd.DataFrame | None
     """
     return sc_tl.marker_gene_overlap(
         adata,
