@@ -41,7 +41,7 @@ def umap(
         n_components: Number of components for UMAP
     
     Returns:
-        None
+        None. Updates `adata.obsm` with UMAP embedding in `adata.obsm['X_umap']` if `compute_umap=True` and embedding not already present.
     """
     # Compute UMAP embedding if needed
     if compute_umap and "X_umap" not in adata.obsm:
@@ -128,7 +128,7 @@ def coremap(
         **kwargs: Additional arguments (currently unused, kept for compatibility)
     
     Returns:
-        None
+        None. Generates interactive Plotly visualization (saved to file if `save` is specified).
     
     Examples:
         >>> # Basic usage with auto-detection
@@ -318,7 +318,7 @@ def tsne(
         learning_rate: Learning rate. Default: 1000
     
     Returns:
-        None
+        None. Updates `adata.obsm` with t-SNE embedding in `adata.obsm['X_tsne']` if `compute_tsne=True` and embedding not already present.
     """
     # Compute t-SNE embedding if needed
     if compute_tsne and "X_tsne" not in adata.obsm:
@@ -395,7 +395,7 @@ def diffmap(
         random_state: Random seed. Default: 0
     
     Returns:
-        None
+        None. Updates `adata.obsm` with diffusion map embedding in `adata.obsm['X_diffmap']` if `compute_diffmap=True` and embedding not already present.
     """
     # Compute diffusion map embedding if needed
     if compute_diffmap and "X_diffmap" not in adata.obsm:
@@ -475,7 +475,7 @@ def draw_graph(
         **kwargs: Additional arguments passed to lt.tl.draw_graph
     
     Returns:
-        None
+        None. Updates `adata.obsm` with graph layout in `adata.obsm[f'X_draw_graph_{layout}']` if `compute_draw_graph=True` and layout not already present.
     """
     # Compute graph layout if needed
     basis_key = f"X_draw_graph_{layout}"
@@ -556,7 +556,7 @@ def visualization(
             - coremap: coremap_key, model, use_webgl, **kwargs
     
     Returns:
-        None
+        None. Updates `adata.obsm` with embedding (method-specific key) if computed, and generates visualization plots.
     """
     # Set default save filename based on method
     if save is None:
@@ -656,7 +656,7 @@ def render_visualizations(
         model: CorespectModel object from cplearn clustering. Required for coremap visualization.
     
     Returns:
-        None
+        None. Generates and saves visualization plots (UMAP, CoreMap, marker gene violin plots) to `output_dir`.
     """
     output_dir = Path(output_dir)
     # Scanpy requires the directory to exist before saving
