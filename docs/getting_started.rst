@@ -227,6 +227,15 @@ Complete Standard Workflow Example
     
     print("✓ Standard workflow complete!")
 
+Example output visualization:
+
+.. figure:: _static/examples/umap_standard_workflow.png
+   :alt: UMAP visualization from standard workflow
+   :width: 600px
+   :align: center
+
+   UMAP visualization colored by Leiden clusters from the standard workflow example.
+
 .. _alternating_methods:
 
 3. Alternating Methods: Core Analysis + Cplearn vs Scanpy
@@ -284,6 +293,13 @@ This workflow uses cplearn's core-periphery learning approach:
     print(f"  - Clusters: {adata.obs['cplearn'].nunique()}")
     print(f"  - Core map embedding: adata.obsm['X_cplearn_coremap']")
 
+Example output visualization:
+
+.. note::
+
+   The coremap visualization is an interactive HTML file. See the generated file for interactive exploration.
+   For a static example, refer to the cplearn workflow output in the alternating methods section below.
+
 Workflow B: Scanpy Louvain + UMAP Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -315,6 +331,15 @@ This workflow uses standard scanpy methods:
     print("✓ Scanpy workflow complete!")
     print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
     print(f"  - UMAP embedding: adata.obsm['X_umap']")
+
+Example output visualization:
+
+.. figure:: _static/examples/umap_alternating_louvain.png
+   :alt: UMAP visualization from Louvain workflow
+   :width: 600px
+   :align: center
+
+   UMAP visualization colored by Louvain clusters from the scanpy workflow example.
 
 Alternating Between Methods in the Same Workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -367,20 +392,3 @@ You can run both workflows on the same data to compare results:
     # Or use cplearn method with cplearn clusters
     marker_genes(adata, cluster_key="cplearn", layer="raw_counts")
 
-Key Points
-~~~~~~~~~~
-
-- **Preprocessing is shared**: Both workflows use the same preprocessing step
-- **Clustering methods are independent**: You can run multiple clustering methods on the same data
-- **Visualization methods match clustering**: 
-  - Use `coremap()` with cplearn clusters
-  - Use `umap()` with scanpy clusters (Leiden/Louvain)
-- **DEG analysis is flexible**: Both `rank_genes_groups` (scanpy) and `marker_genes` (cplearn) can be used with any cluster key
-- **All results are stored separately**: Each method stores results in different keys (e.g., `adata.obs['cplearn']`, `adata.obs['louvain']`)
-
-Next Steps
-----------
-
-- See :doc:`api/index` for the complete API reference
-- Check out the `examples <https://github.com/CrossOmics/Lotus/tree/main/examples>`_ directory for more detailed examples
-- Visit the `Interactive Lotus Embedding Projector <https://huggingface.co/spaces/zzq1zh/Lotus-hf>`_ to try Lotus interactively
