@@ -419,3 +419,31 @@ You can run both workflows on the same data to compare results:
     # Or use cplearn method with cplearn clusters
     marker_genes(adata, cluster_key="cplearn", layer="raw_counts")
 
+Example output visualizations:
+
+**Cplearn Coremap (Interactive HTML):**
+
+View the interactive coremap visualization: 
+`coremap_alternating_cplearn.html <_static/examples/coremap_alternating_cplearn.html>`_
+
+The HTML file is accessible at: 
+``https://crossomics.github.io/Lotus/_static/examples/coremap_alternating_cplearn.html``
+
+**Louvain UMAP (Static PNG):**
+
+.. figure:: _static/examples/umap_alternating_louvain.png
+   :alt: UMAP visualization from alternating methods Louvain workflow
+   :width: 600px
+   :align: center
+
+   UMAP visualization colored by Louvain clusters from the alternating methods example, generated using `data/demo_data.h5ad`.
+    
+    # Both cluster keys can be used for DEG analysis
+    from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
+    
+    # Use scanpy method with Louvain clusters
+    rank_genes_groups(adata, groupby="louvain", method="wilcoxon")
+    
+    # Or use cplearn method with cplearn clusters
+    marker_genes(adata, cluster_key="cplearn", layer="raw_counts")
+
