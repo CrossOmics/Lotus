@@ -1,0 +1,997 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="canonical" href="https://sizchode.github.io/Lotus/_modules/lotus/workflows/preprocessing.html">
+
+    <!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
+        <title>lotus.workflows.preprocessing - Lotus 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/cards.css?v=73a4a0fb" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">Lotus 0.1.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">Lotus 0.1.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Quick Start</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api/index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/workflows.html">Workflows Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/preprocess.html">Preprocessing Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/core_selection.html">Core Analysis Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/clustering.html">Clustering Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/visualization.html">Visualization Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/deg.html">Differential Expression Analysis Module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../citations.html">Citations</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for lotus.workflows.preprocessing</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">anndata</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnData</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">lotus</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lt</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">input</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">save_raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">raw_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;raw_counts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Input step: Save raw count matrix</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        save_raw: Whether to save the raw count matrix</span>
+<span class="sd">        raw_layer: Name of the layer to save raw count matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">save_raw</span><span class="p">:</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">raw_layer</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="qc">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.qc">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qc</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">expr_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;counts&quot;</span><span class="p">,</span>
+    <span class="n">var_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;genes&quot;</span><span class="p">,</span>
+    <span class="n">qc_vars</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">percent_top</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">log1p</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QC (Quality Control) step: Calculate QC metrics</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        expr_type: Expression type for QC calculation</span>
+<span class="sd">        var_type: Variable type for QC calculation</span>
+<span class="sd">        qc_vars: QC variables to calculate</span>
+<span class="sd">        percent_top: Percent top genes to calculate. If None, auto-adjusts based on n_vars</span>
+<span class="sd">        layer: Layer to use for QC calculation</span>
+<span class="sd">        use_raw: Whether to use raw data</span>
+<span class="sd">        inplace: Whether to modify adata in place</span>
+<span class="sd">        log1p: Whether to apply log1p transformation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Auto-adjust percent_top based on number of genes</span>
+    <span class="k">if</span> <span class="n">percent_top</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_vars</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">n_vars</span>
+        <span class="n">percent_top</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">n_vars</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="n">n_vars</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">percent_top</span><span class="p">:</span>
+            <span class="n">percent_top</span> <span class="o">=</span> <span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">n_vars</span><span class="p">),)</span>
+    
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">calculate_qc_metrics</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">expr_type</span><span class="o">=</span><span class="n">expr_type</span><span class="p">,</span>
+        <span class="n">var_type</span><span class="o">=</span><span class="n">var_type</span><span class="p">,</span>
+        <span class="n">qc_vars</span><span class="o">=</span><span class="n">qc_vars</span><span class="p">,</span>
+        <span class="n">percent_top</span><span class="o">=</span><span class="n">percent_top</span><span class="p">,</span>
+        <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span>
+        <span class="n">use_raw</span><span class="o">=</span><span class="n">use_raw</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">,</span>
+        <span class="n">log1p</span><span class="o">=</span><span class="n">log1p</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="filtering">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.filtering">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filtering</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">min_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">min_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">min_cells</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filtering step: Filter cells and genes</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        min_counts: Minimum number of counts per cell</span>
+<span class="sd">        min_genes: Minimum number of genes per cell</span>
+<span class="sd">        max_counts: Maximum number of counts per cell</span>
+<span class="sd">        max_genes: Maximum number of genes per cell</span>
+<span class="sd">        min_cells: Minimum number of cells expressing a gene</span>
+<span class="sd">        inplace: Whether to modify adata in place</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Filter cells</span>
+    <span class="k">if</span> <span class="n">min_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">min_genes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">max_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">max_genes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span>
+            <span class="n">adata</span><span class="p">,</span>
+            <span class="n">min_counts</span><span class="o">=</span><span class="n">min_counts</span><span class="p">,</span>
+            <span class="n">min_genes</span><span class="o">=</span><span class="n">min_genes</span><span class="p">,</span>
+            <span class="n">max_counts</span><span class="o">=</span><span class="n">max_counts</span><span class="p">,</span>
+            <span class="n">max_genes</span><span class="o">=</span><span class="n">max_genes</span><span class="p">,</span>
+            <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">,</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># Filter genes</span>
+    <span class="k">if</span> <span class="n">min_cells</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_genes</span><span class="p">(</span>
+            <span class="n">adata</span><span class="p">,</span>
+            <span class="n">min_cells</span><span class="o">=</span><span class="n">min_cells</span><span class="p">,</span>
+            <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="normalization">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.normalization">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalization</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">target_sum</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e4</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalization step: Normalize to target sum</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        target_sum: Target sum for normalization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Normalize total counts (this is safe to repeat)</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="n">target_sum</span><span class="p">)</span>
+    
+    <span class="c1"># Apply log1p transformation</span>
+    <span class="c1"># If data is already log-transformed, scanpy will warn but we&#39;ll catch it</span>
+    <span class="c1"># and handle gracefully to prevent crashes</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">w</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;always&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># If there&#39;s an error, check if it&#39;s related to log transformation</span>
+            <span class="k">if</span> <span class="s2">&quot;log&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;invalid value&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Skipping log1p transformation - data may already be log-transformed. Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span>
+        
+        <span class="c1"># Check for warnings about already log-transformed data</span>
+        <span class="k">if</span> <span class="n">w</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">w</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;already log-transformed&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">warning</span><span class="o">.</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Data appears to be already log-transformed. Skipping log1p transformation.&quot;</span><span class="p">)</span>
+                    <span class="c1"># Try to reverse the log1p that was just applied</span>
+                    <span class="c1"># Since we applied log1p to already log-transformed data, we need expm1 to reverse</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">):</span>  <span class="c1"># Sparse matrix</span>
+                            <span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>  <span class="c1"># Dense array</span>
+                            <span class="n">adata</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                        <span class="c1"># If we can&#39;t reverse, that&#39;s okay - the data might still be usable</span>
+                        <span class="k">pass</span>
+                    <span class="k">break</span></div>
+
+
+
+<div class="viewcode-block" id="hvg">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.hvg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hvg</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_top_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    HVG (Highly Variable Genes) step: Select highly variable genes</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">n_top_genes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_top_genes</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">adata</span><span class="o">.</span><span class="n">n_vars</span><span class="p">)</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">highly_variable_genes</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">n_top_genes</span><span class="o">=</span><span class="n">n_top_genes</span><span class="p">,</span>
+        <span class="n">flavor</span><span class="o">=</span><span class="s2">&quot;seurat&quot;</span><span class="p">,</span>
+        <span class="n">subset</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="scaling">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.scaling">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scaling</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">zero_center</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">max_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scaling step: Standardize data</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        zero_center: Whether to zero center</span>
+<span class="sd">        max_value: Maximum value for clipping</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">zero_center</span><span class="o">=</span><span class="n">zero_center</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="n">max_value</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pca">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.pca">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pca</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_pcs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">svd_solver</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;arpack&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    PCA step: Principal component analysis</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        n_pcs: Number of principal components. If None, automatically determined by scanpy</span>
+<span class="sd">               (default: min(50, n_obs, n_vars))</span>
+<span class="sd">        svd_solver: SVD solver to use (&#39;arpack&#39;, &#39;randomized&#39;, &#39;auto&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">tl</span><span class="o">.</span><span class="n">pca</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">n_comps</span><span class="o">=</span><span class="n">n_pcs</span><span class="p">,</span> <span class="n">svd_solver</span><span class="o">=</span><span class="n">svd_solver</span><span class="p">)</span>
+    
+    <span class="c1"># Plot PCA variance ratio (standard Scanpy workflow)</span>
+    <span class="c1"># This visualizes the variance explained by each principal component</span>
+    <span class="c1"># Use n_pcs if provided, otherwise use default 30 for plotting</span>
+    <span class="n">plot_n_pcs</span> <span class="o">=</span> <span class="n">n_pcs</span> <span class="k">if</span> <span class="n">n_pcs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">30</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">pca_variance_ratio</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">n_pcs</span><span class="o">=</span><span class="n">plot_n_pcs</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="c1"># Combine initial latent vectors with PCA results (if exists)</span>
+    <span class="n">latent_init</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;X_latent_init&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">latent_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;X_pca&quot;</span><span class="p">],</span> <span class="n">latent_init</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;X_pca&quot;</span><span class="p">]</span>
+    <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s2">&quot;X_latent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">combined</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="neighbors">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.neighbors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">neighbors</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">use_rep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;X_pca&quot;</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Neighbors step: Construct neighbor graph</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        use_rep: Representation to use for neighbor graph construction, default is &quot;X_pca&quot;</span>
+<span class="sd">        n_neighbors: Number of neighbors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">use_rep</span><span class="o">=</span><span class="n">use_rep</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="n">n_neighbors</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log1p">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.log1p">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log1p</span><span class="p">(</span><span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Log1p step: Log transform data (log(x + 1))</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        base: Base of logarithm. If None, uses natural logarithm</span>
+<span class="sd">        layer: Layer to transform. If None, transforms X</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="regress_out">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.regress_out">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">regress_out</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">keys</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Regress out step: Regress out unwanted variables (e.g., cell cycle, batch effects)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        keys: Keys of observations to regress out</span>
+<span class="sd">        layer: Layer to use for regression. If None, uses X</span>
+<span class="sd">        n_jobs: Number of jobs for parallel processing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">regress_out</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="combat">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.combat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">combat</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;batch&quot;</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">covariates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ComBat step: Batch effect correction using ComBat</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        key: Key in adata.obs that contains batch information</span>
+<span class="sd">        covariates: Additional covariates to preserve</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">combat</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">covariates</span><span class="o">=</span><span class="n">covariates</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="scrublet">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.scrublet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scrublet</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">batch_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sim_doublet_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">expected_doublet_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scrublet step: Predict doublets using Scrublet</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        batch_key: Key in adata.obs that contains batch information</span>
+<span class="sd">        sim_doublet_ratio: Ratio of simulated doublets to observed cells</span>
+<span class="sd">        expected_doublet_rate: Expected doublet rate</span>
+<span class="sd">        threshold: Doublet score threshold. If None, automatically determined</span>
+<span class="sd">        random_state: Random seed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">scrublet</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">batch_key</span><span class="o">=</span><span class="n">batch_key</span><span class="p">,</span>
+        <span class="n">sim_doublet_ratio</span><span class="o">=</span><span class="n">sim_doublet_ratio</span><span class="p">,</span>
+        <span class="n">expected_doublet_rate</span><span class="o">=</span><span class="n">expected_doublet_rate</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="scrublet_simulate_doublets">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.scrublet_simulate_doublets">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scrublet_simulate_doublets</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sim_doublet_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+    <span class="n">random_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scrublet simulate doublets step: Simulate doublets by adding counts of random pairs</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        layer: Layer to use for simulation. If None, uses X</span>
+<span class="sd">        sim_doublet_ratio: Ratio of simulated doublets to observed cells</span>
+<span class="sd">        random_seed: Random seed</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        AnnData object with simulated doublets</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">scrublet_simulate_doublets</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">layer</span><span class="o">=</span><span class="n">layer</span><span class="p">,</span>
+        <span class="n">sim_doublet_ratio</span><span class="o">=</span><span class="n">sim_doublet_ratio</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">random_seed</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sample">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.sample">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;obs&quot;</span><span class="p">,</span>
+    <span class="n">replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sample step: Sample observations or variables</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        fraction: Fraction of data to sample (0-1)</span>
+<span class="sd">        n: Number of items to sample</span>
+<span class="sd">        axis: Axis to sample along (&#39;obs&#39; or &#39;var&#39;)</span>
+<span class="sd">        replace: Whether to sample with replacement</span>
+<span class="sd">        random_state: Random seed</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Sampled AnnData object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">fraction</span><span class="o">=</span><span class="n">fraction</span><span class="p">,</span>
+        <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+        <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="downsample_counts">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.downsample_counts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">downsample_counts</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">counts_per_cell</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">total_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnnData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downsample counts step: Downsample counts to a target number</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        counts_per_cell: Target counts per cell (can be a list for different targets per cell)</span>
+<span class="sd">        total_counts: Target total counts</span>
+<span class="sd">        random_state: Random seed</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        AnnData object with downsampled counts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">downsample_counts</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">counts_per_cell</span><span class="o">=</span><span class="n">counts_per_cell</span><span class="p">,</span>
+        <span class="n">total_counts</span><span class="o">=</span><span class="n">total_counts</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="recipe_zheng17">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.recipe_zheng17">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recipe_zheng17</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_top_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipe Zheng17 step: Normalize and filter as of Zheng et al. 2017</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        n_top_genes: Number of highly variable genes</span>
+<span class="sd">        log: Whether to apply log transformation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">recipe_zheng17</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">n_top_genes</span><span class="o">=</span><span class="n">n_top_genes</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="recipe_weinreb17">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.recipe_weinreb17">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recipe_weinreb17</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">mean_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">cv_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">n_pcs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipe Weinreb17 step: Normalize and filter as of Weinreb et al. 2017</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        log: Whether to apply log transformation</span>
+<span class="sd">        mean_threshold: Mean expression threshold</span>
+<span class="sd">        cv_threshold: Coefficient of variation threshold</span>
+<span class="sd">        n_pcs: Number of principal components</span>
+<span class="sd">        random_state: Random seed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">recipe_weinreb17</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">,</span>
+        <span class="n">mean_threshold</span><span class="o">=</span><span class="n">mean_threshold</span><span class="p">,</span>
+        <span class="n">cv_threshold</span><span class="o">=</span><span class="n">cv_threshold</span><span class="p">,</span>
+        <span class="n">n_pcs</span><span class="o">=</span><span class="n">n_pcs</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="o">=</span><span class="n">random_state</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="recipe_seurat">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.recipe_seurat">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">recipe_seurat</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipe Seurat step: Normalize and filter as of Seurat (Satija et al. 2015)</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        log: Whether to apply log transformation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">recipe_seurat</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="preprocess">
+<a class="viewcode-back" href="../../../api/workflows.html#lotus.workflows.preprocess">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">preprocess</span><span class="p">(</span>
+    <span class="n">adata</span><span class="p">:</span> <span class="n">AnnData</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">n_pcs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">target_sum</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e4</span><span class="p">,</span>
+    <span class="n">n_top_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_neighbors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
+    <span class="n">use_rep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;X_pca&quot;</span><span class="p">,</span>
+    <span class="n">save_raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">raw_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;raw_counts&quot;</span><span class="p">,</span>
+    <span class="n">min_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">min_cells</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">min_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_genes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pct_mt_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">hvg_flavor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;seurat_v3&quot;</span><span class="p">,</span>
+    <span class="n">batch_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">regress_out_keys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_combat</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Complete preprocessing pipeline following standard Scanpy workflow:</span>
+<span class="sd">    QC → Filtering → Normalization → Save Raw → HVG → Scaling → PCA → Neighbors</span>
+<span class="sd">    </span>
+<span class="sd">    Standard Scanpy preprocessing steps:</span>
+<span class="sd">    1. Calculate QC metrics (n_counts, n_genes, pct_mt, etc.)</span>
+<span class="sd">    2. Filter cells and genes</span>
+<span class="sd">    3. Normalize total counts and apply log1p transformation</span>
+<span class="sd">    4. Save raw data (normalized + log1p) to adata.raw</span>
+<span class="sd">    5. Select highly variable genes (HVG) and subset to HVG only</span>
+<span class="sd">    6. Scale data (zero-center and clip)</span>
+<span class="sd">    7. Principal component analysis (PCA)</span>
+<span class="sd">    8. Compute neighborhood graph</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        adata: AnnData object</span>
+<span class="sd">        n_pcs: Number of principal components for PCA. If None, automatically determined by scanpy</span>
+<span class="sd">               (default: min(50, n_obs, n_vars))</span>
+<span class="sd">        target_sum: Target sum for normalization (default: 1e4)</span>
+<span class="sd">        n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)</span>
+<span class="sd">        n_neighbors: Number of neighbors for neighbor graph construction</span>
+<span class="sd">        use_rep: Representation to use for neighbor graph construction, default is &quot;X_pca&quot;</span>
+<span class="sd">        save_raw: Whether to save the normalized+log1p data to adata.raw (standard Scanpy practice)</span>
+<span class="sd">        raw_layer: Name of the layer to save raw count matrix (if save_raw=True, also saves to layer)</span>
+<span class="sd">        min_genes: Minimum number of genes per cell for filtering</span>
+<span class="sd">        min_cells: Minimum number of cells expressing a gene for filtering</span>
+<span class="sd">        min_counts: Minimum number of counts per cell for filtering</span>
+<span class="sd">        max_counts: Maximum number of counts per cell for filtering</span>
+<span class="sd">        max_genes: Maximum number of genes per cell for filtering</span>
+<span class="sd">        pct_mt_max: Maximum percentage of mitochondrial genes (filters cells with pct_mt &gt; pct_mt_max)</span>
+<span class="sd">        hvg_flavor: Flavor for highly variable genes selection (&#39;seurat_v3&#39;, &#39;seurat&#39;, &#39;cell_ranger&#39;)</span>
+<span class="sd">        batch_key: Key in adata.obs for batch information (for batch correction)</span>
+<span class="sd">        regress_out_keys: Keys in adata.obs to regress out (e.g., [&#39;total_counts&#39;, &#39;pct_counts_mt&#39;])</span>
+<span class="sd">        use_combat: Whether to use ComBat for batch effect correction (requires batch_key)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if data has already been preprocessed and restore from raw if needed</span>
+    <span class="c1"># This prevents errors when re-running preprocessing on already processed data</span>
+    <span class="k">if</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">save_raw</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">):</span>
+        <span class="c1"># Data has been preprocessed before, restore from raw counts</span>
+        <span class="k">if</span> <span class="n">save_raw</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="c1"># Restore from raw_layer (original count matrix)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Restoring from raw counts layer for re-preprocessing...&quot;</span><span class="p">)</span>
+            <span class="n">adata</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">raw_layer</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># Clear preprocessing results that will be recomputed</span>
+            <span class="k">if</span> <span class="s1">&#39;X_pca&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_pca&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;X_latent&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_latent&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;neighbors&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;neighbors&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;pca&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;pca&#39;</span><span class="p">]</span>
+            <span class="c1"># Clear obs columns that will be recomputed</span>
+            <span class="k">if</span> <span class="s1">&#39;highly_variable&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;highly_variable&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;highly_variable_nbatches&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;highly_variable_nbatches&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;highly_variable_intersection&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;highly_variable_intersection&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;means&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;means&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;dispersions&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;dispersions&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s1">&#39;dispersions_norm&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;dispersions_norm&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Restore from adata.raw (normalized+log1p data)</span>
+            <span class="c1"># We need to reverse the normalization and log1p to get back to counts</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Restoring from adata.raw for re-preprocessing...&quot;</span><span class="p">)</span>
+            <span class="c1"># adata.raw contains normalized+log1p data, so we need to reverse:</span>
+            <span class="c1"># 1. Reverse log1p: expm1</span>
+            <span class="c1"># 2. Reverse normalization: multiply by original total counts</span>
+            <span class="c1"># But we don&#39;t have the original total counts, so we&#39;ll use raw_layer if available</span>
+            <span class="k">if</span> <span class="n">save_raw</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">and</span> <span class="n">raw_layer</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="n">adata</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">raw_layer</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Try to reverse from adata.raw</span>
+                <span class="c1"># This is approximate and may not be exact</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Cannot fully restore from adata.raw. Using adata.raw.X as starting point.&quot;</span><span class="p">)</span>
+                <span class="n">adata</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="c1"># Clear preprocessing results</span>
+                <span class="k">if</span> <span class="s1">&#39;X_pca&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_pca&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;X_latent&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="p">[</span><span class="s1">&#39;X_latent&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;neighbors&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;neighbors&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s1">&#39;pca&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">adata</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;pca&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Save raw count matrix at the beginning (before any transformations)</span>
+    <span class="k">if</span> <span class="n">save_raw</span> <span class="ow">and</span> <span class="n">raw_layer</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw_layer</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">adata</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">raw_layer</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># Step 1: QC - Calculate quality control metrics</span>
+    <span class="n">qc</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+    
+    <span class="c1"># Step 2: Filtering - Filter cells and genes</span>
+    <span class="n">filtering</span><span class="p">(</span>
+        <span class="n">adata</span><span class="p">,</span>
+        <span class="n">min_genes</span><span class="o">=</span><span class="n">min_genes</span><span class="p">,</span>
+        <span class="n">min_cells</span><span class="o">=</span><span class="n">min_cells</span><span class="p">,</span>
+        <span class="n">min_counts</span><span class="o">=</span><span class="n">min_counts</span><span class="p">,</span>
+        <span class="n">max_counts</span><span class="o">=</span><span class="n">max_counts</span><span class="p">,</span>
+        <span class="n">max_genes</span><span class="o">=</span><span class="n">max_genes</span><span class="p">,</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Additional filtering: mitochondrial percentage</span>
+    <span class="k">if</span> <span class="n">pct_mt_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pct_mt_key</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;pct_counts_mt&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">pct_mt_key</span> <span class="o">=</span> <span class="s1">&#39;pct_counts_mt&#39;</span>
+        <span class="k">elif</span> <span class="s1">&#39;pct_mt&#39;</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">pct_mt_key</span> <span class="o">=</span> <span class="s1">&#39;pct_mt&#39;</span>
+        
+        <span class="k">if</span> <span class="n">pct_mt_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_before</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">n_obs</span>
+            <span class="c1"># Create boolean mask and filter</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">pct_mt_key</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">pct_mt_max</span>
+            <span class="c1"># Use AnnData&#39;s internal method for in-place subsetting</span>
+            <span class="c1"># This is the standard way to filter observations in place</span>
+            <span class="n">adata</span><span class="o">.</span><span class="n">_inplace_subset_obs</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_before</span> <span class="o">!=</span> <span class="n">adata</span><span class="o">.</span><span class="n">n_obs</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Filtered </span><span class="si">{</span><span class="n">n_before</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">adata</span><span class="o">.</span><span class="n">n_obs</span><span class="si">}</span><span class="s2"> cells with </span><span class="si">{</span><span class="n">pct_mt_key</span><span class="si">}</span><span class="s2"> &gt;= </span><span class="si">{</span><span class="n">pct_mt_max</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Step 3: Normalization - Normalize total counts and log1p transform</span>
+    <span class="n">normalization</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="n">target_sum</span><span class="p">)</span>
+    
+    <span class="c1"># Step 4: Save raw data (standard Scanpy practice: save normalized+log1p to adata.raw)</span>
+    <span class="c1"># This is the standard Scanpy workflow: adata.raw contains normalized+log1p data</span>
+    <span class="k">if</span> <span class="n">save_raw</span><span class="p">:</span>
+        <span class="n">adata</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">adata</span>
+    
+    <span class="c1"># Optional: Regress out unwanted variables (e.g., total_counts, pct_counts_mt)</span>
+    <span class="k">if</span> <span class="n">regress_out_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">regress_out</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">regress_out_keys</span><span class="p">)</span>
+    
+    <span class="c1"># Optional: Batch effect correction using ComBat</span>
+    <span class="k">if</span> <span class="n">use_combat</span> <span class="ow">and</span> <span class="n">batch_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">batch_key</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">combat</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">batch_key</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: batch_key &#39;</span><span class="si">{</span><span class="n">batch_key</span><span class="si">}</span><span class="s2">&#39; not found in adata.obs. Skipping ComBat correction.&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Step 5: HVG - Select highly variable genes and subset</span>
+    <span class="k">if</span> <span class="n">n_top_genes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">n_top_genes</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="n">adata</span><span class="o">.</span><span class="n">n_vars</span><span class="p">)</span>
+    
+    <span class="c1"># Use the specified flavor for HVG selection</span>
+    <span class="k">if</span> <span class="n">hvg_flavor</span> <span class="o">==</span> <span class="s2">&quot;seurat_v3&quot;</span><span class="p">:</span>
+        <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">highly_variable_genes</span><span class="p">(</span>
+            <span class="n">adata</span><span class="p">,</span>
+            <span class="n">n_top_genes</span><span class="o">=</span><span class="n">n_top_genes</span><span class="p">,</span>
+            <span class="n">flavor</span><span class="o">=</span><span class="s2">&quot;seurat_v3&quot;</span><span class="p">,</span>
+            <span class="n">subset</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lt</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">highly_variable_genes</span><span class="p">(</span>
+            <span class="n">adata</span><span class="p">,</span>
+            <span class="n">n_top_genes</span><span class="o">=</span><span class="n">n_top_genes</span><span class="p">,</span>
+            <span class="n">flavor</span><span class="o">=</span><span class="n">hvg_flavor</span><span class="p">,</span>
+            <span class="n">subset</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># Step 6: Scaling - Zero-center and clip</span>
+    <span class="n">scaling</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>
+    
+    <span class="c1"># Step 7: PCA - Principal component analysis</span>
+    <span class="n">pca</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">n_pcs</span><span class="o">=</span><span class="n">n_pcs</span><span class="p">)</span>
+    
+    <span class="c1"># Step 8: Neighbors - Compute neighborhood graph</span>
+    <span class="n">neighbors</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">use_rep</span><span class="o">=</span><span class="n">use_rep</span><span class="p">,</span> <span class="n">n_neighbors</span><span class="o">=</span><span class="n">n_neighbors</span><span class="p">)</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;qc&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;filtering&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;normalization&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;hvg&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scaling&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;pca&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;neighbors&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;log1p&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;regress_out&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;combat&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scrublet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scrublet_simulate_doublets&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;downsample_counts&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;recipe_zheng17&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;recipe_weinreb17&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;recipe_seurat&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Lotus Team
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../../_static/sidebar.js?v=7786d821"></script>
+    </body>
+</html>
