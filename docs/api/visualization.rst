@@ -7,14 +7,6 @@ Visualization Module
 
    **Citation:** L. McInnes, J. Healy, and J. Melville. *UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction.* `arXiv:1802.03426 <https://arxiv.org/abs/1802.03426>`_
 
-.. autofunction:: lotus.workflows.visualization.tsne
-
-   **Citation:** L. van der Maaten and G. Hinton. *Visualizing Data using t-SNE.* Journal of Machine Learning Research 9, 2579-2605 (2008).
-
-.. autofunction:: lotus.workflows.visualization.diffmap
-
-   **Citation:** R. R. Coifman and S. Lafon. *Diffusion maps.* Applied and Computational Harmonic Analysis 21, 5-30 (2006).
-
 .. autofunction:: lotus.workflows.visualization.draw_graph
 
 .. autofunction:: lotus.workflows.visualization.coremap
