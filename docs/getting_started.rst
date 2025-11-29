@@ -12,6 +12,16 @@ This guide provides three quick start paths for using Lotus:
 1. Installation
 ---------------
 
+Clone the Repository
+~~~~~~~~~~~~~~~~~~~~
+
+First, clone the Lotus repository:
+
+.. code-block:: bash
+
+    git clone https://github.com/CrossOmics/Lotus.git
+    cd Lotus
+
 Install Lotus Package
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -21,12 +31,10 @@ Install the Lotus package in development mode:
 
     pip install -e .
 
-This will make the `lotus` package available system-wide without needing to set `PYTHONPATH`.
-
 Install Interactive Lotus Embedding Projector
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Interactive Lotus Embedding Projector is a web-based tool for real-time data exploration and visualization. To set it up locally:
+The Interactive Lotus Embedding Projector is a web-based tool for real-time data exploration and visualization. To set it up locally (assuming you're already in the Lotus repository directory):
 
 .. code-block:: bash
 
