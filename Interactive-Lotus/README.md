@@ -43,7 +43,7 @@ If the server is already running, you may need to stop it first:
 lsof -ti:5000 | xargs kill -9
 
 # Then restart
-cd Lotus-Web-Demo
+cd Interactive-Lotus
 source venv/bin/activate
 python3 app.py
 

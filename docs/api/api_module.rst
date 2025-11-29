@@ -35,7 +35,7 @@ Flask Application
       from lotus.api import create_app
       
       # Create Flask app
-      app = create_app(static_folder='./Lotus-Web-Demo')
+      app = create_app(static_folder='./Interactive-Lotus')
       
       # Run the server
       if __name__ == '__main__':
