@@ -21,27 +21,27 @@ Main Functions
 Core Analysis
 ~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.core_analysis.core_analysis.core_analysis
+.. autofunction:: lotus.workflows.core_analysis.core_analyze
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import core_analysis
+      from lotus.workflows import core_analyze
       from lotus.methods.cplearn.external import cplearn
       
-      # First compute core map embedding (before clustering)
+      # First perform clustering to get a model
+      model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
+      
+      # Then compute core map embedding (after clustering)
       # Note: This requires a neighbors graph from preprocessing
-      model = cplearn.corespect(adata, use_rep="X_latent", key_added="cplearn")
-      core_analysis(
+      core_analyze(
           adata,
           model=model,
-          use_rep="X_latent",
+          use_rep="X_pca",
           key_added="X_cplearn_coremap",
       )
       
-      # Then perform clustering using the core analysis results
-      # (clustering can use the core map embedding for better results)
-      
       # View results
       print(adata.obsm["X_cplearn_coremap"].shape)
+      print(adata.obs["X_cplearn_coremap_is_core"].head())

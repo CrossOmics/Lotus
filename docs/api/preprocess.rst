@@ -1,7 +1,7 @@
 Preprocessing Module
 =====================
 
-The ``lotus.workflows.preprocess`` module provides data preprocessing related functions.
+The ``lotus.workflows.preprocessing`` module provides data preprocessing related functions.
 
 Overview
 --------
@@ -15,20 +15,20 @@ Preprocessing is the first step in single-cell data analysis, encompassing quali
 Complete Preprocessing Pipeline
 --------------------------------
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.preprocess
+.. autofunction:: lotus.workflows.preprocessing.preprocess
 
    **Usage Example:**
 
    .. code-block:: python
 
-      from lotus.workflows import preprocess
+      from lotus.workflows import preprocessing
       import scanpy as sc
       
       # Load data
       adata = sc.datasets.pbmc3k()
       
       # Complete preprocessing pipeline
-      preprocess(
+      preprocessing.preprocess(
           adata,
           n_pcs=20,
           target_sum=1e4,
@@ -39,51 +39,83 @@ Complete Preprocessing Pipeline
 Step-by-Step Preprocessing Functions
 -------------------------------------
 
+Input
+~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.input
+
 Quality Control
 ~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.qc
-
-   Calculate quality control metrics to help identify low-quality cells.
+.. autofunction:: lotus.workflows.preprocessing.qc
 
 Filtering
 ~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.filtering
-
-   Filter low-quality cells and genes based on QC metrics.
+.. autofunction:: lotus.workflows.preprocessing.filtering
 
 Normalization
 ~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.normalization
-
-   Normalize data to eliminate the effects of sequencing depth.
+.. autofunction:: lotus.workflows.preprocessing.normalization
 
 Highly Variable Genes Selection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.hvg
-
-   Select highly variable genes for subsequent analysis.
+.. autofunction:: lotus.workflows.preprocessing.hvg
 
 Scaling
 ~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.scaling
-
-   Scale data (z-score standardization).
+.. autofunction:: lotus.workflows.preprocessing.scaling
 
 Principal Component Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.pca
-
-   Perform principal component analysis for dimensionality reduction.
+.. autofunction:: lotus.workflows.preprocessing.pca
 
 Neighbor Graph Construction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: lotus.workflows.preprocess.preprocess.neighbors
+.. autofunction:: lotus.workflows.preprocessing.neighbors
 
-   Build neighbor graph between cells.
+Additional Preprocessing Functions
+----------------------------------
+
+Log Transformation
+~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.log1p
+
+Regress Out Variables
+~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.regress_out
+
+Batch Effect Correction
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.combat
+
+Doublet Detection
+~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.scrublet
+
+.. autofunction:: lotus.workflows.preprocessing.scrublet_simulate_doublets
+
+Sampling and Downsampling
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.sample
+
+.. autofunction:: lotus.workflows.preprocessing.downsample_counts
+
+Preprocessing Recipes
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_zheng17
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_weinreb17
+
+.. autofunction:: lotus.workflows.preprocessing.recipe_seurat
