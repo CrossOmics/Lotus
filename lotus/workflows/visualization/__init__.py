@@ -42,9 +42,6 @@ def umap(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     # Compute UMAP embedding if needed
     if compute_umap and "X_umap" not in adata.obsm:
@@ -131,9 +128,6 @@ def coremap(
         **kwargs: Additional arguments (currently unused, kept for compatibility)
     
     Returns:
-        None
-    
-    Return type:
         None
     
     Examples:
@@ -325,9 +319,6 @@ def tsne(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     # Compute t-SNE embedding if needed
     if compute_tsne and "X_tsne" not in adata.obsm:
@@ -404,9 +395,6 @@ def diffmap(
         random_state: Random seed. Default: 0
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     # Compute diffusion map embedding if needed
@@ -488,9 +476,6 @@ def draw_graph(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     # Compute graph layout if needed
     basis_key = f"X_draw_graph_{layout}"
@@ -571,9 +556,6 @@ def visualization(
             - coremap: coremap_key, model, use_webgl, **kwargs
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     # Set default save filename based on method
@@ -674,9 +656,6 @@ def render_visualizations(
         model: CorespectModel object from cplearn clustering. Required for coremap visualization.
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     output_dir = Path(output_dir)

@@ -48,9 +48,6 @@ def core_analyze(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     # Auto-detect representation if not specified
     if use_rep is None:

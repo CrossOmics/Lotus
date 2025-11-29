@@ -17,9 +17,6 @@ def input(adata: AnnData, *, save_raw: bool = True, raw_layer: str = "raw_counts
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     if save_raw:
         adata.layers[raw_layer] = adata.X.copy()
@@ -52,9 +49,6 @@ def qc(
         log1p: Whether to apply log1p transformation
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     # Auto-adjust percent_top based on number of genes
@@ -101,9 +95,6 @@ def filtering(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     # Filter cells
     if min_counts is not None or min_genes is not None or max_counts is not None or max_genes is not None:
@@ -134,9 +125,6 @@ def normalization(adata: AnnData, *, target_sum: float = 1e4) -> None:
         target_sum: Target sum for normalization
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     # Normalize total counts (this is safe to repeat)
@@ -185,9 +173,6 @@ def hvg(adata: AnnData, *, n_top_genes: int | None = None) -> None:
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     if n_top_genes is None:
         n_top_genes = min(2000, adata.n_vars)
@@ -210,9 +195,6 @@ def scaling(adata: AnnData, *, zero_center: bool = True, max_value: float = 10) 
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     lt.pp.scale(adata, zero_center=zero_center, max_value=max_value)
 
@@ -228,9 +210,6 @@ def pca(adata: AnnData, *, n_pcs: int | None = None, svd_solver: str = "arpack")
         svd_solver: SVD solver to use ('arpack', 'randomized', 'auto')
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.tl.pca(adata, n_comps=n_pcs, svd_solver=svd_solver)
@@ -261,9 +240,6 @@ def neighbors(adata: AnnData, *, use_rep: str = "X_pca", n_neighbors: int = 15) 
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     lt.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors)
 
@@ -278,9 +254,6 @@ def log1p(adata: AnnData, *, base: float | None = None, layer: str | None = None
         layer: Layer to transform. If None, transforms X
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.pp.log1p(adata, base=base, layer=layer)
@@ -304,9 +277,6 @@ def regress_out(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     lt.pp.regress_out(adata, keys, layer=layer, n_jobs=n_jobs)
 
@@ -326,9 +296,6 @@ def combat(
         covariates: Additional covariates to preserve
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.pp.combat(adata, key, covariates=covariates)
@@ -355,9 +322,6 @@ def scrublet(
         random_state: Random seed
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.pp.scrublet(
@@ -388,9 +352,6 @@ def scrublet_simulate_doublets(
     
     Returns:
         AnnData object with simulated doublets
-    
-    Return type:
-        AnnData
     """
     return lt.pp.scrublet_simulate_doublets(
         adata,
@@ -422,9 +383,6 @@ def sample(
     
     Returns:
         Sampled AnnData object
-    
-    Return type:
-        AnnData
     """
     return lt.pp.sample(
         adata,
@@ -454,9 +412,6 @@ def downsample_counts(
     
     Returns:
         AnnData object with downsampled counts
-    
-    Return type:
-        AnnData
     """
     return lt.pp.downsample_counts(
         adata,
@@ -481,9 +436,6 @@ def recipe_zheng17(
         log: Whether to apply log transformation
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.pp.recipe_zheng17(adata, n_top_genes=n_top_genes, log=log)
@@ -511,9 +463,6 @@ def recipe_weinreb17(
     
     Returns:
         None
-    
-    Return type:
-        None
     """
     lt.pp.recipe_weinreb17(
         adata,
@@ -538,9 +487,6 @@ def recipe_seurat(
         log: Whether to apply log transformation
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     lt.pp.recipe_seurat(adata, log=log)
@@ -603,9 +549,6 @@ def preprocess(
         use_combat: Whether to use ComBat for batch effect correction (requires batch_key)
     
     Returns:
-        None
-    
-    Return type:
         None
     """
     # Check if data has already been preprocessed and restore from raw if needed

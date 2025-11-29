@@ -92,6 +92,8 @@
     border-radius: 4px;
 }
 
+/* Return type section will be styled via JavaScript for reliability */
+
 .field-list > dt:first-of-type {
     margin-top: 0;
 }
