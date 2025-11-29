@@ -12,7 +12,15 @@ from lotus.methods.scanpy import tl as sc_tl
 
 
 def summarize_clusters(labels: Iterable[int]) -> str:
-    """Summarize cluster label statistics"""
+    """
+    Summarize cluster label statistics
+    
+    Parameters:
+        labels: Iterable of cluster labels
+    
+    Returns:
+        String summary of cluster label statistics
+    """
     histogram = Counter(labels)
     pieces = [f"{label}: {count}" for label, count in sorted(histogram.items())]
     return ", ".join(pieces)
@@ -28,14 +36,7 @@ def leiden(
     print_summary: bool = True,
     **kwargs,
 ) -> None:
-    """
-    Leiden clustering step: Perform clustering analysis using Leiden algorithm.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
+    """    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         resolution: Clustering resolution. Default: 1.2
@@ -46,7 +47,7 @@ def leiden(
         **kwargs: Additional arguments passed to scanpy's leiden function
     
     Returns:
-        None
+        None. Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
     if "neighbors" not in adata.uns and neighbors_key is None:
@@ -91,13 +92,6 @@ def louvain(
     **kwargs,
 ) -> None:
     """
-    Louvain clustering step: Perform clustering analysis using Louvain algorithm.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         resolution: Clustering resolution. Default: 1.2
@@ -108,7 +102,7 @@ def louvain(
         **kwargs: Additional arguments passed to scanpy's louvain function
     
     Returns:
-        None
+        None. Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
     if "neighbors" not in adata.uns and neighbors_key is None:
@@ -154,17 +148,7 @@ def cplearn_cluster(
     propagate: bool = True,
     print_summary: bool = True,
 ) -> cplearn.CorespectModel:
-    """
-    Cplearn clustering step: Perform clustering analysis using CoreSPECT algorithm.
-    
-    This function uses the cplearn (CoreSPECT) algorithm for core-periphery learning,
-    which identifies stable core cells before clustering for more robust results.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
+    """    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         use_rep: Representation to use for clustering. If None, auto-detects: "X_latent" > "X_pca" > "X". Default: None
@@ -252,16 +236,6 @@ def cluster(
     """
     Unified clustering function: Perform clustering analysis using different methods.
     
-    Supports clustering methods:
-    - "leiden" (default): Scanpy Leiden algorithm
-    - "louvain": Scanpy Louvain algorithm
-    - "cplearn": Deprecated - use cplearn API directly (see above)
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
@@ -278,7 +252,7 @@ def cluster(
         print_summary: Whether to print cluster summary
     
     Returns:
-        None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
+        None (for scanpy methods) or CorespectModel (for cplearn, deprecated). Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Set default key_added based on method
     if key_added is None:

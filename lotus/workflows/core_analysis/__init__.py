@@ -19,19 +19,9 @@ def core_analyze(
     """
     CoreAnalysis step: Compute core map embedding and extract core layer information
     
-    This function:
-    1. Computes core map embedding and stores it in adata.obsm
-    2. Extracts and saves core layer information (core_layers_) for visualization
-    3. Ensures clustering labels are available for visualization
-    
-    Compatible with scanpy workflow:
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Outputs embedding in adata.obsm compatible with scanpy format
-    - Saves core layer information in adata.obs for scanpy plotting
-    
-    Note: Neighbors should be computed in preprocessing step before calling this function.
-    Can use either lotus preprocessing or scanpy's sc.pp.neighbors().
+    This function computes core map embedding and stores it in adata.obsm and extracts and saves core layer information (core_layers_) for visualization
+    In addition, it is compatible with scanpy workflow because it works with scanpy neighbors graph (stored in adata.obsp),
+    accepts scanpy standard representations (X_pca, X_umap, etc.), outputs embedding in adata.obsm compatible with scanpy format and saves core layer information in adata.obs for scanpy plotting
     
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
@@ -45,6 +35,9 @@ def core_analyze(
                      If None, auto-detects: "cplearn_labels" > "leiden" > "louvain"
                      Default is None (auto-detect)
         print_summary: Whether to print assignment summary
+    
+    Returns:
+        None. Updates `adata.obsm` with coremap embedding in `adata.obsm[key_added]` and `adata.obs` with core layer information in `adata.obs[f'{key_added}_is_core']`.
     """
     # Auto-detect representation if not specified
     if use_rep is None:

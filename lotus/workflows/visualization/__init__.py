@@ -39,6 +39,9 @@ def umap(
         min_dist: Minimum distance parameter for UMAP
         spread: Spread parameter for UMAP
         n_components: Number of components for UMAP
+    
+    Returns:
+        None. Updates `adata.obsm` with UMAP embedding in `adata.obsm['X_umap']` if `compute_umap=True` and embedding not already present.
     """
     # Compute UMAP embedding if needed
     if compute_umap and "X_umap" not in adata.obsm:
@@ -123,6 +126,9 @@ def coremap(
                from adata.uns. Required for proper layer visualization.
         use_webgl: Whether to use WebGL for rendering (faster for large datasets)
         **kwargs: Additional arguments (currently unused, kept for compatibility)
+    
+    Returns:
+        None. Generates interactive Plotly visualization (saved to file if `save` is specified).
     
     Examples:
         >>> # Basic usage with auto-detection
@@ -310,6 +316,9 @@ def tsne(
         random_state: Random seed. Default: 0
         early_exaggeration: Early exaggeration parameter. Default: 12
         learning_rate: Learning rate. Default: 1000
+    
+    Returns:
+        None. Updates `adata.obsm` with t-SNE embedding in `adata.obsm['X_tsne']` if `compute_tsne=True` and embedding not already present.
     """
     # Compute t-SNE embedding if needed
     if compute_tsne and "X_tsne" not in adata.obsm:
@@ -384,6 +393,9 @@ def diffmap(
         n_comps: Number of components. Default: 15
         neighbors_key: Key for neighbors in adata.uns. Default: None
         random_state: Random seed. Default: 0
+    
+    Returns:
+        None. Updates `adata.obsm` with diffusion map embedding in `adata.obsm['X_diffmap']` if `compute_diffmap=True` and embedding not already present.
     """
     # Compute diffusion map embedding if needed
     if compute_diffmap and "X_diffmap" not in adata.obsm:
@@ -461,6 +473,9 @@ def draw_graph(
         random_state: Random seed. Default: 0
         neighbors_key: Key for neighbors in adata.uns. Default: None
         **kwargs: Additional arguments passed to lt.tl.draw_graph
+    
+    Returns:
+        None. Updates `adata.obsm` with graph layout in `adata.obsm[f'X_draw_graph_{layout}']` if `compute_draw_graph=True` and layout not already present.
     """
     # Compute graph layout if needed
     basis_key = f"X_draw_graph_{layout}"
@@ -539,6 +554,9 @@ def visualization(
             - diffmap: n_comps, neighbors_key, random_state, compute_diffmap
             - draw_graph: layout, init_pos, root, random_state, neighbors_key, compute_draw_graph, **kwargs
             - coremap: coremap_key, model, use_webgl, **kwargs
+    
+    Returns:
+        None. Updates `adata.obsm` with embedding (method-specific key) if computed, and generates visualization plots.
     """
     # Set default save filename based on method
     if save is None:
@@ -636,6 +654,9 @@ def render_visualizations(
         include_coremap: Whether to include coremap visualization if available
         coremap_key: Key name for coremap embedding in adata.obsm
         model: CorespectModel object from cplearn clustering. Required for coremap visualization.
+    
+    Returns:
+        None. Generates and saves visualization plots (UMAP, CoreMap, marker gene violin plots) to `output_dir`.
     """
     output_dir = Path(output_dir)
     # Scanpy requires the directory to exist before saving

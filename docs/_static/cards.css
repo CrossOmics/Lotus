@@ -92,6 +92,8 @@
     border-radius: 4px;
 }
 
+/* Return type section will be styled via JavaScript for reliability */
+
 .field-list > dt:first-of-type {
     margin-top: 0;
 }
@@ -217,5 +219,16 @@
 .sidebar-tree li:has(.api-ref-toggle) > a,
 .sidebar-tree li .api-ref-toggle + a {
     padding-left: 0.5rem;
+}
+
+/* Hide the toctree content at the bottom of the page (but keep it in sidebar) */
+.toctree-wrapper {
+    display: none;
+}
+
+/* Alternative selector for toctree */
+.rst-content .toctree-wrapper,
+.rst-content > .toctree-wrapper {
+    display: none;
 }
 

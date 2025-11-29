@@ -18,7 +18,7 @@ def pick_groups(labels: Sequence[int]) -> tuple[set[int], set[int]]:
         labels: Sequence of cluster labels
     
     Returns:
-        Two sets of group labels
+        Two sets of group labels (groups_a, groups_b)
     """
     unique = [label for label in sorted(set(labels)) if label != -1]
     if len(unique) < 2:
@@ -201,7 +201,7 @@ def rank_genes_groups(
         **kwargs: Additional arguments passed to scanpy's rank_genes_groups
     
     Returns:
-        None (results stored in adata.uns)
+        None. Updates `adata.uns` with ranked genes results in `adata.uns[key_added or 'rank_genes_groups']`.
     """
     sc_tl.rank_genes_groups(
         adata,
@@ -247,7 +247,7 @@ def filter_rank_genes_groups(
         compare_abs: Whether to compare absolute values. Default: False
     
     Returns:
-        None (filtered results stored in adata.uns)
+        None. Updates `adata.uns` with filtered ranked genes results in `adata.uns[key_added]`.
     """
     sc_tl.filter_rank_genes_groups(
         adata,

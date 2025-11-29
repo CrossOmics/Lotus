@@ -2,6 +2,12 @@
 Main Flask application for Lotus API
 """
 
+# Set matplotlib backend BEFORE importing any matplotlib code
+# This prevents GUI-related errors in Flask/threaded environments (especially on macOS)
+# 'Agg' is a non-interactive backend that works on all platforms (Linux, Windows, macOS)
+import matplotlib
+matplotlib.use('Agg') 
+
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from pathlib import Path
