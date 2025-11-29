@@ -163,4 +163,3 @@ def core_analysis(
 
 # Alias for backward compatibility
 compute_coremap_embedding = core_analysis
-

@@ -23,6 +23,24 @@ Main Functions
 
 UMAP Visualization
 ~~~~~~~~~~~~~~~~~~~
+Unified Visualization Function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: lotus.workflows.visualization.visualization.visualization
+
+   **Usage Example:**
+
+   .. code-block:: python
+
+      from lotus.workflows import visualization
+      
+      # Use different visualization methods
+      visualization(adata, method="umap", cluster_key="leiden")
+      visualization(adata, method="tsne", perplexity=50)
+      visualization(adata, method="diffmap", n_comps=20)
+      visualization(adata, method="draw_graph", layout="fa")
+      visualization(adata, method="coremap", model=model)
+
 
 .. autofunction:: lotus.workflows.visualization.visualization.umap
 
@@ -45,23 +63,6 @@ UMAP Visualization
       # cluster_key="leiden"  # if using sc.tl.leiden()
       # cluster_key="louvain"  # if using sc.tl.louvain()
 
-Unified Visualization Function
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: lotus.workflows.visualization.visualization.visualization
-
-   **Usage Example:**
-
-   .. code-block:: python
-
-      from lotus.workflows import visualization
-      
-      # Use different visualization methods
-      visualization(adata, method="umap", cluster_key="leiden")
-      visualization(adata, method="tsne", perplexity=50)
-      visualization(adata, method="diffmap", n_comps=20)
-      visualization(adata, method="draw_graph", layout="fa")
-      visualization(adata, method="coremap", model=model)
 
 t-SNE Visualization
 ~~~~~~~~~~~~~~~~~~~

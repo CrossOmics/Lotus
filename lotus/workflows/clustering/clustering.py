@@ -18,7 +18,7 @@ def summarize_clusters(labels: Iterable[int]) -> str:
     return ", ".join(pieces)
 
 
-def clustering(
+def cluster(
     adata: AnnData,
     *,
     method: Literal["cplearn", "leiden", "louvain"] = "leiden",
@@ -31,32 +31,49 @@ def clustering(
     fine_grained: bool = False,
     propagate: bool = True,
     # scanpy-specific parameters
-    random_state: int = 0,
     neighbors_key: str | None = None,
     obsp: str | None = None,
     # common parameters
     print_summary: bool = True,
 ) -> cplearn.CorespectModel | None:
     """
-    Perform clustering analysis.
+    Clustering step: Perform clustering analysis using scanpy methods (leiden, louvain)
+    
+    This function primarily implements scanpy clustering methods.
+    For cplearn clustering, please use the cplearn API directly:
+    
+    .. code-block:: python
+    
+        from lotus.methods.cplearn.external import cplearn
+        model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
+    
+    Supports clustering methods:
+    - "leiden" (default): Scanpy Leiden algorithm
+    - "louvain": Scanpy Louvain algorithm
+    - "cplearn": Deprecated - use cplearn API directly (see above)
+    
+    Compatible with scanpy workflow:
+    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
+    - Works with scanpy neighbors graph (stored in adata.obsp)
+    - Outputs cluster labels compatible with scanpy format
     
     Parameters:
-        adata (AnnData): AnnData object
-        method (Literal["cplearn", "leiden", "louvain"]): Clustering method. Default: "leiden"
-        use_rep (str | None): Representation to use. Default: None (auto-detect)
-        key_added (str | None): Key name for cluster labels in adata.obs. Default: None (method-specific)
-        cluster_resolution (float): Clustering resolution. Default: 1.2
-        stable_core_frac (float): Stable core fraction (cplearn only). Default: 0.25
-        stable_ng_num (int): Number of neighbors for stable core (cplearn only). Default: 8
-        fine_grained (bool): Use fine-grained clustering (cplearn only). Default: False
-        propagate (bool): Propagate labels (cplearn only). Default: True
-        random_state (int): Random seed (scanpy methods only). Default: 0
-        neighbors_key (str | None): Key in adata.uns for neighbors (scanpy methods only). Default: None
-        obsp (str | None): Key in adata.obsp for adjacency matrix (scanpy methods only). Default: None
-        print_summary (bool): Print cluster summary. Default: True
+        adata: AnnData object (compatible with scanpy AnnData)
+        method: Clustering method to use. Options: "leiden" (default), "louvain", "cplearn" (deprecated)
+        use_rep: Representation to use for clustering (deprecated for cplearn, use cplearn API directly)
+        key_added: Key name for cluster labels in adata.obs.
+                   If None, uses method-specific default: "leiden", "louvain", or "cplearn"
+        cluster_resolution: Clustering resolution (applies to all methods)
+        stable_core_frac: Stable core fraction (deprecated, use cplearn API directly)
+        stable_ng_num: Number of neighbors for stable core (deprecated, use cplearn API directly)
+        fine_grained: Whether to use fine-grained clustering (deprecated, use cplearn API directly)
+        propagate: Whether to propagate labels (deprecated, use cplearn API directly)
+        neighbors_key: Key in adata.uns where neighbors are stored (scanpy methods only)
+        obsp: Key in adata.obsp to use as adjacency matrix (scanpy methods only)
+        print_summary: Whether to print cluster summary
     
     Returns:
-        None | cplearn.CorespectModel: None for scanpy methods, CorespectModel for cplearn
+        None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
     """
     # Set default key_added based on method
     if key_added is None:
@@ -71,13 +88,13 @@ def clustering(
     if method == "cplearn":
         import warnings
         warnings.warn(
-            "Using method='cplearn' in clustering() is deprecated. "
+            "Using method='cplearn' in cluster() is deprecated. "
             "Please use cplearn API directly:\n"
             "  from lotus.methods.cplearn.external import cplearn\n"
             "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn')\n"
             "For core layer analysis, use:\n"
-            "  from lotus.workflows import core_analysis\n"
-            "  core_analysis(adata, model=model)",
+            "  from lotus.workflows import core_analyze\n"
+            "  core_analyze(adata, model=model)",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -150,7 +167,6 @@ def clustering(
                 adata,
                 resolution=cluster_resolution,
                 key_added=key_added,
-                random_state=random_state,
                 neighbors_key=neighbors_key,
                 obsp=obsp,
             )
@@ -159,7 +175,6 @@ def clustering(
                 adata,
                 resolution=cluster_resolution,
                 key_added=key_added,
-                random_state=random_state,
                 neighbors_key=neighbors_key,
                 obsp=obsp,
             )
@@ -176,8 +191,8 @@ def clustering(
                 "Cluster summary:",
                 summarize_clusters(adata.obs[key_added]),
             )
-            if clustering_key in adata.obs:
-                print(f"Stored clustering labels: `adata.obs['{clustering_key}']`")
+            if key_added in adata.obs:
+                print(f"Stored clustering labels: `adata.obs['{key_added}']`")
         
         return None
     
@@ -186,4 +201,9 @@ def clustering(
 
 
 # Alias for backward compatibility
-run_clustering = clustering
+run_clustering = cluster
+
+__all__ = [
+    "cluster",
+    "run_clustering",
+]
