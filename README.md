@@ -16,7 +16,7 @@ This will make the `lotus` package available system-wide without needing to set 
 
 ## Lotus Embedding Projector
 
-We developed an interactive analysis tool, available at `Interactive-Lotus/`. See the [Interactive-Lotus README](Interactive-Lotus/README.md) for setup instructions. We also support a [lightweight web demo](https://lotus.zeabur.app/) for demonstration. 
+We developed an interactive analysis tool, available at `Interactive-Lotus/`. See the [Interactive-Lotus README](Interactive-Lotus/README.md) for setup instructions. We also support a [lightweight web demo](https://huggingface.co/spaces/zzq1zh/Lotus-hf) for demonstration. 
 
 **Note:** The web demo has computational resource limitations and only supports very small datasets.
 
