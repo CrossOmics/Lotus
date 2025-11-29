@@ -513,20 +513,7 @@ def preprocess(
     regress_out_keys: list[str] | None = None,
     use_combat: bool = False,
 ) -> None:
-    """
-    Complete preprocessing pipeline following standard Scanpy workflow:
-    QC → Filtering → Normalization → Save Raw → HVG → Scaling → PCA → Neighbors
-    
-    Standard Scanpy preprocessing steps:
-    1. Calculate QC metrics (n_counts, n_genes, pct_mt, etc.)
-    2. Filter cells and genes
-    3. Normalize total counts and apply log1p transformation
-    4. Save raw data (normalized + log1p) to adata.raw
-    5. Select highly variable genes (HVG) and subset to HVG only
-    6. Scale data (zero-center and clip)
-    7. Principal component analysis (PCA)
-    8. Compute neighborhood graph
-    
+    """    
     Parameters:
         adata: AnnData object
         n_pcs: Number of principal components for PCA. If None, automatically determined by scanpy

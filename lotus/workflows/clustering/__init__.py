@@ -36,14 +36,7 @@ def leiden(
     print_summary: bool = True,
     **kwargs,
 ) -> None:
-    """
-    Leiden clustering step: Perform clustering analysis using Leiden algorithm.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
+    """    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         resolution: Clustering resolution. Default: 1.2
@@ -99,13 +92,6 @@ def louvain(
     **kwargs,
 ) -> None:
     """
-    Louvain clustering step: Perform clustering analysis using Louvain algorithm.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         resolution: Clustering resolution. Default: 1.2
@@ -162,17 +148,7 @@ def cplearn_cluster(
     propagate: bool = True,
     print_summary: bool = True,
 ) -> cplearn.CorespectModel:
-    """
-    Cplearn clustering step: Perform clustering analysis using CoreSPECT algorithm.
-    
-    This function uses the cplearn (CoreSPECT) algorithm for core-periphery learning,
-    which identifies stable core cells before clustering for more robust results.
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
-    
+    """    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         use_rep: Representation to use for clustering. If None, auto-detects: "X_latent" > "X_pca" > "X". Default: None
@@ -259,16 +235,6 @@ def cluster(
 ) -> cplearn.CorespectModel | None:
     """
     Unified clustering function: Perform clustering analysis using different methods.
-    
-    Supports clustering methods:
-    - "leiden" (default): Scanpy Leiden algorithm
-    - "louvain": Scanpy Louvain algorithm
-    - "cplearn": Deprecated - use cplearn API directly (see above)
-    
-    Compatible with scanpy workflow:
-    - Accepts scanpy standard representations (X_pca, X_umap, etc.)
-    - Works with scanpy neighbors graph (stored in adata.obsp)
-    - Outputs cluster labels compatible with scanpy format
     
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)

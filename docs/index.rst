@@ -9,7 +9,7 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
        <a href="why_lotus.html" class="lotus-card">
            <div class="lotus-card-title">
                <span class="lotus-card-icon">💡</span>
-               <span>Why Lotus?</span>
+               <span>What's new at Lotus?</span>
            </div>
            <p class="lotus-card-description">Learn about the key features and advantages that make Lotus a powerful choice for single-cell analysis.</p>
        </a>
