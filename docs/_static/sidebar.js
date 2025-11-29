@@ -69,9 +69,7 @@
                          href.includes('core_selection') ||
                          href.includes('clustering') ||
                          href.includes('visualization') ||
-                         href.includes('deg') ||
-                         href.includes('tools') ||
-                         href.includes('preprocessing_compat'))) {
+                         href.includes('deg'))) {
                         apiModules.push(item);
                     } else if (!href.includes('api/')) {
                         // Stop when we hit a non-API link
