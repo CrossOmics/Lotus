@@ -84,13 +84,30 @@ def example_1_standard_workflow(output_dir: Path) -> None:
     
     # 3. Visualization
     print("\n3. Visualization (UMAP)...")
-    umap(
-        adata,
-        cluster_key="leiden",
-        output_dir=str(output_dir),
-        save="_standard_workflow.png",
-    )
-    print(f"   Saved: {output_dir}/umap_standard_workflow.png")
+    # Set figdir to ensure files are saved in output_dir
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        umap(
+            adata,
+            cluster_key="leiden",
+            output_dir=str(output_dir),
+            save="_standard_workflow.png",
+        )
+        png_path = output_dir / "umap_standard_workflow.png"
+        # Also check figures/ directory (fallback)
+        if not png_path.exists():
+            figures_png = Path("figures") / "umap_standard_workflow.png"
+            if figures_png.exists():
+                import shutil
+                shutil.copy(figures_png, png_path)
+                print(f"   Copied from figures/ to: {png_path}")
+            else:
+                print(f"   Warning: PNG file not found")
+        else:
+            print(f"   Saved: {png_path}")
+    finally:
+        lt.settings.figdir = old_figdir
     
     # 4. DEG Analysis
     print("\n4. Differential Expression Analysis...")
@@ -240,12 +257,31 @@ def example_3_alternating_methods(output_dir: Path) -> None:
     # === Workflow B: Scanpy Louvain ===
     print("\n3. Workflow B: Scanpy Louvain...")
     louvain(adata, resolution=0.8, key_added="louvain")  # Higher resolution for small dataset
-    umap(
-        adata,
-        cluster_key="louvain",
-        output_dir=str(output_dir),
-        save="_alternating_louvain.png",
-    )
+    
+    # Scanpy visualization (UMAP)
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        umap(
+            adata,
+            cluster_key="louvain",
+            output_dir=str(output_dir),
+            save="_alternating_louvain.png",
+        )
+        png_path = output_dir / "umap_alternating_louvain.png"
+        # Also check figures/ directory (fallback)
+        if not png_path.exists():
+            figures_png = Path("figures") / "umap_alternating_louvain.png"
+            if figures_png.exists():
+                import shutil
+                shutil.copy(figures_png, png_path)
+                print(f"   Copied from figures/ to: {png_path}")
+            else:
+                print(f"   Warning: PNG file not found")
+        else:
+            print(f"   Saved: {png_path}")
+    finally:
+        lt.settings.figdir = old_figdir
     print(f"   Louvain clusters: {adata.obs['louvain'].nunique()}")
     
     # Compare results
