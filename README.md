@@ -6,13 +6,12 @@ A single-cell RNA sequencing analysis package for preprocessing, clustering, vis
 
 ## Installation
 
-Install the lotus package in development mode:
+Install the lotus package:
 
 ```bash
 pip install -e .
 ```
 
-This will make the `lotus` package available system-wide without needing to set `PYTHONPATH`.
 
 ## Lotus Embedding Projector
 
@@ -22,4 +21,4 @@ We developed an interactive analysis tool, available at `Interactive-Lotus/`. Se
 
 ## Documentation
 
-Full documentation is available at https://crossomics.github.io/Lotus/.
+Documentation is available at https://crossomics.github.io/Lotus/.

@@ -2,13 +2,6 @@
 
 Web application for Lotus Embedding Projector and provide a [lightweight web demo](https://huggingface.co/spaces/zzq1zh/Lotus-hf). Due to computational resource limitations, this web demo only supports small datasets. We encourage you to deploy locally using the following method.
 
-
-## Features
-
-- Upload and visualize single-cell RNA-seq data
-- Interactive embedding visualization
-- Clustering and preprocessing workflows
-
 ## Quick Start
 
 ```bash
