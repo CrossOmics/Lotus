@@ -47,7 +47,7 @@ def core_analyze(
         print_summary: Whether to print assignment summary
     
     Returns:
-        None
+        None. Updates `adata.obsm` with coremap embedding in `adata.obsm[key_added]` and `adata.obs` with core layer information in `adata.obs[f'{key_added}_is_core']`.
     """
     # Auto-detect representation if not specified
     if use_rep is None:

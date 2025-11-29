@@ -54,7 +54,7 @@ def leiden(
         **kwargs: Additional arguments passed to scanpy's leiden function
     
     Returns:
-        None
+        None. Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
     if "neighbors" not in adata.uns and neighbors_key is None:
@@ -116,7 +116,7 @@ def louvain(
         **kwargs: Additional arguments passed to scanpy's louvain function
     
     Returns:
-        None
+        None. Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Ensure neighbors graph exists (required for scanpy clustering)
     if "neighbors" not in adata.uns and neighbors_key is None:
@@ -286,7 +286,7 @@ def cluster(
         print_summary: Whether to print cluster summary
     
     Returns:
-        None (for scanpy methods) or CorespectModel (for cplearn, deprecated)
+        None (for scanpy methods) or CorespectModel (for cplearn, deprecated). Updates `adata.obs` with cluster labels in `adata.obs[key_added]`.
     """
     # Set default key_added based on method
     if key_added is None:

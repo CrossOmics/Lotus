@@ -16,7 +16,7 @@ def input(adata: AnnData, *, save_raw: bool = True, raw_layer: str = "raw_counts
         raw_layer: Name of the layer to save raw count matrix
     
     Returns:
-        None
+        None. Updates `adata.layers` with raw count matrix in `adata.layers[raw_layer]` if `save_raw=True`.
     """
     if save_raw:
         adata.layers[raw_layer] = adata.X.copy()
@@ -49,7 +49,7 @@ def qc(
         log1p: Whether to apply log1p transformation
     
     Returns:
-        None
+        None. Updates `adata.obs` and `adata.var` with QC metrics (e.g., `n_counts`, `n_genes`, `pct_counts_mt`).
     """
     # Auto-adjust percent_top based on number of genes
     if percent_top is None:
@@ -94,7 +94,7 @@ def filtering(
         inplace: Whether to modify adata in place
     
     Returns:
-        None
+        None. Filters `adata` in place, removing cells/genes that don't meet the criteria.
     """
     # Filter cells
     if min_counts is not None or min_genes is not None or max_counts is not None or max_genes is not None:
@@ -125,7 +125,7 @@ def normalization(adata: AnnData, *, target_sum: float = 1e4) -> None:
         target_sum: Target sum for normalization
     
     Returns:
-        None
+        None. Updates `adata.X` with normalized and log1p-transformed data.
     """
     # Normalize total counts (this is safe to repeat)
     lt.pp.normalize_total(adata, target_sum=target_sum)
@@ -172,7 +172,7 @@ def hvg(adata: AnnData, *, n_top_genes: int | None = None) -> None:
         n_top_genes: Number of highly variable genes. If None, uses min(2000, adata.n_vars)
     
     Returns:
-        None
+        None. Updates `adata.var` with HVG information in `adata.var['highly_variable']` and subsets `adata` to HVG only.
     """
     if n_top_genes is None:
         n_top_genes = min(2000, adata.n_vars)
@@ -194,7 +194,7 @@ def scaling(adata: AnnData, *, zero_center: bool = True, max_value: float = 10) 
         max_value: Maximum value for clipping
     
     Returns:
-        None
+        None. Updates `adata.X` with scaled data.
     """
     lt.pp.scale(adata, zero_center=zero_center, max_value=max_value)
 
@@ -210,7 +210,7 @@ def pca(adata: AnnData, *, n_pcs: int | None = None, svd_solver: str = "arpack")
         svd_solver: SVD solver to use ('arpack', 'randomized', 'auto')
     
     Returns:
-        None
+        None. Updates `adata.obsm` with PCA results in `adata.obsm['X_pca']` and `adata.obsm['X_latent']`.
     """
     lt.tl.pca(adata, n_comps=n_pcs, svd_solver=svd_solver)
     
@@ -239,7 +239,7 @@ def neighbors(adata: AnnData, *, use_rep: str = "X_pca", n_neighbors: int = 15) 
         n_neighbors: Number of neighbors
     
     Returns:
-        None
+        None. Updates `adata.uns` with neighbor graph in `adata.uns['neighbors']` and `adata.obsp` with adjacency matrix.
     """
     lt.pp.neighbors(adata, use_rep=use_rep, n_neighbors=n_neighbors)
 
@@ -254,7 +254,7 @@ def log1p(adata: AnnData, *, base: float | None = None, layer: str | None = None
         layer: Layer to transform. If None, transforms X
     
     Returns:
-        None
+        None. Updates `adata.X` or `adata.layers[layer]` with log1p-transformed data.
     """
     lt.pp.log1p(adata, base=base, layer=layer)
 
@@ -276,7 +276,7 @@ def regress_out(
         n_jobs: Number of jobs for parallel processing
     
     Returns:
-        None
+        None. Updates `adata.X` or `adata.layers[layer]` with regressed-out data.
     """
     lt.pp.regress_out(adata, keys, layer=layer, n_jobs=n_jobs)
 
@@ -296,7 +296,7 @@ def combat(
         covariates: Additional covariates to preserve
     
     Returns:
-        None
+        None. Updates `adata.X` with batch-corrected data using ComBat.
     """
     lt.pp.combat(adata, key, covariates=covariates)
 
@@ -322,7 +322,7 @@ def scrublet(
         random_state: Random seed
     
     Returns:
-        None
+        None. Updates `adata.obs` with doublet scores in `adata.obs['doublet_score']` and predictions in `adata.obs['predicted_doublet']`.
     """
     lt.pp.scrublet(
         adata,
@@ -436,7 +436,7 @@ def recipe_zheng17(
         log: Whether to apply log transformation
     
     Returns:
-        None
+        None. Updates `adata` with normalized, filtered, and log-transformed data following Zheng et al. 2017 workflow.
     """
     lt.pp.recipe_zheng17(adata, n_top_genes=n_top_genes, log=log)
 
@@ -462,7 +462,7 @@ def recipe_weinreb17(
         random_state: Random seed
     
     Returns:
-        None
+        None. Updates `adata` with normalized, filtered, and log-transformed data following Weinreb et al. 2017 workflow.
     """
     lt.pp.recipe_weinreb17(
         adata,
@@ -487,7 +487,7 @@ def recipe_seurat(
         log: Whether to apply log transformation
     
     Returns:
-        None
+        None. Updates `adata` with normalized, filtered, and log-transformed data following Seurat workflow.
     """
     lt.pp.recipe_seurat(adata, log=log)
 
@@ -549,7 +549,7 @@ def preprocess(
         use_combat: Whether to use ComBat for batch effect correction (requires batch_key)
     
     Returns:
-        None
+        None. Updates `adata` with preprocessed data: QC metrics in `adata.obs` and `adata.var`, normalized data in `adata.X`, HVG in `adata.var['highly_variable']`, PCA in `adata.obsm['X_pca']` and `adata.obsm['X_latent']`, and neighbor graph in `adata.uns['neighbors']` and `adata.obsp`.
     """
     # Check if data has already been preprocessed and restore from raw if needed
     # This prevents errors when re-running preprocessing on already processed data
