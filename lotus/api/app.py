@@ -89,15 +89,15 @@ def main():
     print("=" * 60)
     print("\n[INFO] Server logs will appear below:\n")
     
-    # Try to find static folder (Lotus-Web-Demo directory)
-    # When running from Lotus-Web-Demo/app.py, we need to go up one level
+    # Try to find static folder (Interactive-Lotus directory)
+    # When running from Interactive-Lotus/app.py, we need to go up one level
     # When running as module, we need to go up three levels
     current_file = Path(__file__)
     # Try different paths
     possible_paths = [
-        current_file.parent.parent.parent / 'Lotus-Web-Demo',  # From lotus/api/app.py
-        current_file.parent.parent / 'Lotus-Web-Demo',  # Alternative
-        Path.cwd() / 'Lotus-Web-Demo',  # Current working directory
+        current_file.parent.parent.parent / 'Interactive-Lotus',  # From lotus/api/app.py
+        current_file.parent.parent / 'Interactive-Lotus',  # Alternative
+        Path.cwd() / 'Interactive-Lotus',  # Current working directory
     ]
     
     static_folder = None
@@ -127,12 +127,12 @@ if os.environ.get('PORT') or os.environ.get('GUNICORN'):
     static_folder_env = os.environ.get('STATIC_FOLDER')
     if static_folder_env:
         static_folder = static_folder_env
-    elif os.environ.get('DOCKER') or os.path.exists('/app/Lotus-Web-Demo'):
+    elif os.environ.get('DOCKER') or os.path.exists('/app/Interactive-Lotus'):
         # In Docker, try to find static folder
         possible_paths = [
-            Path('/app/Lotus-Web-Demo'),
-            Path.cwd() / 'Lotus-Web-Demo',
-            Path(__file__).parent.parent.parent / 'Lotus-Web-Demo',
+            Path('/app/Interactive-Lotus'),
+            Path.cwd() / 'Interactive-Lotus',
+            Path(__file__).parent.parent.parent / 'Interactive-Lotus',
         ]
         static_folder = None
         for path in possible_paths:
