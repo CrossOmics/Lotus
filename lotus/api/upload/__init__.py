@@ -14,11 +14,14 @@ bp = Blueprint('upload', __name__, url_prefix='/api')
 # Default datasets directory - check multiple possible locations
 def get_default_datasets_dir():
     """Get the directory containing default datasets"""
-    # Try multiple possible locations
+    # Try multiple possible locations, prioritize 'data' directory
     possible_paths = [
-        Path(__file__).parent.parent.parent.parent / 'datasets',  # From lotus/api/upload/__init__.py
-        Path(__file__).parent.parent.parent / 'datasets',  # Alternative
-        Path.cwd() / 'datasets',  # Current working directory
+        Path(__file__).parent.parent.parent.parent / 'data',  # From lotus/api/upload/__init__.py -> data
+        Path(__file__).parent.parent.parent / 'data',  # Alternative -> data
+        Path.cwd() / 'data',  # Current working directory -> data
+        Path(__file__).parent.parent.parent.parent / 'datasets',  # From lotus/api/upload/__init__.py -> datasets
+        Path(__file__).parent.parent.parent / 'datasets',  # Alternative -> datasets
+        Path.cwd() / 'datasets',  # Current working directory -> datasets
         UPLOAD_FOLDER / 'datasets',  # In upload folder
         UPLOAD_FOLDER,  # Directly in upload folder
     ]
@@ -164,9 +167,21 @@ def load_default_dataset():
             print(f"[LOAD] Error: Dataset not allowed: {filename}")
             return jsonify({'error': f'Dataset not allowed. Allowed datasets: {", ".join(allowed_datasets)}'}), 400
         
-        # Find the dataset file
+        # Find the dataset file - prioritize 'data' directory
         datasets_dir = get_default_datasets_dir()
         filepath = datasets_dir / filename
+        
+        # Also check in data directory directly
+        if not filepath.exists():
+            possible_data_paths = [
+                Path(__file__).parent.parent.parent.parent / 'data' / filename,
+                Path(__file__).parent.parent.parent / 'data' / filename,
+                Path.cwd() / 'data' / filename,
+            ]
+            for loc in possible_data_paths:
+                if loc.exists() and loc.is_file():
+                    filepath = loc
+                    break
         
         # Also check in upload folder directly
         if not filepath.exists():
@@ -185,9 +200,24 @@ def load_default_dataset():
                     break
         
         if not filepath.exists():
-            error_msg = f'Default dataset file not found: {filename}. Please ensure the file exists in the datasets directory or upload folder.'
+            # Collect all searched paths for error message
+            searched_paths = [
+                str(datasets_dir),
+                str(UPLOAD_FOLDER),
+            ]
+            # Add data directory paths
+            data_paths = [
+                Path(__file__).parent.parent.parent.parent / 'data',
+                Path(__file__).parent.parent.parent / 'data',
+                Path.cwd() / 'data',
+            ]
+            for p in data_paths:
+                if str(p) not in searched_paths:
+                    searched_paths.append(str(p))
+            
+            error_msg = f'Default dataset file not found: {filename}. Please ensure the file exists in the data directory or upload folder.'
             print(f"[LOAD] Error: {error_msg}")
-            print(f"[LOAD] Searched in: {datasets_dir}, {UPLOAD_FOLDER}")
+            print(f"[LOAD] Searched in: {', '.join(searched_paths)}")
             return jsonify({'error': error_msg}), 404
         
         print(f"[LOAD] Found dataset file: {filepath}")
