@@ -75,12 +75,10 @@ Import Required Modules
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import (
-        preprocess,
-        leiden,  # or louvain
-        umap,
-        rank_genes_groups,  # or marker_genes
-    )
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.clustering import leiden  # or louvain
+    from lotus.workflows.visualization import umap
+    from lotus.workflows.deg_analysis import rank_genes_groups  # or marker_genes
     from anndata import AnnData
 
 Step 1: Load Data
@@ -154,7 +152,7 @@ Lotus supports multiple clustering methods. For the standard scanpy workflow, us
 
 .. code-block:: python
 
-    from lotus.workflows import louvain
+    from lotus.workflows.clustering import louvain
     
     louvain(
         adata,
@@ -187,7 +185,7 @@ Find marker genes between clusters using scanpy's method:
 
 .. code-block:: python
 
-    from lotus.workflows import rank_genes_groups
+    from lotus.workflows.deg_analysis import rank_genes_groups
     
     rank_genes_groups(
         adata,
@@ -209,7 +207,10 @@ This example uses the demo dataset included in the repository:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, leiden, umap, rank_genes_groups
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.clustering import leiden
+    from lotus.workflows.visualization import umap
+    from lotus.workflows.deg_analysis import rank_genes_groups
     
     # 1. Load data (using demo dataset from repository)
     adata = lt.read("data/demo_data.h5ad")
@@ -256,7 +257,9 @@ This workflow uses cplearn's core-periphery learning approach:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, core_analyze, coremap
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.visualization import coremap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -320,7 +323,9 @@ This workflow uses standard scanpy methods:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap, louvain
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.visualization import umap
+    from lotus.workflows.clustering import louvain
     
     # 1. Load data (using demo dataset)
     adata = lt.read("data/demo_data.h5ad")
@@ -366,7 +371,8 @@ This workflow combines cplearn clustering with UMAP visualization, giving you th
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.visualization import umap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -414,7 +420,10 @@ This workflow uses core analysis to compute the core map embedding, but applies 
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, louvain, core_analyze, coremap
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.clustering import louvain
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.visualization import coremap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -475,7 +484,10 @@ This workflow combines core analysis with Louvain clustering and UMAP visualizat
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap, louvain, core_analyze
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.visualization import umap
+    from lotus.workflows.clustering import louvain
+    from lotus.workflows.core_analysis import core_analyze
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -536,7 +548,10 @@ You can run both workflows on the same data to compare results:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap, leiden, louvain, core_analyze, coremap
+    from lotus.workflows.preprocessing import preprocess
+    from lotus.workflows.visualization import umap, coremap
+    from lotus.workflows.clustering import leiden, louvain
+    from lotus.workflows.core_analysis import core_analyze
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -572,7 +587,7 @@ You can run both workflows on the same data to compare results:
     print("Louvain clusters:", adata.obs['louvain'].value_counts())
     
     # Both cluster keys can be used for DEG analysis
-    from lotus.workflows import rank_genes_groups, marker_genes
+    from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
     
     # Use scanpy method with Louvain clusters
     rank_genes_groups(adata, groupby="louvain", method="wilcoxon")
