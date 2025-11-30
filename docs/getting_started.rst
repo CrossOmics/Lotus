@@ -244,12 +244,20 @@ The visualization below was generated using the demo dataset (`data/demo_data.h5
 
 .. _alternating_methods:
 
-3. Alternating Methods: Core Analysis + Cplearn vs Scanpy
-----------------------------------------------------------
+3. Alternating Methods: Mixing Clustering and Visualization Methods
+-------------------------------------------------------------------
 
-This section demonstrates how to alternate between different analysis methods:
-- **Core Analysis + Cplearn**: Use cplearn for clustering and coremap for visualization
-- **Scanpy Methods**: Use Leiden/Louvain for clustering and UMAP for visualization
+This section demonstrates how to alternate between different analysis methods. You can mix and match clustering methods (Leiden, Louvain, Cplearn) with visualization methods (UMAP, Coremap), and also combine core analysis with different clustering methods:
+
+**Standard Combinations:**
+- **Leiden + UMAP**: Standard scanpy workflow (see Section 2)
+- **Louvain + UMAP**: Alternative scanpy workflow
+- **Cplearn + Coremap**: Cplearn clustering with interactive coremap visualization
+- **Cplearn + UMAP**: Cplearn clustering with UMAP visualization
+
+**Core Analysis Combinations:**
+- **Core Analysis + Louvain + Coremap**: Use core analysis embedding with Louvain clustering and coremap visualization
+- **Core Analysis + Louvain + UMAP**: Use core analysis embedding with Louvain clustering and UMAP visualization
 
 You can switch between these methods in the same workflow to compare results.
 
@@ -364,6 +372,179 @@ The visualization below was generated using the demo dataset (`data/demo_data.h5
    :align: center
 
    UMAP visualization colored by Louvain clusters from the scanpy workflow example, generated using `data/demo_data.h5ad`.
+
+Workflow C: Cplearn Clustering + UMAP Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This workflow combines cplearn clustering with UMAP visualization, giving you the benefits of cplearn's core-periphery learning with the familiar UMAP visualization:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess, umap
+    from lotus.methods.cplearn.external import cplearn
+    
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 3. Cplearn clustering
+    model = cplearn.corespect(
+        adata,
+        use_rep="X_latent",
+        key_added="cplearn",
+        stable={"core_frac": 0.3, "ng_num": 10},
+        cluster={"resolution": 0.8},
+        propagate=False,
+    )
+    
+    # 4. Visualization: Use UMAP with cplearn clusters
+    umap(
+        adata,
+        cluster_key="cplearn",  # Use cplearn cluster labels
+        output_dir="./results",
+        save="_cplearn_umap.png",
+    )
+    
+    print("✓ Cplearn + UMAP workflow complete!")
+    print(f"  - Clusters: {adata.obs['cplearn'].nunique()}")
+    print(f"  - UMAP embedding: adata.obsm['X_umap']")
+
+Example output visualization:
+
+.. figure:: _static/examples/umap_cplearn_workflow.png
+   :alt: UMAP visualization with cplearn clusters
+   :width: 600px
+   :align: center
+
+   UMAP visualization colored by cplearn clusters, combining cplearn's clustering with UMAP visualization, generated using `data/demo_data.h5ad`.
+
+Workflow D: Core Analysis + Louvain Clustering + Coremap Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This workflow uses core analysis to compute the core map embedding, but applies Louvain clustering instead of cplearn clustering, then visualizes with coremap:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess, louvain
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.visualization import coremap
+    from lotus.methods.cplearn.external import cplearn
+    
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 3. Get cplearn model (needed for core analysis, but we'll use louvain clustering)
+    model = cplearn.corespect(
+        adata,
+        use_rep="X_latent",
+        key_added="cplearn_temp",
+        stable={"core_frac": 0.3, "ng_num": 10},
+        cluster={"resolution": 0.8},
+        propagate=False,
+    )
+    
+    # 4. Louvain clustering
+    louvain(adata, resolution=0.8, key_added="louvain")
+    
+    # 5. Core analysis using louvain clusters
+    core_analyze(
+        adata,
+        model=model,
+        use_rep="X_latent",
+        key_added="X_louvain_coremap",
+        cluster_key="louvain",  # Use louvain clusters instead of cplearn
+    )
+    
+    # 6. Visualization: Coremap with louvain clusters
+    coremap(
+        adata,
+        coremap_key="X_louvain_coremap",
+        cluster_key="louvain",
+        output_dir="./results",
+        save="coremap_louvain_workflow.html",
+        model=model,
+    )
+    
+    print("✓ Core Analysis + Louvain + Coremap workflow complete!")
+    print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
+    print(f"  - Core map embedding: adata.obsm['X_louvain_coremap']")
+
+Example output visualization:
+
+View the interactive coremap visualization: 
+`coremap_louvain_workflow.html <_static/examples/coremap_louvain_workflow.html>`_
+
+The HTML file is accessible at: 
+``https://crossomics.github.io/Lotus/_static/examples/coremap_louvain_workflow.html``
+
+Workflow E: Core Analysis + Louvain Clustering + UMAP Visualization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This workflow combines core analysis with Louvain clustering and UMAP visualization:
+
+.. code-block:: python
+
+    import lotus as lt
+    from lotus.workflows import preprocess, umap, louvain
+    from lotus.workflows.core_analysis import core_analyze
+    from lotus.methods.cplearn.external import cplearn
+    
+    # 1. Load data (using demo dataset)
+    adata = lt.read("data/demo_data.h5ad")
+    
+    # 2. Preprocessing
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 3. Get cplearn model (needed for core analysis, but we'll use louvain clustering)
+    model = cplearn.corespect(
+        adata,
+        use_rep="X_latent",
+        key_added="cplearn_temp",
+        stable={"core_frac": 0.3, "ng_num": 10},
+        cluster={"resolution": 0.8},
+        propagate=False,
+    )
+    
+    # 4. Louvain clustering
+    louvain(adata, resolution=0.8, key_added="louvain")
+    
+    # 5. Core analysis using louvain clusters
+    core_analyze(
+        adata,
+        model=model,
+        use_rep="X_latent",
+        key_added="X_louvain_coremap",
+        cluster_key="louvain",  # Use louvain clusters instead of cplearn
+    )
+    
+    # 6. Visualization: UMAP with louvain clusters
+    umap(
+        adata,
+        cluster_key="louvain",
+        output_dir="./results",
+        save="_louvain_umap.png",
+    )
+    
+    print("✓ Core Analysis + Louvain + UMAP workflow complete!")
+    print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
+    print(f"  - UMAP embedding: adata.obsm['X_umap']")
+    print(f"  - Core map embedding: adata.obsm['X_louvain_coremap']")
+
+Example output visualization:
+
+.. figure:: _static/examples/umap_coreanalysis_louvain_workflow.png
+   :alt: UMAP visualization with core analysis and louvain clusters
+   :width: 600px
+   :align: center
+
+   UMAP visualization colored by Louvain clusters, with core analysis embedding computed using `data/demo_data.h5ad`.
 
 Alternating Between Methods in the Same Workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

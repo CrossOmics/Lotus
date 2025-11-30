@@ -292,6 +292,225 @@ def example_3_alternating_methods(output_dir: Path) -> None:
     print("\n✓ Alternating methods workflow complete!")
 
 
+def example_4_cplearn_umap(output_dir: Path) -> None:
+    """Run Example 4: Cplearn Clustering + UMAP Visualization."""
+    print("\n" + "=" * 60)
+    print("Example 4: Cplearn Clustering + UMAP Visualization")
+    print("=" * 60)
+    
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
+    
+    # 1. Preprocessing
+    print("\n1. Preprocessing...")
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 2. Cplearn Clustering
+    print("\n2. Cplearn Clustering...")
+    try:
+        model = cplearn.corespect(
+            adata,
+            use_rep="X_latent",
+            key_added="cplearn",
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},
+            propagate=False,
+        )
+        print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
+    except Exception as e:
+        print(f"   Warning: Cplearn clustering failed: {e}")
+        print("   Skipping cplearn + umap workflow...")
+        return
+    
+    # 3. Visualization: UMAP with cplearn clusters
+    print("\n3. Visualization (UMAP with cplearn clusters)...")
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        umap(
+            adata,
+            cluster_key="cplearn",  # Use cplearn cluster labels
+            output_dir=str(output_dir),
+            save="_cplearn_umap.png",
+        )
+        # The umap function saves with pattern: umap{cluster_key}{save}
+        # So it should be: umap_cplearn_umap.png
+        png_path = output_dir / "umap_cplearn_umap.png"
+        target_path = output_dir / "umap_cplearn_workflow.png"
+        
+        # Check if file exists, if not check figures/ directory
+        if png_path.exists():
+            import shutil
+            shutil.copy(png_path, target_path)
+            print(f"   Saved: {target_path}")
+        else:
+            figures_png = Path("figures") / "umap_cplearn_umap.png"
+            if figures_png.exists():
+                import shutil
+                shutil.copy(figures_png, target_path)
+                print(f"   Copied from figures/ to: {target_path}")
+            else:
+                print(f"   Warning: PNG file not found. Expected: {png_path}")
+    finally:
+        lt.settings.figdir = old_figdir
+    
+    print(f"   Cplearn clusters: {adata.obs['cplearn'].nunique()}")
+    print("\n✓ Cplearn + UMAP workflow complete!")
+
+
+def example_5_coreanalysis_louvain_coremap(output_dir: Path) -> None:
+    """Run Example 5: Core Analysis + Louvain Clustering + Coremap Visualization."""
+    print("\n" + "=" * 60)
+    print("Example 5: Core Analysis + Louvain + Coremap")
+    print("=" * 60)
+    
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
+    
+    # 1. Preprocessing
+    print("\n1. Preprocessing...")
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 2. Get cplearn model (for core analysis, but we'll use louvain clustering)
+    print("\n2. Getting cplearn model for core analysis...")
+    try:
+        model = cplearn.corespect(
+            adata,
+            use_rep="X_latent",
+            key_added="cplearn_temp",  # Temporary, we'll use louvain instead
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},
+            propagate=False,
+        )
+    except Exception as e:
+        print(f"   Warning: Cplearn model creation failed: {e}")
+        print("   Skipping core analysis workflow...")
+        return
+    
+    # 3. Louvain clustering
+    print("\n3. Louvain Clustering...")
+    louvain(adata, resolution=0.8, key_added="louvain")
+    print(f"   Found {adata.obs['louvain'].nunique()} clusters")
+    
+    # 4. Core analysis using louvain clusters
+    print("\n4. Core Analysis (using louvain clusters)...")
+    core_analyze(
+        adata,
+        model=model,
+        use_rep="X_latent",
+        key_added="X_louvain_coremap",
+        cluster_key="louvain",  # Use louvain clusters instead of cplearn
+    )
+    
+    # 5. Visualization: Coremap with louvain clusters
+    print("\n5. Visualization (Coremap with louvain clusters)...")
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        coremap(
+            adata,
+            coremap_key="X_louvain_coremap",
+            cluster_key="louvain",  # Use louvain clusters
+            output_dir=str(output_dir),
+            save="coremap_louvain_workflow.html",
+            model=model,
+        )
+        html_path = output_dir / "coremap_louvain_workflow.html"
+        if html_path.exists():
+            print(f"   Saved: {html_path}")
+        else:
+            print(f"   Warning: HTML file not found at {html_path}")
+    finally:
+        lt.settings.figdir = old_figdir
+    
+    print("\n✓ Core Analysis + Louvain + Coremap workflow complete!")
+
+
+def example_6_coreanalysis_louvain_umap(output_dir: Path) -> None:
+    """Run Example 6: Core Analysis + Louvain Clustering + UMAP Visualization."""
+    print("\n" + "=" * 60)
+    print("Example 6: Core Analysis + Louvain + UMAP")
+    print("=" * 60)
+    
+    # Load real data
+    demo_data_path = Path(__file__).parent.parent / "data" / "demo_data.h5ad"
+    print(f"Loading data from: {demo_data_path}")
+    adata = lt.read(str(demo_data_path))
+    print(f"Loaded dataset: {adata.shape}")
+    
+    # 1. Preprocessing
+    print("\n1. Preprocessing...")
+    preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
+    
+    # 2. Get cplearn model (for core analysis, but we'll use louvain clustering)
+    print("\n2. Getting cplearn model for core analysis...")
+    try:
+        model = cplearn.corespect(
+            adata,
+            use_rep="X_latent",
+            key_added="cplearn_temp",  # Temporary, we'll use louvain instead
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},
+            propagate=False,
+        )
+    except Exception as e:
+        print(f"   Warning: Cplearn model creation failed: {e}")
+        print("   Skipping core analysis workflow...")
+        return
+    
+    # 3. Louvain clustering
+    print("\n3. Louvain Clustering...")
+    louvain(adata, resolution=0.8, key_added="louvain")
+    print(f"   Found {adata.obs['louvain'].nunique()} clusters")
+    
+    # 4. Core analysis using louvain clusters
+    print("\n4. Core Analysis (using louvain clusters)...")
+    core_analyze(
+        adata,
+        model=model,
+        use_rep="X_latent",
+        key_added="X_louvain_coremap",
+        cluster_key="louvain",  # Use louvain clusters instead of cplearn
+    )
+    
+    # 5. Visualization: UMAP with louvain clusters
+    print("\n5. Visualization (UMAP with louvain clusters)...")
+    old_figdir = lt.settings.figdir
+    lt.settings.figdir = str(output_dir)
+    try:
+        umap(
+            adata,
+            cluster_key="louvain",  # Use louvain clusters
+            output_dir=str(output_dir),
+            save="_louvain_umap.png",
+        )
+        png_path = output_dir / "umap_louvain_umap.png"
+        target_path = output_dir / "umap_coreanalysis_louvain_workflow.png"
+        
+        if png_path.exists():
+            import shutil
+            shutil.copy(png_path, target_path)
+            print(f"   Saved: {target_path}")
+        else:
+            figures_png = Path("figures") / "umap_louvain_umap.png"
+            if figures_png.exists():
+                import shutil
+                shutil.copy(figures_png, target_path)
+                print(f"   Copied from figures/ to: {target_path}")
+            else:
+                print(f"   Warning: PNG file not found. Expected: {png_path}")
+    finally:
+        lt.settings.figdir = old_figdir
+    
+    print("\n✓ Core Analysis + Louvain + UMAP workflow complete!")
+
+
 def main():
     """Generate all example visualizations."""
     # Create output directory in docs/_static
@@ -308,6 +527,9 @@ def main():
         example_1_standard_workflow(output_dir)
         example_2_cplearn_workflow(output_dir)
         example_3_alternating_methods(output_dir)
+        example_4_cplearn_umap(output_dir)
+        example_5_coreanalysis_louvain_coremap(output_dir)
+        example_6_coreanalysis_louvain_umap(output_dir)
         
         print("\n" + "=" * 60)
         print("✓ All examples completed successfully!")
@@ -317,6 +539,9 @@ def main():
         print("  - coremap_cplearn_workflow.html")
         print("  - coremap_alternating_cplearn.html")
         print("  - umap_alternating_louvain.png")
+        print("  - umap_cplearn_workflow.png")
+        print("  - coremap_louvain_workflow.html")
+        print("  - umap_coreanalysis_louvain_workflow.png")
         
     except Exception as e:
         print(f"\n✗ Error: {e}")
