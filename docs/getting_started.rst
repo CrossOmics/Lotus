@@ -128,7 +128,7 @@ After preprocessing, check the results:
 
 .. code-block:: python
 
-    print(f"✓ Preprocessing complete")
+    print(f" Preprocessing complete")
     print(f"  - Data shape: {adata.shape}")
     print(f"  - PCA stored in: `adata.obsm['X_pca']`")
     print(f"  - Neighbors graph constructed: {'neighbors' in adata.uns}")
@@ -187,7 +187,7 @@ Find marker genes between clusters using scanpy's method:
 
 .. code-block:: python
 
-    from lotus.workflows.deg_analysis import rank_genes_groups
+    from lotus.workflows import rank_genes_groups
     
     rank_genes_groups(
         adata,
@@ -209,8 +209,7 @@ This example uses the demo dataset included in the repository:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, leiden, umap
-    from lotus.workflows.deg_analysis import rank_genes_groups
+    from lotus.workflows import preprocess, leiden, umap, rank_genes_groups
     
     # 1. Load data (using demo dataset from repository)
     adata = lt.read("data/demo_data.h5ad")
@@ -229,7 +228,7 @@ This example uses the demo dataset included in the repository:
     # 5. Differential Expression Analysis
     rank_genes_groups(adata, groupby="leiden", method="wilcoxon")
     
-    print("✓ Standard workflow complete!")
+    print(" Standard workflow complete!")
 
 Example output visualization:
 
@@ -248,19 +247,7 @@ The visualization below was generated using the demo dataset (`data/demo_data.h5
 -------------------------------------------------------------------
 
 This section demonstrates how to alternate between different analysis methods. You can mix and match clustering methods (Leiden, Louvain, Cplearn) with visualization methods (UMAP, Coremap), and also combine core analysis with different clustering methods:
-
-**Standard Combinations:**
-- **Leiden + UMAP**: Standard scanpy workflow (see Section 2)
-- **Louvain + UMAP**: Alternative scanpy workflow
-- **Cplearn + Coremap**: Cplearn clustering with interactive coremap visualization
-- **Cplearn + UMAP**: Cplearn clustering with UMAP visualization
-
-**Core Analysis Combinations:**
-- **Core Analysis + Louvain + Coremap**: Use core analysis embedding with Louvain clustering and coremap visualization
-- **Core Analysis + Louvain + UMAP**: Use core analysis embedding with Louvain clustering and UMAP visualization
-
-You can switch between these methods in the same workflow to compare results.
-
+We provide several examples below:
 Workflow A: Core Analysis + Cplearn Clustering + Coremap Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -269,9 +256,7 @@ This workflow uses cplearn's core-periphery learning approach:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess
-    from lotus.workflows.core_analysis import core_analyze
-    from lotus.workflows.visualization import coremap
+    from lotus.workflows import preprocess, core_analyze, coremap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -306,7 +291,7 @@ This workflow uses cplearn's core-periphery learning approach:
         save="_cplearn_coremap.html",
     )
     
-    print("✓ Cplearn workflow complete!")
+    print(" Cplearn workflow complete!")
     print(f"  - Clusters: {adata.obs['cplearn'].nunique()}")
     print(f"  - Core map embedding: adata.obsm['X_cplearn_coremap']")
 
@@ -358,7 +343,7 @@ This workflow uses standard scanpy methods:
         save="_louvain_umap.png",
     )
     
-    print("✓ Scanpy workflow complete!")
+    print("Scanpy workflow complete!")
     print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
     print(f"  - UMAP embedding: adata.obsm['X_umap']")
 
@@ -408,7 +393,7 @@ This workflow combines cplearn clustering with UMAP visualization, giving you th
         save="_cplearn_umap.png",
     )
     
-    print("✓ Cplearn + UMAP workflow complete!")
+    print(" Cplearn + UMAP workflow complete!")
     print(f"  - Clusters: {adata.obs['cplearn'].nunique()}")
     print(f"  - UMAP embedding: adata.obsm['X_umap']")
 
@@ -429,9 +414,7 @@ This workflow uses core analysis to compute the core map embedding, but applies 
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, louvain
-    from lotus.workflows.core_analysis import core_analyze
-    from lotus.workflows.visualization import coremap
+    from lotus.workflows import preprocess, louvain, core_analyze, coremap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -472,7 +455,7 @@ This workflow uses core analysis to compute the core map embedding, but applies 
         model=model,
     )
     
-    print("✓ Core Analysis + Louvain + Coremap workflow complete!")
+    print(" Core Analysis + Louvain + Coremap workflow complete!")
     print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
     print(f"  - Core map embedding: adata.obsm['X_louvain_coremap']")
 
@@ -492,8 +475,7 @@ This workflow combines core analysis with Louvain clustering and UMAP visualizat
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap, louvain
-    from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows import preprocess, umap, louvain, core_analyze
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -532,7 +514,7 @@ This workflow combines core analysis with Louvain clustering and UMAP visualizat
         save="_louvain_umap.png",
     )
     
-    print("✓ Core Analysis + Louvain + UMAP workflow complete!")
+    print(" Core Analysis + Louvain + UMAP workflow complete!")
     print(f"  - Clusters: {adata.obs['louvain'].nunique()}")
     print(f"  - UMAP embedding: adata.obsm['X_umap']")
     print(f"  - Core map embedding: adata.obsm['X_louvain_coremap']")
@@ -554,9 +536,7 @@ You can run both workflows on the same data to compare results:
 .. code-block:: python
 
     import lotus as lt
-    from lotus.workflows import preprocess, umap, leiden, louvain
-    from lotus.workflows.core_analysis import core_analyze
-    from lotus.workflows.visualization import coremap
+    from lotus.workflows import preprocess, umap, leiden, louvain, core_analyze, coremap
     from lotus.methods.cplearn.external import cplearn
     
     # 1. Load data (using demo dataset)
@@ -592,7 +572,7 @@ You can run both workflows on the same data to compare results:
     print("Louvain clusters:", adata.obs['louvain'].value_counts())
     
     # Both cluster keys can be used for DEG analysis
-    from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
+    from lotus.workflows import rank_genes_groups, marker_genes
     
     # Use scanpy method with Louvain clusters
     rank_genes_groups(adata, groupby="louvain", method="wilcoxon")
