@@ -1,7 +1,7 @@
 Installation
 =============
 
-This guide covers installing the Lotus package and the Interactive Lotus Embedding Projector.
+This guide covers installing the Lotus package. The Interactive Lotus Embedding Projector is completely optional and only needed if you want to use the web-based interactive visualization tool.
 
 Python Version Requirement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,10 +35,10 @@ Install the Lotus package in development mode:
 
     pip install -e .
 
-Install Interactive Lotus Embedding Projector
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install Interactive Lotus Embedding Projector (Optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Interactive Lotus Embedding Projector is a web-based tool for real-time data exploration and visualization. To set it up locally (assuming you're already in the Lotus repository directory):
+The Interactive Lotus Embedding Projector is a web-based tool for real-time data exploration and visualization. **This installation is completely optional** - you only need it if you want to use the interactive web interface. To set it up locally (assuming you're already in the Lotus repository directory):
 
 .. code-block:: bash
 
