@@ -929,7 +929,7 @@ async function handleDataFile(event) {
     disableAllButtons();
     disableDataLoadingButtons();
     
-    // Determine file type from extension (h5ad, csv, tsv, zip for mtx allowed)
+    // Determine file type from extension (h5ad, csv, tsv, mtx allowed)
     const fileName = file.name.toLowerCase();
     let fileType = null;
     
@@ -939,11 +939,10 @@ async function handleDataFile(event) {
         fileType = 'csv';
     } else if (fileName.endsWith('.tsv')) {
         fileType = 'tsv';
-    } else if (fileName.endsWith('.zip')) {
-        // Zip files are assumed to be mtx format (10x Genomics format)
+    } else if (fileName.endsWith('.mtx')) {
         fileType = 'mtx';
     } else {
-        showStatus('Unsupported file format. Please upload .h5ad, .csv, .tsv, or .zip (for mtx) files only.', 'error');
+        showStatus('Unsupported file format. Please upload .h5ad, .csv, .tsv, or .mtx files only.', 'error');
         enableDataLoadingButtons(); // Re-enable buttons if file format is invalid
         return;
     }
