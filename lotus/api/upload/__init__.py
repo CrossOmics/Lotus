@@ -123,11 +123,11 @@ def upload_data():
                     mtx_folder = filepath.parent
                 
                 # Find mtx file and required files (support different naming patterns)
-                mtx_files = list(mtx_folder.glob('*.mtx')) + list(mtx_folder.glob('*.mtx.gz'))
-                # Also check subdirectories
-                for subdir in mtx_folder.iterdir():
-                    if subdir.is_dir():
-                        mtx_files.extend(list(subdir.glob('*.mtx')) + list(subdir.glob('*.mtx.gz')))
+                # Use rglob for recursive search
+                mtx_files = list(mtx_folder.rglob('*.mtx'))
+                mtx_files.extend(list(mtx_folder.rglob('*.mtx.gz')))
+                # Remove duplicates
+                mtx_files = list(set(mtx_files))
                 
                 if not mtx_files:
                     return jsonify({'error': 'No .mtx file found in the uploaded folder. Please ensure the zip contains a matrix.mtx file (or data_matrix.mtx, counts_matrix.mtx, etc.)'}), 400
@@ -135,18 +135,30 @@ def upload_data():
                 # Find the mtx folder (could be root or subdirectory)
                 mtx_file = mtx_files[0]
                 actual_mtx_folder = mtx_file.parent
+                print(f"[UPLOAD] Found mtx file: {mtx_file.name} in folder: {actual_mtx_folder}")
                 
                 # Check for required files with different naming patterns
+                # Search in the same folder as mtx file
                 genes_files = list(actual_mtx_folder.glob('genes.tsv')) + list(actual_mtx_folder.glob('features.tsv'))
                 # Also check for data_* and counts_* patterns
                 genes_files.extend(list(actual_mtx_folder.glob('*genes.tsv')) + list(actual_mtx_folder.glob('*features.tsv')))
                 genes_files.extend(list(actual_mtx_folder.glob('data_*genes.tsv')) + list(actual_mtx_folder.glob('data_*features.tsv')))
                 genes_files.extend(list(actual_mtx_folder.glob('counts_*genes.tsv')) + list(actual_mtx_folder.glob('counts_*features.tsv')))
+                # Remove duplicates
+                genes_files = list(set(genes_files))
                 
                 barcodes_files = list(actual_mtx_folder.glob('barcodes.tsv'))
                 barcodes_files.extend(list(actual_mtx_folder.glob('*barcodes.tsv')))
                 barcodes_files.extend(list(actual_mtx_folder.glob('data_*barcodes.tsv')))
                 barcodes_files.extend(list(actual_mtx_folder.glob('counts_*barcodes.tsv')))
+                # Remove duplicates
+                barcodes_files = list(set(barcodes_files))
+                
+                print(f"[UPLOAD] Found {len(genes_files)} genes/features files, {len(barcodes_files)} barcodes files in {actual_mtx_folder}")
+                if genes_files:
+                    print(f"[UPLOAD] Genes/features files: {[f.name for f in genes_files]}")
+                if barcodes_files:
+                    print(f"[UPLOAD] Barcodes files: {[f.name for f in barcodes_files]}")
                 
                 # Define expected file names
                 import os
@@ -157,15 +169,31 @@ def upload_data():
                 expected_barcodes_name = actual_mtx_folder / 'barcodes.tsv'
                 
                 # If mtx file is not named matrix.mtx, create a link/copy
+                # Always create matrix.mtx (not .gz) for read_10x_mtx compatibility
                 if mtx_file.name not in ['matrix.mtx', 'matrix.mtx.gz']:
-                    target_name = expected_mtx_gz_name if mtx_file.name.endswith('.gz') else expected_mtx_name
+                    # For read_10x_mtx, we need matrix.mtx (uncompressed) even if original is .gz
+                    # But if original is .gz, we should keep it as .gz
+                    if mtx_file.name.endswith('.gz'):
+                        target_name = expected_mtx_gz_name
+                    else:
+                        target_name = expected_mtx_name
+                    
                     if not target_name.exists():
                         try:
                             os.link(str(mtx_file), str(target_name))
                             print(f"[UPLOAD] Created link: {mtx_file.name} -> {target_name.name}")
-                        except OSError:
+                        except OSError as e:
+                            print(f"[UPLOAD] Link failed ({e}), trying copy...")
                             shutil.copy2(str(mtx_file), str(target_name))
                             print(f"[UPLOAD] Copied file: {mtx_file.name} -> {target_name.name}")
+                    else:
+                        print(f"[UPLOAD] Target file already exists: {target_name.name}")
+                elif mtx_file.name == 'matrix.mtx.gz':
+                    # If it's already matrix.mtx.gz, that's fine
+                    print(f"[UPLOAD] Mtx file already has correct name: {mtx_file.name}")
+                else:
+                    # If it's matrix.mtx, that's perfect
+                    print(f"[UPLOAD] Mtx file already has correct name: {mtx_file.name}")
                 
                 # If genes/features files have different names, create links
                 if genes_files:
@@ -194,13 +222,28 @@ def upload_data():
                             print(f"[UPLOAD] Copied file: {barcodes_file.name} -> barcodes.tsv")
                 
                 # Final check for required files
-                if not (expected_mtx_name.exists() or expected_mtx_gz_name.exists()):
-                    return jsonify({'error': 'matrix.mtx file not found after processing. Please ensure the zip contains a .mtx file.'}), 400
+                mtx_exists = expected_mtx_name.exists() or expected_mtx_gz_name.exists()
+                genes_exists = expected_genes_name.exists() or expected_features_name.exists()
+                barcodes_exists = expected_barcodes_name.exists()
                 
-                if not (expected_genes_name.exists() or expected_features_name.exists()):
+                print(f"[UPLOAD] File check - mtx: {mtx_exists}, genes/features: {genes_exists}, barcodes: {barcodes_exists}")
+                print(f"[UPLOAD] Expected files in {actual_mtx_folder}:")
+                print(f"[UPLOAD]   - matrix.mtx: {expected_mtx_name.exists()}")
+                print(f"[UPLOAD]   - matrix.mtx.gz: {expected_mtx_gz_name.exists()}")
+                print(f"[UPLOAD]   - genes.tsv: {expected_genes_name.exists()}")
+                print(f"[UPLOAD]   - features.tsv: {expected_features_name.exists()}")
+                print(f"[UPLOAD]   - barcodes.tsv: {expected_barcodes_name.exists()}")
+                
+                if not mtx_exists:
+                    # List all files in the folder for debugging
+                    all_files = list(actual_mtx_folder.glob('*'))
+                    file_list = ', '.join([f.name for f in all_files])
+                    return jsonify({'error': f'matrix.mtx file not found after processing. Files in folder: {file_list}. Please ensure the zip contains a .mtx file.'}), 400
+                
+                if not genes_exists:
                     return jsonify({'error': 'genes.tsv or features.tsv file not found. 10x mtx format requires: matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv in the same folder.'}), 400
                 
-                if not expected_barcodes_name.exists():
+                if not barcodes_exists:
                     return jsonify({'error': 'barcodes.tsv file not found. 10x mtx format requires: matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv in the same folder.'}), 400
                 
                 print(f"[UPLOAD] Reading mtx from folder: {actual_mtx_folder}")
