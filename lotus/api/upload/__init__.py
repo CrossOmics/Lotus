@@ -90,7 +90,7 @@ def upload_data():
             elif file_type == 'mtx':
                 # MTX format - 10x Genomics format
                 # read_10x_mtx expects a folder containing matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv
-                print(f"[UPLOAD] Loading MTX file from folder: {filepath.parent}")
+                print(f"[UPLOAD] Loading MTX file: {filepath.name}")
                 if not LOTUS_AVAILABLE or read_10x_mtx is None:
                     if sc is None:
                         return jsonify({'error': 'Lotus or scanpy not available. Please install lotus or scanpy to read mtx files.'}), 500
@@ -99,9 +99,52 @@ def upload_data():
                 else:
                     read_10x_mtx_func = read_10x_mtx
                 
-                # read_10x_mtx expects a folder path containing the mtx files
-                # The uploaded .mtx file should be in a folder with genes.tsv/features.tsv and barcodes.tsv
                 mtx_folder = filepath.parent
+                
+                # Check if uploaded file is not named matrix.mtx - create a link or copy
+                expected_mtx_name = mtx_folder / 'matrix.mtx'
+                expected_mtx_gz_name = mtx_folder / 'matrix.mtx.gz'
+                
+                # If the uploaded file is not matrix.mtx, create a link or copy
+                if filepath.name not in ['matrix.mtx', 'matrix.mtx.gz']:
+                    if not expected_mtx_name.exists() and not expected_mtx_gz_name.exists():
+                        # Create a symlink or copy the file as matrix.mtx
+                        import os
+                        try:
+                            if filepath.suffix == '.gz' or filepath.name.endswith('.mtx.gz'):
+                                if not expected_mtx_gz_name.exists():
+                                    os.link(str(filepath), str(expected_mtx_gz_name))
+                                    print(f"[UPLOAD] Created link: {filepath.name} -> matrix.mtx.gz")
+                            else:
+                                if not expected_mtx_name.exists():
+                                    os.link(str(filepath), str(expected_mtx_name))
+                                    print(f"[UPLOAD] Created link: {filepath.name} -> matrix.mtx")
+                        except OSError:
+                            # If link fails (e.g., on Windows or cross-filesystem), copy the file
+                            import shutil
+                            if filepath.suffix == '.gz' or filepath.name.endswith('.mtx.gz'):
+                                if not expected_mtx_gz_name.exists():
+                                    shutil.copy2(str(filepath), str(expected_mtx_gz_name))
+                                    print(f"[UPLOAD] Copied file: {filepath.name} -> matrix.mtx.gz")
+                            else:
+                                if not expected_mtx_name.exists():
+                                    shutil.copy2(str(filepath), str(expected_mtx_name))
+                                    print(f"[UPLOAD] Copied file: {filepath.name} -> matrix.mtx")
+                
+                # Check for required files
+                genes_file = mtx_folder / 'genes.tsv'
+                features_file = mtx_folder / 'features.tsv'
+                barcodes_file = mtx_folder / 'barcodes.tsv'
+                
+                if not (expected_mtx_name.exists() or expected_mtx_gz_name.exists()):
+                    return jsonify({'error': 'matrix.mtx file not found. Please ensure the uploaded .mtx file is accessible, or upload it in a folder with the correct structure.'}), 400
+                
+                if not (genes_file.exists() or features_file.exists()):
+                    return jsonify({'error': 'genes.tsv or features.tsv file not found. 10x mtx format requires: matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv in the same folder. Please upload all required files or use a zip file containing the complete folder structure.'}), 400
+                
+                if not barcodes_file.exists():
+                    return jsonify({'error': 'barcodes.tsv file not found. 10x mtx format requires: matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv in the same folder. Please upload all required files or use a zip file containing the complete folder structure.'}), 400
+                
                 print(f"[UPLOAD] Reading mtx from folder: {mtx_folder}")
                 adata = read_10x_mtx_func(str(mtx_folder))
                 print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
