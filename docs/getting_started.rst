@@ -3,9 +3,9 @@ Quick Start
 
 This guide provides three quick start paths for using Lotus:
 
-1. **Installation** - Install Lotus package and Interactive Lotus Embedding Projector
-2. **Standard Scanpy Workflow** - Preprocess → Clustering → Visualization → DEG Analysis
-3. **Alternating Methods** - Switch between core analysis + cplearn vs scanpy methods
+1. :doc:`**Installation** <installation>`: How to install Lotus package and Interactive Lotus Embedding Projector
+2. :doc:`**Standard Scanpy Workflow** <standard_workflow>`: How to use Lotus package to perform standard single-cell analysis workflow
+3. :doc:`**Alternating Methods** <alternating_methods>`: How to switch between core analysis and cplearn vs scanpy methods
 
 .. toctree::
    :maxdepth: 1
