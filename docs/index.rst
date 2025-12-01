@@ -67,8 +67,5 @@ Lotus is a scalable toolkit for analyzing single-cell gene expression data built
 
    why_lotus
    getting_started
-   installation
-   standard_workflow
-   alternating_methods
    api/index
    citations
