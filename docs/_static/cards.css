@@ -130,95 +130,46 @@
     font-weight: 500;
 }
 
-/* Sidebar dropdown menu styles for API Reference */
-.sidebar-tree li {
-    position: relative;
-}
-
-.api-ref-toggle {
-    position: absolute;
-    left: -1.5rem;
-    top: 0.3rem;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0.3rem 0.4rem;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 1.2rem;
-    height: 1.2rem;
+/* Fix Furo theme toctree toggle button styling - make it transparent and match theme */
+.sidebar-tree button.toctree-toggle,
+.sidebar-tree .toctree-toggle,
+.sidebar-tree li > button {
+    background: transparent !important;
+    border: none !important;
     color: var(--color-foreground-secondary, #6a737d) !important;
-    transition: color 0.2s ease, background-color 0.2s ease;
-    z-index: 100;
-    line-height: 1;
-    visibility: visible !important;
-    opacity: 1 !important;
+    padding: 0.25rem 0.4rem !important;
+    margin-right: 0.25rem !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    border-radius: 3px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
 }
 
-.api-ref-toggle:hover {
+.sidebar-tree button.toctree-toggle:hover,
+.sidebar-tree .toctree-toggle:hover,
+.sidebar-tree li > button:hover {
+    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05)) !important;
     color: var(--color-foreground-primary, #1a1a1a) !important;
-    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.08));
-    border-radius: 4px;
 }
 
-.api-ref-toggle:focus {
-    outline: 2px solid var(--color-accent, #0066cc);
-    outline-offset: 2px;
-}
-
-.api-ref-toggle .toggle-icon {
-    font-size: 0.7rem;
-    line-height: 1;
-    display: inline-block;
-    font-weight: bold;
-}
-
-.sidebar-tree li.expanded .api-ref-toggle .toggle-icon {
-    transform: rotate(0deg);
-}
-
-.sidebar-tree li:not(.expanded) .api-ref-toggle .toggle-icon {
-    transform: rotate(-90deg);
-}
-
-.api-ref-submenu {
-    margin-left: 1.25rem;
-    margin-top: 0.5rem;
-    padding-left: 0.75rem;
-    border-left: 2px solid var(--color-background-border, rgba(0, 0, 0, 0.1));
-    list-style: none;
-}
-
-.api-ref-submenu li {
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-}
-
-.api-ref-submenu a {
-    font-size: 0.9em;
-    color: var(--color-foreground-secondary, #6a737d);
-    padding: 0.25rem 0.5rem;
-    display: block;
-    border-radius: 4px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    text-decoration: none;
-}
-
-.api-ref-submenu a:hover {
-    background-color: var(--color-background-secondary, rgba(0, 0, 0, 0.05));
-    color: var(--color-foreground-primary, #1a1a1a);
-}
-
-.api-ref-submenu a.current {
-    color: var(--color-foreground-primary, #1a1a1a);
-    font-weight: 500;
-}
-
-/* Ensure the API Reference link has proper spacing when toggle button is present */
-.sidebar-tree li:has(.api-ref-toggle) > a,
-.sidebar-tree li .api-ref-toggle + a {
-    padding-left: 0.5rem;
+/* Hide any white square buttons or incorrectly styled buttons */
+.sidebar-tree button[style*="background"]:not(.toctree-toggle),
+.sidebar-tree button[style*="white"],
+.sidebar-tree button[style*="background-color: white"],
+.sidebar-tree button[style*="background-color: #fff"],
+.sidebar-tree button[style*="background-color: #ffffff"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Hide the toctree content at the bottom of the page (but keep it in sidebar) */
