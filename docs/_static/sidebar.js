@@ -19,7 +19,7 @@
         let apiRefLink = null;
         let apiRefItem = null;
         
-        // Find the API Reference link
+        // Find the API Reference link and its parent list item
         for (const link of allLinks) {
             const href = link.getAttribute('href') || '';
             const text = link.textContent.trim();
@@ -39,90 +39,62 @@
             return;
         }
 
-        // Check if API Reference already has a submenu
+        // Check if API Reference already has a submenu (from Sphinx toctree)
         let submenu = apiRefItem.querySelector('ul');
         
-        // If no submenu, try to find API module links that should be grouped
+        // If no submenu from toctree, the toctree might not be rendering correctly
+        // In that case, we should not interfere with Furo's native toctree functionality
         if (!submenu) {
-            // Look for API module links in the sidebar
-            const apiModules = [];
-            const allListItems = sidebarTree.querySelectorAll('li');
-            let foundApiRef = false;
-            
-            for (const item of allListItems) {
-                const link = item.querySelector('a');
-                if (!link) continue;
-                
-                const href = link.getAttribute('href') || '';
-                
-                if (item === apiRefItem) {
-                    foundApiRef = true;
-                    continue;
-                }
-                
-                if (foundApiRef) {
-                    // Check if this is an API module
-                    if (href.includes('api/') && 
-                        !href.includes('api/index') &&
-                        (href.includes('workflows') ||
-                         href.includes('preprocess') ||
-                         href.includes('core_selection') ||
-                         href.includes('clustering') ||
-                         href.includes('visualization') ||
-                         href.includes('deg'))) {
-                        apiModules.push(item);
-                    } else if (!href.includes('api/')) {
-                        // Stop when we hit a non-API link
-                        break;
-                    }
-                }
-            }
-            
-            // Create submenu if we found API modules
-            if (apiModules.length > 0) {
-                submenu = document.createElement('ul');
-                submenu.className = 'api-ref-submenu';
-                
-                apiModules.forEach(li => {
-                    const clonedLi = li.cloneNode(true);
-                    submenu.appendChild(clonedLi);
-                });
-                
-                apiRefItem.appendChild(submenu);
-            }
-        }
-
-        // Only proceed if we have a submenu with items
-        if (!submenu || submenu.children.length === 0) {
-            console.log('No submenu found or submenu is empty');
+            console.log('No submenu found - toctree may not be rendering correctly');
             return;
         }
 
-        // Check if toggle button already exists
-        if (apiRefItem.querySelector('.api-ref-toggle')) {
+        // Check if Furo's native toggle button already exists
+        // Furo uses a button with class 'toctree-toggle' or similar
+        const existingToggle = apiRefItem.querySelector('button[aria-expanded]') ||
+                              apiRefItem.querySelector('.toctree-toggle') ||
+                              apiRefItem.querySelector('button[class*="toggle"]');
+        
+        if (existingToggle) {
+            // Furo's native toggle exists, ensure it works correctly
+            console.log('Furo native toggle found, ensuring it works');
+            
+            // Make sure the toggle button is clickable
+            existingToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // Let Furo handle the toggle
+            }, true);
+            
             return;
         }
 
-        // Create toggle button
+        // If no native toggle exists, create one that works with Furo's structure
+        // Find the label element (Furo wraps links in labels)
+        const label = apiRefLink.closest('label') || apiRefLink.parentElement;
+        
+        // Create toggle button compatible with Furo
         const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'api-ref-toggle';
+        toggleBtn.className = 'toctree-toggle';
         toggleBtn.setAttribute('aria-expanded', 'false');
         toggleBtn.setAttribute('aria-label', 'Toggle API Reference submenu');
         toggleBtn.setAttribute('type', 'button');
-        toggleBtn.innerHTML = '<span class="toggle-icon">▼</span>';
+        toggleBtn.innerHTML = '▼';
         
-        // Insert toggle button before the link
-        if (apiRefLink.parentNode === apiRefItem) {
-            apiRefItem.insertBefore(toggleBtn, apiRefLink);
+        // Insert toggle button before the label/link
+        if (label && label.parentNode === apiRefItem) {
+            apiRefItem.insertBefore(toggleBtn, label);
         } else {
-            // If link is wrapped in another element, insert before that wrapper
-            const linkWrapper = apiRefLink.parentNode;
-            linkWrapper.parentNode.insertBefore(toggleBtn, linkWrapper);
+            apiRefItem.insertBefore(toggleBtn, apiRefLink);
         }
 
-        // Initially hide the submenu
-        submenu.style.display = 'none';
-        submenu.classList.add('api-ref-submenu');
+        // Initially hide the submenu if not expanded
+        const isExpanded = apiRefItem.classList.contains('current') || 
+                          apiRefItem.classList.contains('expanded');
+        if (!isExpanded) {
+            submenu.style.display = 'none';
+        }
+        toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        toggleBtn.textContent = isExpanded ? '▲' : '▼';
 
         // Toggle function
         function toggleSubmenu() {
@@ -131,7 +103,7 @@
             
             toggleBtn.setAttribute('aria-expanded', newState);
             submenu.style.display = newState ? 'block' : 'none';
-            toggleBtn.querySelector('.toggle-icon').textContent = newState ? '▲' : '▼';
+            toggleBtn.textContent = newState ? '▲' : '▼';
             apiRefItem.classList.toggle('expanded', newState);
         }
 
@@ -142,18 +114,12 @@
             toggleSubmenu();
         });
 
-        // Also allow clicking on the API Reference link to toggle (when on API index page)
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/api/index') || currentPath.endsWith('/api/')) {
-            apiRefLink.addEventListener('click', function(e) {
-                e.preventDefault();
-                toggleSubmenu();
-            });
-        }
-
         // Expand by default if we're on an API page
+        const currentPath = window.location.pathname;
         if (currentPath.includes('/api/') && !currentPath.includes('/api/index')) {
-            toggleSubmenu();
+            if (!isExpanded) {
+                toggleSubmenu();
+            }
         }
         
         console.log('Sidebar dropdown initialized successfully');
