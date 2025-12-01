@@ -6,7 +6,10 @@ from flask import Blueprint, request, jsonify
 import pandas as pd
 from anndata import AnnData
 from pathlib import Path
-from ..config import UPLOAD_FOLDER, LOTUS_AVAILABLE, read, read_10x_h5, sc
+import zipfile
+import shutil
+import tempfile
+from ..config import UPLOAD_FOLDER, LOTUS_AVAILABLE, read, read_10x_h5, read_10x_mtx, sc
 from ..utils import get_session_dir, save_adata
 
 bp = Blueprint('upload', __name__, url_prefix='/api')
@@ -50,18 +53,22 @@ def upload_data():
             print("[UPLOAD] Error: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
         
-        # Validate file type (only h5ad, csv, tsv allowed)
-        allowed_types = ['h5ad', 'csv', 'tsv']
+        # Validate file type (h5ad, csv, tsv, mtx/zip allowed)
+        allowed_types = ['h5ad', 'csv', 'tsv', 'mtx']
         if file_type not in allowed_types:
             print(f"[UPLOAD] Error: Unsupported file type: {file_type}")
-            return jsonify({'error': f'Unsupported file format. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
+            return jsonify({'error': f'Unsupported file format. Only .h5ad, .csv, .tsv, and .zip (for mtx) files are allowed.'}), 400
         
         # Additional validation: check file extension
         file_ext = Path(file.filename).suffix.lower()
-        allowed_extensions = ['.h5ad', '.csv', '.tsv']
+        allowed_extensions = ['.h5ad', '.csv', '.tsv', '.zip']
         if file_ext not in allowed_extensions:
             print(f"[UPLOAD] Error: Invalid file extension: {file_ext}")
-            return jsonify({'error': f'Invalid file extension. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
+            return jsonify({'error': f'Invalid file extension. Only .h5ad, .csv, .tsv, and .zip (for mtx) files are allowed.'}), 400
+        
+        # For mtx format, file must be a zip file
+        if file_type == 'mtx' and file_ext != '.zip':
+            return jsonify({'error': 'MTX format requires a .zip file containing the mtx folder (with matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv)'}), 400
         
         # Save uploaded file
         filepath = UPLOAD_FOLDER / file.filename
@@ -87,8 +94,55 @@ def upload_data():
                 df = pd.read_csv(filepath, sep='\t' if file_type == 'tsv' else ',', index_col=0)
                 adata = AnnData(df.T)  # Transpose: genes as vars, cells as obs
                 print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
+            elif file_type == 'mtx':
+                # MTX format - zip file containing mtx folder
+                print(f"[UPLOAD] Loading MTX format from zip file")
+                if not LOTUS_AVAILABLE or read_10x_mtx is None:
+                    if sc is None:
+                        return jsonify({'error': 'Lotus or scanpy not available. Please install lotus or scanpy to read mtx files.'}), 500
+                    # Use scanpy's read_10x_mtx
+                    read_10x_mtx_func = sc.read_10x_mtx
+                else:
+                    read_10x_mtx_func = read_10x_mtx
+                
+                # Extract zip file to temporary directory
+                extract_dir = UPLOAD_FOLDER / f"mtx_extract_{filepath.stem}"
+                extract_dir.mkdir(exist_ok=True)
+                try:
+                    with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                        zip_ref.extractall(extract_dir)
+                    print(f"[UPLOAD] Extracted zip to: {extract_dir}")
+                    
+                    # Find the mtx folder (could be at root or in a subdirectory)
+                    mtx_folder = None
+                    # Check if extract_dir itself contains mtx files
+                    mtx_files = list(extract_dir.glob('matrix.mtx*'))
+                    if mtx_files:
+                        mtx_folder = extract_dir
+                    else:
+                        # Look for subdirectories containing mtx files
+                        for subdir in extract_dir.iterdir():
+                            if subdir.is_dir():
+                                if list(subdir.glob('matrix.mtx*')):
+                                    mtx_folder = subdir
+                                    break
+                    
+                    if mtx_folder is None:
+                        return jsonify({'error': 'Could not find matrix.mtx file in zip. Please ensure the zip contains a folder with matrix.mtx, genes.tsv/features.tsv, and barcodes.tsv files.'}), 400
+                    
+                    print(f"[UPLOAD] Found mtx folder: {mtx_folder}")
+                    adata = read_10x_mtx_func(str(mtx_folder))
+                    print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
+                finally:
+                    # Clean up extracted files
+                    if extract_dir.exists():
+                        try:
+                            shutil.rmtree(extract_dir)
+                            print(f"[UPLOAD] Cleaned up extracted files: {extract_dir}")
+                        except Exception as e:
+                            print(f"[UPLOAD] Warning: Could not clean up extracted files: {e}")
             else:
-                return jsonify({'error': f'Unsupported file type: {file_type}. Only .h5ad, .csv, and .tsv are supported.'}), 400
+                return jsonify({'error': f'Unsupported file type: {file_type}. Only .h5ad, .csv, .tsv, and .zip (for mtx) are supported.'}), 400
         except Exception as e:
             import traceback
             error_msg = f'Failed to load file: {str(e)}'
