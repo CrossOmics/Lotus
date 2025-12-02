@@ -223,6 +223,12 @@
             border-left: 4px solid var(--primary);
         }
 
+        .toast.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid var(--warning);
+        }
+
         .toast-icon {
             font-size: 18px;
             flex-shrink: 0;
@@ -298,6 +304,17 @@
         .btn:disabled:hover {
             background: var(--primary);
             transform: none;
+        }
+        
+        .btn-mtx-upload:hover {
+            background: #f1f5f9;
+            border-color: var(--primary);
+        }
+        
+        .btn-mtx-upload.uploaded {
+            background: #d1fae5;
+            border-color: var(--success);
+            color: #065f46;
         }
 
         .btn-secondary {
@@ -528,8 +545,36 @@
                     <div class="file-upload-area" id="file-upload-area">
                         <div class="file-upload-icon">📊</div>
                         <div class="file-upload-text">Click or drag to upload</div>
-                        <div class="file-upload-hint">.h5ad, .csv, .tsv, .mtx, .zip (for mtx)</div>
-                        <input type="file" id="data-file" class="file-input" accept=".h5ad,.csv,.tsv,.mtx,.zip">
+                        <div class="file-upload-hint">.h5ad, .csv, .tsv</div>
+                        <input type="file" id="data-file" class="file-input" accept=".h5ad,.csv,.tsv">
+                    </div>
+                    
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <div style="font-size: 11px; color: var(--text-light); margin-bottom: 12px; font-weight: 600;">Or upload MTX format (10x Genomics)</div>
+                        <div style="font-size: 10px; color: var(--text-light); margin-bottom: 8px; font-style: italic;">Click each title to upload - data will load automatically when all three are ready</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="mtx-matrix-btn" class="btn-mtx-upload" style="min-width: 80px; font-size: 12px; padding: 8px 12px; text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+                                    Matrix:
+                                </button>
+                                <span id="mtx-matrix-status" style="flex: 1; font-size: 11px; color: var(--text-light);"></span>
+                                <input type="file" id="mtx-matrix-file" class="file-input" accept=".mtx,.mtx.gz" style="display: none;">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="mtx-features-btn" class="btn-mtx-upload" style="min-width: 80px; font-size: 12px; padding: 8px 12px; text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+                                    Features:
+                                </button>
+                                <span id="mtx-features-status" style="flex: 1; font-size: 11px; color: var(--text-light);"></span>
+                                <input type="file" id="mtx-features-file" class="file-input" accept=".tsv" style="display: none;">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" id="mtx-barcodes-btn" class="btn-mtx-upload" style="min-width: 80px; font-size: 12px; padding: 8px 12px; text-align: left; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text);">
+                                    Barcodes:
+                                </button>
+                                <span id="mtx-barcodes-status" style="flex: 1; font-size: 11px; color: var(--text-light);"></span>
+                                <input type="file" id="mtx-barcodes-file" class="file-input" accept=".tsv" style="display: none;">
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="margin-top: 16px;">

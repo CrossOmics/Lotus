@@ -493,6 +493,13 @@ async function checkHealth() {
     }
 }
 
+// Store MTX files temporarily
+let mtxFiles = {
+    matrix: null,
+    features: null,
+    barcodes: null
+};
+
 function setupFileInputs() {
     const fileInput = document.getElementById('data-file');
     const uploadArea = document.getElementById('file-upload-area');
@@ -521,6 +528,27 @@ function setupFileInputs() {
     uploadArea.addEventListener('click', () => {
         fileInput.click();
     });
+    
+    // Setup MTX file inputs - click buttons to upload
+    const matrixBtn = document.getElementById('mtx-matrix-btn');
+    const featuresBtn = document.getElementById('mtx-features-btn');
+    const barcodesBtn = document.getElementById('mtx-barcodes-btn');
+    const matrixInput = document.getElementById('mtx-matrix-file');
+    const featuresInput = document.getElementById('mtx-features-file');
+    const barcodesInput = document.getElementById('mtx-barcodes-file');
+    
+    if (matrixBtn && matrixInput) {
+        matrixBtn.addEventListener('click', () => matrixInput.click());
+        matrixInput.addEventListener('change', (e) => handleMtxFileUpload(e, 'matrix'));
+    }
+    if (featuresBtn && featuresInput) {
+        featuresBtn.addEventListener('click', () => featuresInput.click());
+        featuresInput.addEventListener('change', (e) => handleMtxFileUpload(e, 'features'));
+    }
+    if (barcodesBtn && barcodesInput) {
+        barcodesBtn.addEventListener('click', () => barcodesInput.click());
+        barcodesInput.addEventListener('change', (e) => handleMtxFileUpload(e, 'barcodes'));
+    }
     
     // Setup Ground Truth file upload for Visualization (coremap)
     setupGroundTruthFileInput();
@@ -929,7 +957,7 @@ async function handleDataFile(event) {
     disableAllButtons();
     disableDataLoadingButtons();
     
-    // Determine file type from extension (h5ad, csv, tsv, mtx, zip allowed)
+    // Determine file type from extension (h5ad, csv, tsv allowed; mtx uses separate upload)
     const fileName = file.name.toLowerCase();
     let fileType = null;
     
@@ -939,13 +967,8 @@ async function handleDataFile(event) {
         fileType = 'csv';
     } else if (fileName.endsWith('.tsv')) {
         fileType = 'tsv';
-    } else if (fileName.endsWith('.mtx')) {
-        fileType = 'mtx';
-    } else if (fileName.endsWith('.zip')) {
-        // Zip files are assumed to be mtx format (10x Genomics format)
-        fileType = 'zip';
     } else {
-        showStatus('Unsupported file format. Please upload .h5ad, .csv, .tsv, .mtx, or .zip (for mtx) files only.', 'error');
+        showStatus('Unsupported file format. Please upload .h5ad, .csv, or .tsv files only. For MTX format, use the separate file upload option below.', 'error');
         enableDataLoadingButtons(); // Re-enable buttons if file format is invalid
         return;
     }
@@ -1008,6 +1031,199 @@ async function handleDataFile(event) {
     } catch (error) {
         console.error('[UPLOAD] Exception:', error);
         showStatus(`Error: ${error.message}`, 'error');
+    } finally {
+        // Always re-enable data loading buttons to allow reloading at any time
+        enableDataLoadingButtons();
+    }
+}
+
+// Handle individual MTX file upload
+async function handleMtxFileUpload(event, fileType) {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+    
+    console.log(`[UPLOAD] MTX ${fileType} file selected:`, file.name);
+    
+    // Update UI to show file is selected
+    const btnId = `mtx-${fileType}-btn`;
+    const statusId = `mtx-${fileType}-status`;
+    const btn = document.getElementById(btnId);
+    const status = document.getElementById(statusId);
+    
+    if (btn) {
+        btn.classList.add('uploaded');
+        btn.innerHTML = `✓ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)}:`;
+    }
+    if (status) {
+        status.textContent = file.name;
+        status.style.color = 'var(--success)';
+    }
+    
+    // Store file reference
+    mtxFiles[fileType] = file;
+    
+    // Check if all three files are ready
+    if (mtxFiles.matrix && mtxFiles.features && mtxFiles.barcodes) {
+        // All files ready, combine and load
+        showStatus('All files ready, loading data...', 'info');
+        await combineAndLoadMtxFiles();
+    } else {
+        // Show which files are still needed
+        const missing = [];
+        if (!mtxFiles.matrix) missing.push('Matrix');
+        if (!mtxFiles.features) missing.push('Features');
+        if (!mtxFiles.barcodes) missing.push('Barcodes');
+        showStatus(`✓ ${fileType} uploaded. Still need: ${missing.join(', ')}`, 'info');
+    }
+}
+
+// Combine and load all MTX files
+async function combineAndLoadMtxFiles() {
+    if (!mtxFiles.matrix || !mtxFiles.features || !mtxFiles.barcodes) {
+        showStatus('Please upload all three files: Matrix, Features, and Barcodes', 'error');
+        return;
+    }
+    
+    console.log('[UPLOAD] All MTX files ready, combining and loading...', {
+        matrix: mtxFiles.matrix.name,
+        features: mtxFiles.features.name,
+        barcodes: mtxFiles.barcodes.name
+    });
+    
+    showStatus('Combining and loading MTX files...', 'info');
+    
+    // Reset all state when loading new data
+    resetAllState();
+    
+    // Disable pipeline buttons and data loading buttons during upload
+    disableAllButtons();
+    disableDataLoadingButtons();
+    
+    try {
+        const formData = new FormData();
+        formData.append('matrix_file', mtxFiles.matrix);
+        formData.append('features_file', mtxFiles.features);
+        formData.append('barcodes_file', mtxFiles.barcodes);
+        formData.append('type', 'mtx_multi');
+        formData.append('session_id', sessionId);
+
+        console.log('[UPLOAD] Sending MTX files to:', `${API_BASE}/upload`);
+        const response = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        console.log('[UPLOAD] Response status:', response.status, response.statusText);
+
+        let data;
+        try {
+            data = await response.json();
+            console.log('[UPLOAD] Response data:', data);
+        } catch (e) {
+            const text = await response.text();
+            console.error('[UPLOAD] Failed to parse JSON:', text);
+            throw new Error(`Server error: ${response.status} ${response.statusText}. Response: ${text.substring(0, 200)}`);
+        }
+
+        if (!response.ok) {
+            console.error('[UPLOAD] Error response:', data);
+            throw new Error(data.error || `Upload failed: ${response.status}`);
+        }
+
+        console.log('[UPLOAD] Success:', data);
+        showStatus(data.message || `✓ Loaded ${data.shape[0]} cells, ${data.shape[1]} genes`, 'success');
+        
+        // Show warning if Seurat format was detected
+        if (data.warning) {
+            setTimeout(() => {
+                showStatus(`⚠ ${data.warning}`, 'warning');
+            }, 500); // Show warning after success message
+        }
+        
+        // Reset all state when new data is loaded
+        resetAllState();
+        
+        // Clear MTX files and reset UI
+        mtxFiles = { matrix: null, features: null, barcodes: null };
+        
+        // Reset MTX upload buttons and status
+        const matrixBtn = document.getElementById('mtx-matrix-btn');
+        const featuresBtn = document.getElementById('mtx-features-btn');
+        const barcodesBtn = document.getElementById('mtx-barcodes-btn');
+        const matrixStatus = document.getElementById('mtx-matrix-status');
+        const featuresStatus = document.getElementById('mtx-features-status');
+        const barcodesStatus = document.getElementById('mtx-barcodes-status');
+        
+        if (matrixBtn) {
+            matrixBtn.classList.remove('uploaded');
+            matrixBtn.textContent = 'Matrix:';
+        }
+        if (featuresBtn) {
+            featuresBtn.classList.remove('uploaded');
+            featuresBtn.textContent = 'Features:';
+        }
+        if (barcodesBtn) {
+            barcodesBtn.classList.remove('uploaded');
+            barcodesBtn.textContent = 'Barcodes:';
+        }
+        if (matrixStatus) matrixStatus.textContent = '';
+        if (featuresStatus) featuresStatus.textContent = '';
+        if (barcodesStatus) barcodesStatus.textContent = '';
+        
+        // Clear file inputs
+        document.getElementById('mtx-matrix-file').value = '';
+        document.getElementById('mtx-features-file').value = '';
+        document.getElementById('mtx-barcodes-file').value = '';
+        
+        // Enable pipeline buttons
+        document.getElementById('btn-preprocess').disabled = false;
+        document.getElementById('pipeline-section').style.display = 'block';
+        
+        // Update metadata select
+        if (data.obs_columns) {
+            updateMetadataSelect(data.obs_columns);
+        }
+        
+        // Update available cluster keys
+        await updateAvailableClusterKeys();
+        
+        // Update button states
+        updateButtonStates();
+        
+        // Update visualization method selector
+        updateVisualizationMethodSelector();
+        
+    } catch (error) {
+        console.error('[UPLOAD] Exception:', error);
+        showStatus(`Error: ${error.message}`, 'error');
+        // Clear files on error and reset UI
+        mtxFiles = { matrix: null, features: null, barcodes: null };
+        
+        // Reset MTX upload buttons and status
+        const matrixBtn = document.getElementById('mtx-matrix-btn');
+        const featuresBtn = document.getElementById('mtx-features-btn');
+        const barcodesBtn = document.getElementById('mtx-barcodes-btn');
+        const matrixStatus = document.getElementById('mtx-matrix-status');
+        const featuresStatus = document.getElementById('mtx-features-status');
+        const barcodesStatus = document.getElementById('mtx-barcodes-status');
+        
+        if (matrixBtn) {
+            matrixBtn.classList.remove('uploaded');
+            matrixBtn.textContent = 'Matrix:';
+        }
+        if (featuresBtn) {
+            featuresBtn.classList.remove('uploaded');
+            featuresBtn.textContent = 'Features:';
+        }
+        if (barcodesBtn) {
+            barcodesBtn.classList.remove('uploaded');
+            barcodesBtn.textContent = 'Barcodes:';
+        }
+        if (matrixStatus) matrixStatus.textContent = '';
+        if (featuresStatus) featuresStatus.textContent = '';
+        if (barcodesStatus) barcodesStatus.textContent = '';
     } finally {
         // Always re-enable data loading buttons to allow reloading at any time
         enableDataLoadingButtons();
@@ -2272,6 +2488,8 @@ function showStatus(message, type) {
         icon.textContent = '✓';
     } else if (type === 'error') {
         icon.textContent = '✗';
+    } else if (type === 'warning') {
+        icon.textContent = '⚠';
     } else {
         icon.textContent = 'ℹ';
     }

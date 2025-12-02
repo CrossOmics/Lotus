@@ -1,5 +1,5 @@
-Alternating Methods: Mixing Clustering and Visualization Methods
-=================================================================
+Integrating Analysis with Core Layers
+======================================
 
 This section demonstrates how to alternate between different analysis methods. You can mix and match clustering methods (Leiden, Louvain, Cplearn) with visualization methods (UMAP, Coremap), and also combine core analysis with different clustering methods.
 
@@ -369,4 +369,7 @@ The HTML file is accessible at:
    :align: center
 
    UMAP visualization colored by Louvain clusters from the alternating methods example, generated using `data/demo_data.h5ad`.
+
+
+
 
