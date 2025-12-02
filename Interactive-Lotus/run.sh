@@ -35,9 +35,11 @@ fi
 # Run the application
 echo ""
 echo "Starting Flask server..."
-echo "Open http://localhost:5000 in your browser"
+# Default port is 5259 (5000 is often used by AirPlay on macOS)
+PORT=${PORT:-5259}
+echo "Open http://localhost:${PORT} in your browser"
 echo "Press Ctrl+C to stop"
 echo ""
 
-python3 app.py
+PORT=${PORT} python3 app.py
 
