@@ -41,7 +41,7 @@ This workflow uses cplearn's core-periphery learning approach. The new unified w
         stable_ng_num=8,
         cluster_resolution=1.2,
         propagate=True,
-        force=False,  # Reuse existing clustering from core_analyze if parameters match
+        force=False,  
     )
     
     # 5. Visualization: Use coremap instead of UMAP
@@ -159,7 +159,7 @@ This workflow combines core analysis (cplearn clustering) with UMAP visualizatio
         stable_ng_num=10,
         cluster_resolution=0.8,
         propagate=True,
-        force=False,  # Reuse existing clustering from core_analyze if parameters match
+        force=False,  
     )
     
     # 5. Visualization: Use UMAP with cplearn clusters
@@ -331,7 +331,7 @@ You can run both workflows on the same data to compare results. The unified work
         stable_ng_num=8,
         cluster_resolution=1.2,
         propagate=True,
-        force=False,  # Reuse existing clustering from core_analyze if parameters match
+        force=False, 
     )
     
     # 5. Cplearn visualization (coremap)
