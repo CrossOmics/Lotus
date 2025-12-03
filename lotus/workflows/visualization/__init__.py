@@ -100,6 +100,7 @@ def coremap(
     show: bool = False,
     model: cplearn.CorespectModel | None = None,
     use_webgl: bool = False,
+    fast_view: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -108,7 +109,7 @@ def coremap(
     This function visualizes the core map embedding computed by core_analyze(),
     which provides a special dimensionality reduction representation highlighting
     core cell states and cell relationships. It uses cplearn's own visualization
-    function which provides interactive Plotly plots with layer sliders.
+    function which provides interactive Plotly plots with layer sliders (sidebar).
     
     Parameters:
         adata: AnnData object with coremap embedding in adata.obsm
@@ -123,8 +124,9 @@ def coremap(
         save: Save filename or False to not save. Default is "_coremap.html" (Plotly HTML format)
         show: Whether to show the plot
         model: CorespectModel object from cplearn clustering. If None, will try to reconstruct
-               from adata.uns. Required for proper layer visualization.
+               from adata.uns. Required for proper layer visualization and sidebar (layer slider).
         use_webgl: Whether to use WebGL for rendering (faster for large datasets)
+        fast_view: Whether to use a faster, less interactive view for large datasets. Default: False.
         **kwargs: Additional arguments (currently unused, kept for compatibility)
     
     Returns:
@@ -231,34 +233,58 @@ def coremap(
     if not hasattr(model, "layers_") or model.layers_ is None:
         raise ValueError("Model does not have layers_ attribute. Cannot visualize coremap.")
     
-    layers_ = model.layers_
+    # Step 1: Generate UMAP skeleton if not exists (same as API version)
+    if 'X_umap' not in adata.obsm or adata.obsm['X_umap'].shape[1] != 2:
+        print("[COREMAP] Computing UMAP skeleton...")
+        # Use the representation for UMAP (get from kwargs if provided)
+        use_rep = kwargs.get('use_rep', None)
+        if use_rep and use_rep in adata.obsm:
+            X_for_umap = adata.obsm[use_rep]
+        elif 'X_pca' in adata.obsm:
+            X_for_umap = adata.obsm['X_pca']
+        elif 'X_latent' in adata.obsm:
+            X_for_umap = adata.obsm['X_latent']
+        else:
+            X_for_umap = adata.X
+            if hasattr(X_for_umap, 'toarray'):
+                X_for_umap = X_for_umap.toarray()
+        
+        try:
+            import umap
+            reducer = umap.UMAP(n_components=2)
+            X_umap = reducer.fit_transform(X_for_umap)
+            adata.obsm['X_umap_skeleton'] = X_umap
+            print(f"[COREMAP] UMAP skeleton computed: shape {X_umap.shape}")
+        except ImportError:
+            raise ImportError("UMAP is required for coremap visualization with sidebar. Please install umap-learn.")
+    else:
+        X_umap = adata.obsm['X_umap']
+        print("[COREMAP] Using existing UMAP embedding")
     
-    # Reconstruct label_dict from history
-    history = adata.uns[history_key]
-    label_dict = {}
-    for round_id_str, round_data in history.items():
-        round_id = int(round_id_str)
-        coords = np.asarray(round_data["coordinates"], dtype=float)
-        label_dict[round_id] = coords
+    print("[COREMAP] Initializing Coremap...")
+    try:
+        from cplearn.coremap import Coremap
+        cmap = Coremap(model, global_umap=X_umap, fast_view=fast_view)
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to initialize Coremap object: {str(e)}. "
+            f"This is required for sidebar (layer slider) functionality."
+        ) from e
     
-    # Create a simple proxy object for coremap_obj
-    class CoremapProxy:
-        def __init__(self, label_dict, layers_, X):
-            self.label_dict = label_dict
-            self.layers_ = layers_
-            self.X = X
+    # Step 3: Prepare labels for visualization (same as API version)
+    labels_to_use = None
+    if cluster_key and cluster_key in adata.obs:
+        labels_to_use = np.asarray(adata.obs[cluster_key].values, dtype=int)
+        print(f"[COREMAP] Using cluster labels from '{cluster_key}'")
+    elif hasattr(model, 'labels_') and model is not None:
+        labels_to_use = np.asarray(model.labels_, dtype=int)
+        print("[COREMAP] Using labels from model")
+    else:
+        print("[COREMAP] Warning: No labels found, visualization may not show clusters")
     
-    # Get X from adata
-    X = adata.X
-    if hasattr(X, "toarray"):  # Sparse matrix
-        X = X.toarray()
-    X = np.asarray(X, dtype=float)
-    
-    # Create proxy object
-    coremap_obj = CoremapProxy(label_dict, layers_, X)
-    
-    # Call visualize_coremap
-    fig = visualize_coremap(coremap_obj, labels=labels, use_webgl=use_webgl)
+    # Step 4: Generate visualization (same as API version)
+    print("[COREMAP] Generating layer-wise visualization...")
+    fig = visualize_coremap(cmap, labels_to_use, use_webgl=use_webgl)
     
     # Set up output directory
     if output_dir is not None:
@@ -276,6 +302,7 @@ def coremap(
         if not str(save_path).endswith('.html'):
             save_path = Path(str(save_path).replace('.png', '.html').replace('.pdf', '.html'))
         
+        # Use same method as API version
         fig.write_html(str(save_path))
         print(f"Saving coremap visualization to {save_path}")
     
