@@ -15,6 +15,7 @@ This workflow uses cplearn's core-periphery learning approach. The new unified w
     import lotus as lt
     from lotus.workflows.preprocessing import preprocess
     from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.clustering import cplearn_cluster
     from lotus.workflows.visualization import coremap
     
     # 1. Load data (using demo dataset)
@@ -23,18 +24,26 @@ This workflow uses cplearn's core-periphery learning approach. The new unified w
     # 2. Preprocessing (same as standard workflow)
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 3. Core Analysis: Identify core cells, compute clustering, and core map embedding
-    #    If model=None, core_analyze automatically calls cplearn.corespect() internally
+    # 3. Core Analysis: Identify core cells and compute core map embedding
     model = core_analyze(
         adata,
         use_rep="X_latent",  # or "X_pca"
         key_added="X_cplearn_coremap",
         stable={"core_frac": 0.25, "ng_num": 8},
-        cluster={"resolution": 1.2},
         propagate=True,  # Enable propagation for slider support
     )
     
-    # 4. Visualization: Use coremap instead of UMAP
+    # 4. Cplearn Clustering
+    model = cplearn_cluster(
+        adata,
+        use_rep="X_latent",
+        stable={"core_frac": 0.25, "ng_num": 8},
+        cluster={"resolution": 1.2},
+        propagate=True,
+        force=False,  # Reuse existing clustering from core_analyze if parameters match
+    )
+    
+    # 5. Visualization: Use coremap instead of UMAP
     coremap(
         adata,
         coremap_key="X_cplearn_coremap",
@@ -123,6 +132,7 @@ This workflow combines core analysis (cplearn clustering) with UMAP visualizatio
     import lotus as lt
     from lotus.workflows.preprocessing import preprocess
     from lotus.workflows.core_analysis import core_analyze
+    from lotus.workflows.clustering import cplearn_cluster
     from lotus.workflows.visualization import umap
     
     # 1. Load data (using demo dataset)
@@ -131,17 +141,26 @@ This workflow combines core analysis (cplearn clustering) with UMAP visualizatio
     # 2. Preprocessing
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 3. Core Analysis: Automatically does cplearn clustering internally
+    # 3. Core Analysis: Identify core cells and compute core map embedding
     model = core_analyze(
         adata,
         use_rep="X_latent",
         key_added="X_cplearn_coremap",
         stable={"core_frac": 0.3, "ng_num": 10},
-        cluster={"resolution": 0.8},
         propagate=True,  # Enable propagation to generate multiple layers for slider
     )
     
-    # 4. Visualization: Use UMAP with cplearn clusters
+    # 4. Cplearn Clustering
+    model = cplearn_cluster(
+        adata,
+        use_rep="X_latent",
+        stable={"core_frac": 0.3, "ng_num": 10},
+        cluster={"resolution": 0.8},
+        propagate=True,
+        force=False,  # Reuse existing clustering from core_analyze if parameters match
+    )
+    
+    # 5. Visualization: Use UMAP with cplearn clusters
     umap(
         adata,
         cluster_key="cplearn",  # Use cplearn cluster labels
@@ -351,6 +370,8 @@ The HTML file is accessible at:
    :align: center
 
    UMAP visualization colored by Louvain clusters from the alternating methods example, generated using `data/demo_data.h5ad`.
+
+
 
 
 
