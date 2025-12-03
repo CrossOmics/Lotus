@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 from lotus.methods.scanpy import tl as sc_tl
 
 
@@ -44,7 +44,7 @@ def cluster(
     
     .. code-block:: python
     
-        from lotus.methods.cplearn.external import cplearn
+        from lotus.methods.cplearn import cplearn
         model = cplearn.corespect(adata, use_rep="X_pca", key_added="cplearn")
     
     Supports clustering methods:
@@ -90,7 +90,7 @@ def cluster(
         warnings.warn(
             "Using method='cplearn' in cluster() is deprecated. "
             "Please use cplearn API directly:\n"
-            "  from lotus.methods.cplearn.external import cplearn\n"
+            "  from lotus.methods.cplearn import cplearn\n"
             "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn')\n"
             "For core layer analysis, use:\n"
             "  from lotus.workflows import core_analyze\n"

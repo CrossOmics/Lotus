@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 from lotus.methods.scanpy import tl as sc_tl
 
 
@@ -147,8 +147,15 @@ def cplearn_cluster(
     fine_grained: bool = False,
     propagate: bool = True,
     print_summary: bool = True,
-) -> cplearn.CorespectModel:
-    """    
+    force: bool = False,
+) -> cplearn.CorespectModel | None:
+    """
+    Cplearn clustering: Perform clustering using cplearn.corespect().
+    
+    If core_analyze() has already been called with matching parameters, this function
+    will reuse the existing clustering results to avoid duplicate computation.
+    Set `force=True` to force re-run clustering even if existing results are found.
+    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
         use_rep: Representation to use for clustering. If None, auto-detects: "X_latent" > "X_pca" > "X". Default: None
@@ -159,9 +166,11 @@ def cplearn_cluster(
         fine_grained: Whether to use fine-grained clustering. Default: False
         propagate: Whether to propagate labels. Default: True
         print_summary: Whether to print cluster summary. Default: True
+        force: If True, force re-run clustering even if existing results are found.
+               Default: False
     
     Returns:
-        CorespectModel: The cplearn model object
+        CorespectModel: The cplearn model object, or None if reusing existing results
     """
     # Auto-detect representation if not specified
     if use_rep is None:
@@ -172,6 +181,39 @@ def cplearn_cluster(
         else:
             use_rep = "X"
     
+    # Check if core_analyze was already done (skip if force=True)
+    core_analyze_done = (
+        not force and
+        'core_analyze' in adata.uns and 
+        adata.uns['core_analyze'].get('done', False)
+    )
+    
+    if core_analyze_done:
+        # Check if cplearn clustering was already done
+        core_analyze_info = adata.uns['core_analyze']
+        cplearn_key = core_analyze_info.get('cplearn_key', 'cplearn')
+        
+        # Check if clustering result exists
+        if cplearn_key in adata.obs:
+            # Check if parameters match (allow some tolerance)
+            existing_cluster = core_analyze_info.get('cluster', {})
+            existing_resolution = existing_cluster.get('resolution', None)
+            
+            if existing_resolution is not None:
+                resolution_match = abs(existing_resolution - cluster_resolution) < 0.1
+                
+                if resolution_match:
+                    if print_summary:
+                        print(f"[CLUSTER] Reusing existing cplearn clustering from core_analyze()")
+                        print(f"[CLUSTER]   Resolution: {existing_resolution} (requested: {cluster_resolution})")
+                        print(f"[CLUSTER]   Key: {cplearn_key}")
+                        print(f"[CLUSTER]   Clusters: {adata.obs[cplearn_key].nunique()}")
+                    
+                    # Return None to indicate we're reusing existing results
+                    # The model is already stored in adata, but we can't return it directly
+                    # Users should use the clustering results from adata.obs[cplearn_key]
+                    return None
+    
     # Ensure neighbors graph exists (required for cplearn)
     if "neighbors" not in adata.uns:
         import warnings
@@ -180,6 +222,10 @@ def cplearn_cluster(
             "or use scanpy's sc.pp.neighbors() to compute neighbors graph.",
             UserWarning,
         )
+    
+    # No existing clustering found, parameters don't match, or force=True - run normally
+    if force and print_summary:
+        print(f"[CLUSTER] force=True: Re-running clustering (will overwrite existing results if any)")
     
     model = cplearn.corespect(
         adata,
@@ -269,7 +315,7 @@ def cluster(
         warnings.warn(
             "Using method='cplearn' in cluster() is deprecated. "
             "Please use cplearn API directly:\n"
-            "  from lotus.methods.cplearn.external import cplearn\n"
+            "  from lotus.methods.cplearn import cplearn\n"
             "  model = cplearn.corespect(adata, use_rep='X_pca', key_added='cplearn')\n"
             "For core layer analysis, use:\n"
             "  from lotus.workflows import core_analyze\n"

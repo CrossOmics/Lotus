@@ -9,7 +9,7 @@ from anndata import AnnData
 import matplotlib.pyplot as plt
 
 import lotus as lt
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 
 
 def umap(

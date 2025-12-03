@@ -24,7 +24,7 @@ from lotus.workflows import preprocess, leiden, louvain, umap
 from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
 from lotus.workflows.core_analysis import core_analyze
 from lotus.workflows.visualization import coremap
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 
 
 def build_demo_dataset(
@@ -133,31 +133,23 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Core Analysis + Cplearn Clustering
+    # 2. Core Analysis + Cplearn Clustering (unified workflow)
     print("\n2. Core Analysis + Cplearn Clustering...")
     try:
-        model = cplearn.corespect(
+        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        model = core_analyze(
             adata,
             use_rep="X_latent",
-            key_added="cplearn",
+            key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},  # Adjusted for small dataset
             cluster={"resolution": 0.8},  # Lower resolution for small dataset
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
         print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
-        print(f"   Warning: Cplearn clustering failed: {e}")
+        print(f"   Warning: Core analysis failed: {e}")
         print("   Skipping cplearn workflow...")
         return
-    
-    # 3. Compute core map embedding
-    print("\n3. Computing core map embedding...")
-    core_analyze(
-        adata,
-        model=model,
-        use_rep="X_latent",
-        key_added="X_cplearn_coremap",
-    )
     
     # 4. Visualization: Coremap
     print("\n4. Visualization (Coremap)...")
@@ -220,15 +212,15 @@ def example_3_alternating_methods(output_dir: Path) -> None:
     # === Workflow A: Cplearn ===
     print("\n2. Workflow A: Cplearn...")
     try:
-        model = cplearn.corespect(
+        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        model = core_analyze(
             adata,
             use_rep="X_latent",
-            key_added="cplearn",
+            key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
-        core_analyze(adata, model=model, use_rep="X_latent", key_added="X_cplearn_coremap")
     except Exception as e:
         print(f"   Warning: Cplearn workflow failed: {e}")
         print("   Skipping cplearn visualization...")
@@ -308,20 +300,21 @@ def example_4_cplearn_umap(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Cplearn Clustering
-    print("\n2. Cplearn Clustering...")
+    # 2. Core Analysis + Cplearn Clustering (unified workflow)
+    print("\n2. Core Analysis + Cplearn Clustering...")
     try:
-        model = cplearn.corespect(
+        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        model = core_analyze(
             adata,
             use_rep="X_latent",
-            key_added="cplearn",
+            key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
         print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
-        print(f"   Warning: Cplearn clustering failed: {e}")
+        print(f"   Warning: Core analysis failed: {e}")
         print("   Skipping cplearn + umap workflow...")
         return
     
@@ -377,39 +370,31 @@ def example_5_coreanalysis_louvain_coremap(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Get cplearn model (for core analysis, but we'll use louvain clustering)
-    print("\n2. Getting cplearn model for core analysis...")
+    # 2. Core Analysis (unified workflow: core_analyze -> louvain)
+    print("\n2. Core Analysis...")
     try:
-        model = cplearn.corespect(
+        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        # This does core identification, but we'll use louvain clustering for visualization
+        model = core_analyze(
             adata,
             use_rep="X_latent",
-            key_added="cplearn_temp",  # Temporary, we'll use louvain instead
+            key_added="X_louvain_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
     except Exception as e:
-        print(f"   Warning: Cplearn model creation failed: {e}")
+        print(f"   Warning: Core analysis failed: {e}")
         print("   Skipping core analysis workflow...")
         return
     
-    # 3. Louvain clustering
+    # 3. Louvain clustering (user prefers louvain over cplearn clustering)
     print("\n3. Louvain Clustering...")
     louvain(adata, resolution=0.8, key_added="louvain")
     print(f"   Found {adata.obs['louvain'].nunique()} clusters")
     
-    # 4. Core analysis using louvain clusters
-    print("\n4. Core Analysis (using louvain clusters)...")
-    core_analyze(
-        adata,
-        model=model,
-        use_rep="X_latent",
-        key_added="X_louvain_coremap",
-        cluster_key="louvain",  # Use louvain clusters instead of cplearn
-    )
-    
-    # 5. Visualization: Coremap with louvain clusters
-    print("\n5. Visualization (Coremap with louvain clusters)...")
+    # 4. Visualization: Coremap with louvain clusters
+    print("\n4. Visualization (Coremap with louvain clusters)...")
     old_figdir = lt.settings.figdir
     lt.settings.figdir = str(output_dir)
     try:
@@ -448,39 +433,31 @@ def example_6_coreanalysis_louvain_umap(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Get cplearn model (for core analysis, but we'll use louvain clustering)
-    print("\n2. Getting cplearn model for core analysis...")
+    # 2. Core Analysis (unified workflow: core_analyze -> louvain)
+    print("\n2. Core Analysis...")
     try:
-        model = cplearn.corespect(
+        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        # This does core identification, but we'll use louvain clustering for visualization
+        model = core_analyze(
             adata,
             use_rep="X_latent",
-            key_added="cplearn_temp",  # Temporary, we'll use louvain instead
+            key_added="X_louvain_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
     except Exception as e:
-        print(f"   Warning: Cplearn model creation failed: {e}")
+        print(f"   Warning: Core analysis failed: {e}")
         print("   Skipping core analysis workflow...")
         return
     
-    # 3. Louvain clustering
+    # 3. Louvain clustering (user prefers louvain over cplearn clustering)
     print("\n3. Louvain Clustering...")
     louvain(adata, resolution=0.8, key_added="louvain")
     print(f"   Found {adata.obs['louvain'].nunique()} clusters")
     
-    # 4. Core analysis using louvain clusters
-    print("\n4. Core Analysis (using louvain clusters)...")
-    core_analyze(
-        adata,
-        model=model,
-        use_rep="X_latent",
-        key_added="X_louvain_coremap",
-        cluster_key="louvain",  # Use louvain clusters instead of cplearn
-    )
-    
-    # 5. Visualization: UMAP with louvain clusters
-    print("\n5. Visualization (UMAP with louvain clusters)...")
+    # 4. Visualization: UMAP with louvain clusters
+    print("\n4. Visualization (UMAP with louvain clusters)...")
     old_figdir = lt.settings.figdir
     lt.settings.figdir = str(output_dir)
     try:
