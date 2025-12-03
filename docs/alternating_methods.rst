@@ -37,8 +37,9 @@ This workflow uses cplearn's core-periphery learning approach. The new unified w
     model = cplearn_cluster(
         adata,
         use_rep="X_latent",
-        stable={"core_frac": 0.25, "ng_num": 8},
-        cluster={"resolution": 1.2},
+        stable_core_frac=0.25,
+        stable_ng_num=8,
+        cluster_resolution=1.2,
         propagate=True,
         force=False,  # Reuse existing clustering from core_analyze if parameters match
     )
@@ -154,8 +155,9 @@ This workflow combines core analysis (cplearn clustering) with UMAP visualizatio
     model = cplearn_cluster(
         adata,
         use_rep="X_latent",
-        stable={"core_frac": 0.3, "ng_num": 10},
-        cluster={"resolution": 0.8},
+        stable_core_frac=0.3,
+        stable_ng_num=10,
+        cluster_resolution=0.8,
         propagate=True,
         force=False,  # Reuse existing clustering from core_analyze if parameters match
     )
@@ -302,7 +304,7 @@ You can run both workflows on the same data to compare results. The unified work
     import lotus as lt
     from lotus.workflows.preprocessing import preprocess
     from lotus.workflows.core_analysis import core_analyze
-    from lotus.workflows.clustering import louvain
+    from lotus.workflows.clustering import cplearn_cluster, louvain
     from lotus.workflows.visualization import umap, coremap
     
     # 1. Load data (using demo dataset)
@@ -312,17 +314,27 @@ You can run both workflows on the same data to compare results. The unified work
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
     # === Workflow A: Cplearn ===
-    # 3. Core analysis + cplearn clustering (automatic)
+    # 3. Core Analysis
     model = core_analyze(
         adata,
         use_rep="X_latent",
         key_added="X_cplearn_coremap",
         stable={"core_frac": 0.25, "ng_num": 8},
-        cluster={"resolution": 1.2},
         propagate=True,
     )
     
-    # 4. Cplearn visualization (coremap)
+    # 4. Cplearn Clustering
+    model = cplearn_cluster(
+        adata,
+        use_rep="X_latent",
+        stable_core_frac=0.25,
+        stable_ng_num=8,
+        cluster_resolution=1.2,
+        propagate=True,
+        force=False,  # Reuse existing clustering from core_analyze if parameters match
+    )
+    
+    # 5. Cplearn visualization (coremap)
     coremap(
         adata,
         coremap_key="X_cplearn_coremap",
@@ -333,10 +345,10 @@ You can run both workflows on the same data to compare results. The unified work
     )
     
     # === Workflow B: Scanpy ===
-    # 5. Louvain clustering
+    # 6. Louvain clustering
     louvain(adata, resolution=0.5, key_added="louvain")
     
-    # 6. Scanpy visualization (UMAP)
+    # 7. Scanpy visualization (UMAP)
     umap(adata, cluster_key="louvain", output_dir="./results", save="_louvain.png")
     
     # === Compare Results ===

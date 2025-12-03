@@ -155,8 +155,9 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
         model = cplearn_cluster(
             adata,
             use_rep="X_latent",
-            stable={"core_frac": 0.3, "ng_num": 10},
-            cluster={"resolution": 0.8},  # Lower resolution for small dataset
+            stable_core_frac=0.3,
+            stable_ng_num=10,
+            cluster_resolution=0.8,  # Lower resolution for small dataset
             propagate=True,
             force=False,  # Reuse existing clustering from core_analyze if parameters match
         )
@@ -239,8 +240,9 @@ def example_3_alternating_methods(output_dir: Path) -> None:
         model = cplearn_cluster(
             adata,
             use_rep="X_latent",
-            stable={"core_frac": 0.3, "ng_num": 10},
-            cluster={"resolution": 0.8},
+            stable_core_frac=0.3,
+            stable_ng_num=10,
+            cluster_resolution=0.8,
             propagate=True,
             force=False,  # Reuse existing clustering from core_analyze if parameters match
         )
@@ -344,8 +346,9 @@ def example_4_cplearn_umap(output_dir: Path) -> None:
         model = cplearn_cluster(
             adata,
             use_rep="X_latent",
-            stable={"core_frac": 0.3, "ng_num": 10},
-            cluster={"resolution": 0.8},
+            stable_core_frac=0.3,
+            stable_ng_num=10,
+            cluster_resolution=0.8,
             propagate=True,
             force=False,  # Reuse existing clustering from core_analyze if parameters match
         )
