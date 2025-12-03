@@ -23,6 +23,7 @@ import lotus as lt
 from lotus.workflows import preprocess, leiden, louvain, umap
 from lotus.workflows.deg_analysis import rank_genes_groups, marker_genes
 from lotus.workflows.core_analysis import core_analyze
+from lotus.workflows.clustering import cplearn_cluster
 from lotus.workflows.visualization import coremap
 from lotus.methods.cplearn import cplearn
 
@@ -133,21 +134,35 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Core Analysis + Cplearn Clustering (unified workflow)
-    print("\n2. Core Analysis + Cplearn Clustering...")
+    # 2. Core Analysis
+    print("\n2. Core Analysis...")
     try:
-        # core_analyze automatically calls cplearn.corespect() internally when model=None
         model = core_analyze(
             adata,
             use_rep="X_latent",
             key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},  # Adjusted for small dataset
-            cluster={"resolution": 0.8},  # Lower resolution for small dataset
             propagate=True,  # Enable propagation to generate multiple layers for slider
+        )
+    except Exception as e:
+        print(f"   Warning: Core analysis failed: {e}")
+        print("   Skipping cplearn workflow...")
+        return
+    
+    # 3. Cplearn Clustering
+    print("\n3. Cplearn Clustering...")
+    try:
+        model = cplearn_cluster(
+            adata,
+            use_rep="X_latent",
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},  # Lower resolution for small dataset
+            propagate=True,
+            force=False,  # Reuse existing clustering from core_analyze if parameters match
         )
         print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
-        print(f"   Warning: Core analysis failed: {e}")
+        print(f"   Warning: Cplearn clustering failed: {e}")
         print("   Skipping cplearn workflow...")
         return
     
@@ -212,14 +227,22 @@ def example_3_alternating_methods(output_dir: Path) -> None:
     # === Workflow A: Cplearn ===
     print("\n2. Workflow A: Cplearn...")
     try:
-        # core_analyze automatically calls cplearn.corespect() internally when model=None
+        # Core Analysis
         model = core_analyze(
             adata,
             use_rep="X_latent",
             key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
-            cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
+        )
+        # Cplearn Clustering
+        model = cplearn_cluster(
+            adata,
+            use_rep="X_latent",
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},
+            propagate=True,
+            force=False,  # Reuse existing clustering from core_analyze if parameters match
         )
     except Exception as e:
         print(f"   Warning: Cplearn workflow failed: {e}")
@@ -300,26 +323,40 @@ def example_4_cplearn_umap(output_dir: Path) -> None:
     print("\n1. Preprocessing...")
     preprocess(adata, n_pcs=20, n_top_genes=2000, n_neighbors=15, save_raw=True)
     
-    # 2. Core Analysis + Cplearn Clustering (unified workflow)
-    print("\n2. Core Analysis + Cplearn Clustering...")
+    # 2. Core Analysis
+    print("\n2. Core Analysis...")
     try:
-        # core_analyze automatically calls cplearn.corespect() internally when model=None
         model = core_analyze(
             adata,
             use_rep="X_latent",
             key_added="X_cplearn_coremap",
             stable={"core_frac": 0.3, "ng_num": 10},
-            cluster={"resolution": 0.8},
             propagate=True,  # Enable propagation to generate multiple layers for slider
         )
-        print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
         print(f"   Warning: Core analysis failed: {e}")
         print("   Skipping cplearn + umap workflow...")
         return
     
-    # 3. Visualization: UMAP with cplearn clusters
-    print("\n3. Visualization (UMAP with cplearn clusters)...")
+    # 3. Cplearn Clustering
+    print("\n3. Cplearn Clustering...")
+    try:
+        model = cplearn_cluster(
+            adata,
+            use_rep="X_latent",
+            stable={"core_frac": 0.3, "ng_num": 10},
+            cluster={"resolution": 0.8},
+            propagate=True,
+            force=False,  # Reuse existing clustering from core_analyze if parameters match
+        )
+        print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
+    except Exception as e:
+        print(f"   Warning: Cplearn clustering failed: {e}")
+        print("   Skipping cplearn + umap workflow...")
+        return
+    
+    # 4. Visualization: UMAP with cplearn clusters
+    print("\n4. Visualization (UMAP with cplearn clusters)...")
     old_figdir = lt.settings.figdir
     lt.settings.figdir = str(output_dir)
     try:
