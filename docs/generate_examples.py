@@ -142,7 +142,7 @@ def example_2_cplearn_workflow(output_dir: Path) -> None:
             key_added="cplearn",
             stable={"core_frac": 0.3, "ng_num": 10},  # Adjusted for small dataset
             cluster={"resolution": 0.8},  # Lower resolution for small dataset
-            propagate=False,  # Disable propagation to avoid errors
+            propagate=True,  # Enable propagation to generate multiple layers for slider
         )
         print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
@@ -226,7 +226,7 @@ def example_3_alternating_methods(output_dir: Path) -> None:
             key_added="cplearn",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
-            propagate=False,
+            propagate=True,  # Enable propagation to generate multiple layers for slider
         )
         core_analyze(adata, model=model, use_rep="X_latent", key_added="X_cplearn_coremap")
     except Exception as e:
@@ -317,7 +317,7 @@ def example_4_cplearn_umap(output_dir: Path) -> None:
             key_added="cplearn",
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
-            propagate=False,
+            propagate=True,  # Enable propagation to generate multiple layers for slider
         )
         print(f"   Found {adata.obs['cplearn'].nunique()} clusters")
     except Exception as e:
@@ -386,7 +386,7 @@ def example_5_coreanalysis_louvain_coremap(output_dir: Path) -> None:
             key_added="cplearn_temp",  # Temporary, we'll use louvain instead
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
-            propagate=False,
+            propagate=True,  # Enable propagation to generate multiple layers for slider
         )
     except Exception as e:
         print(f"   Warning: Cplearn model creation failed: {e}")
@@ -457,7 +457,7 @@ def example_6_coreanalysis_louvain_umap(output_dir: Path) -> None:
             key_added="cplearn_temp",  # Temporary, we'll use louvain instead
             stable={"core_frac": 0.3, "ng_num": 10},
             cluster={"resolution": 0.8},
-            propagate=False,
+            propagate=True,  # Enable propagation to generate multiple layers for slider
         )
     except Exception as e:
         print(f"   Warning: Cplearn model creation failed: {e}")

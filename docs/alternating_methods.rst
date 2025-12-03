@@ -144,7 +144,7 @@ This workflow combines cplearn clustering with UMAP visualization, giving you th
         key_added="cplearn",
         stable={"core_frac": 0.3, "ng_num": 10},
         cluster={"resolution": 0.8},
-        propagate=False,
+        propagate=True,  # Enable propagation to generate multiple layers for slider
     )
     
     # 4. Visualization: Use UMAP with cplearn clusters
@@ -195,7 +195,7 @@ This workflow uses core analysis to compute the core map embedding, but applies 
         key_added="cplearn_temp",
         stable={"core_frac": 0.3, "ng_num": 10},
         cluster={"resolution": 0.8},
-        propagate=False,
+        propagate=True,  # Enable propagation to generate multiple layers for slider
     )
     
     # 4. Louvain clustering
@@ -259,7 +259,7 @@ This workflow combines core analysis with Louvain clustering and UMAP visualizat
         key_added="cplearn_temp",
         stable={"core_frac": 0.3, "ng_num": 10},
         cluster={"resolution": 0.8},
-        propagate=False,
+        propagate=True,  # Enable propagation to generate multiple layers for slider
     )
     
     # 4. Louvain clustering
