@@ -805,25 +805,37 @@ function setupControls() {
         updatePlot();
     });
     
-    // Update cplearn advanced parameters visibility based on method selection
+    // Update cplearn and scanpy advanced parameters visibility based on method selection
     const clusterMethodSelect = document.getElementById('cluster-method');
     const cplearnAdvancedParams = document.getElementById('cplearn-advanced-params');
+    const scanpyAdvancedParams = document.getElementById('scanpy-advanced-params');
+    const nIterationsGroup = document.getElementById('cluster-n-iterations-group');
     
-    function updateCplearnParamsVisibility() {
-        if (clusterMethodSelect && cplearnAdvancedParams) {
+    function updateClusteringParamsVisibility() {
+        if (clusterMethodSelect) {
             const method = clusterMethodSelect.value;
-            if (method === 'cplearn') {
-                cplearnAdvancedParams.style.display = 'block';
-            } else {
-                cplearnAdvancedParams.style.display = 'none';
+            
+            // Update cplearn params visibility
+            if (cplearnAdvancedParams) {
+                cplearnAdvancedParams.style.display = (method === 'cplearn') ? 'block' : 'none';
+            }
+            
+            // Update scanpy params visibility
+            if (scanpyAdvancedParams) {
+                scanpyAdvancedParams.style.display = (method === 'leiden' || method === 'louvain') ? 'block' : 'none';
+            }
+            
+            // Update n_iterations visibility (only for leiden)
+            if (nIterationsGroup) {
+                nIterationsGroup.style.display = (method === 'leiden') ? 'block' : 'none';
             }
         }
     }
     
     if (clusterMethodSelect) {
-        clusterMethodSelect.addEventListener('change', updateCplearnParamsVisibility);
+        clusterMethodSelect.addEventListener('change', updateClusteringParamsVisibility);
         // Initialize visibility on page load
-        updateCplearnParamsVisibility();
+        updateClusteringParamsVisibility();
     }
     
     // Add event listeners for visualization parameters to clear cache when changed
@@ -1351,6 +1363,18 @@ async function runClustering() {
         const stable_ng_num = parseInt(document.getElementById('stable-ng-num')?.value) || 8;
         const fine_grained = document.getElementById('fine-grained')?.checked || false;
         const propagate = document.getElementById('propagate')?.checked !== false;
+        
+        // scanpy-specific parameters
+        const random_state_elem = document.getElementById('cluster-random-state');
+        const random_state = random_state_elem?.value?.trim() ? parseInt(random_state_elem.value) : null;
+        const n_iterations_elem = document.getElementById('cluster-n-iterations');
+        const n_iterations = n_iterations_elem?.value?.trim() ? parseInt(n_iterations_elem.value) : null;
+        const flavor_elem = document.getElementById('cluster-flavor');
+        const flavor = flavor_elem?.value?.trim() || null;
+        const use_weights_elem = document.getElementById('cluster-use-weights');
+        const use_weights = use_weights_elem?.checked !== undefined ? use_weights_elem.checked : null;
+        const directed_elem = document.getElementById('cluster-directed');
+        const directed = directed_elem?.checked !== undefined ? directed_elem.checked : null;
 
         const requestBody = {
             session_id: sessionId,
@@ -1367,6 +1391,18 @@ async function runClustering() {
             requestBody.stable_ng_num = stable_ng_num;
             requestBody.fine_grained = fine_grained;
             requestBody.propagate = propagate;
+        }
+        
+        // Add scanpy-specific parameters (for leiden and louvain)
+        if (method === 'leiden' || method === 'louvain') {
+            if (random_state !== null) requestBody.random_state = random_state;
+            if (flavor) requestBody.flavor = flavor;
+            if (use_weights !== null) requestBody.use_weights = use_weights;
+            if (directed !== null) requestBody.directed = directed;
+            // n_iterations only for leiden
+            if (method === 'leiden' && n_iterations !== null) {
+                requestBody.n_iterations = n_iterations;
+            }
         }
 
         const response = await fetch(`${API_BASE}/cluster`, {

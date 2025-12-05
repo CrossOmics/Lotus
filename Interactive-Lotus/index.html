@@ -794,6 +794,53 @@
                                 </label>
                             </div>
                         </div>
+                        <div id="scanpy-advanced-params" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Random State</label>
+                                <input type="number" id="cluster-random-state" class="form-input" value="" placeholder="Auto (0)" min="0" step="1">
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                    Random seed for reproducibility. Leave empty for default (0).
+                                </div>
+                            </div>
+                            <div class="form-group" id="cluster-n-iterations-group" style="display: none;">
+                                <label class="form-label">N Iterations (Leiden only)</label>
+                                <input type="number" id="cluster-n-iterations" class="form-input" value="" placeholder="Auto (-1)" min="-1" step="1">
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                    Number of iterations. -1 means until convergence. Leave empty for default.
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Flavor</label>
+                                <select id="cluster-flavor" class="form-input">
+                                    <option value="">Default</option>
+                                    <option value="leidenalg">leidenalg (Leiden default)</option>
+                                    <option value="igraph">igraph</option>
+                                    <option value="vtraag">vtraag (Louvain default)</option>
+                                    <option value="rapids">rapids (Louvain only)</option>
+                                </select>
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                    Algorithm implementation flavor. Default: leidenalg for Leiden, vtraag for Louvain.
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="cluster-use-weights" style="cursor: pointer;">
+                                    <span class="form-label" style="margin: 0;">Use Weights</span>
+                                </label>
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                    Use edge weights in clustering. Default: True for Leiden, False for Louvain.
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="cluster-directed" style="cursor: pointer;">
+                                    <span class="form-label" style="margin: 0;">Directed Graph</span>
+                                </label>
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                    Treat graph as directed. Default: None (auto-detect) for Leiden, True for Louvain.
+                                </div>
+                            </div>
+                        </div>
                         <button id="btn-cluster" class="btn" disabled>Run Clustering</button>
                     </div>
 

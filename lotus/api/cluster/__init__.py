@@ -26,11 +26,21 @@ def run_clustering():
         resolution = data.get('resolution', 1.2)
         use_rep = data.get('use_rep', None)
         key_added = data.get('key_added', None)  # If None, uses method-specific default
+        
         # cplearn-specific parameters
         stable_core_frac = data.get('stable_core_frac', 0.25)
         stable_ng_num = data.get('stable_ng_num', 8)
         fine_grained = data.get('fine_grained', False)
         propagate = data.get('propagate', True)
+        
+        # scanpy-specific parameters (for leiden and louvain)
+        random_state = data.get('random_state', None)  # None means use default (0)
+        neighbors_key = data.get('neighbors_key', None)
+        obsp = data.get('obsp', None)
+        use_weights = data.get('use_weights', None)  # None means use default
+        directed = data.get('directed', None)  # None means use default
+        flavor = data.get('flavor', None)  # None means use default
+        n_iterations = data.get('n_iterations', None)  # Only for leiden, None means use default (-1)
         
         adata = load_adata(session_id)
         
@@ -168,8 +178,30 @@ def run_clustering():
                     print("[CLUSTER] Computing neighbors graph for Leiden...")
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
                 cluster_key_to_use = key_added or 'leiden'
+                
+                # Prepare leiden parameters
+                leiden_params = {
+                    'resolution': resolution,
+                    'key_added': cluster_key_to_use,
+                }
+                if random_state is not None:
+                    leiden_params['random_state'] = random_state
+                if neighbors_key is not None:
+                    leiden_params['neighbors_key'] = neighbors_key
+                if obsp is not None:
+                    leiden_params['obsp'] = obsp
+                if use_weights is not None:
+                    leiden_params['use_weights'] = use_weights
+                if directed is not None:
+                    leiden_params['directed'] = directed
+                if flavor is not None:
+                    leiden_params['flavor'] = flavor
+                if n_iterations is not None:
+                    leiden_params['n_iterations'] = n_iterations
+                
                 print(f"[CLUSTER] Running scanpy Leiden with resolution={resolution}, key_added={cluster_key_to_use}")
-                sc.tl.leiden(adata, resolution=resolution, key_added=cluster_key_to_use)
+                print(f"[CLUSTER] Leiden parameters: {leiden_params}")
+                sc.tl.leiden(adata, **leiden_params)
                 cluster_key = cluster_key_to_use
             except Exception as e:
                 error_msg = f'Leiden clustering failed: {str(e)}'
@@ -197,8 +229,28 @@ def run_clustering():
                     print("[CLUSTER] Computing neighbors graph for Louvain...")
                     sc.pp.neighbors(adata, use_rep=use_rep or 'X_pca', n_neighbors=15)
                 cluster_key_to_use = key_added or 'louvain'
+                
+                # Prepare louvain parameters
+                louvain_params = {
+                    'resolution': resolution,
+                    'key_added': cluster_key_to_use,
+                }
+                if random_state is not None:
+                    louvain_params['random_state'] = random_state
+                if neighbors_key is not None:
+                    louvain_params['neighbors_key'] = neighbors_key
+                if obsp is not None:
+                    louvain_params['obsp'] = obsp
+                if use_weights is not None:
+                    louvain_params['use_weights'] = use_weights
+                if directed is not None:
+                    louvain_params['directed'] = directed
+                if flavor is not None:
+                    louvain_params['flavor'] = flavor
+                
                 print(f"[CLUSTER] Running scanpy Louvain with resolution={resolution}, key_added={cluster_key_to_use}")
-                sc.tl.louvain(adata, resolution=resolution, key_added=cluster_key_to_use)
+                print(f"[CLUSTER] Louvain parameters: {louvain_params}")
+                sc.tl.louvain(adata, **louvain_params)
                 cluster_key = cluster_key_to_use
             except (ImportError, ModuleNotFoundError) as e:
                 error_msg = f'Louvain clustering failed: louvain module not installed'
