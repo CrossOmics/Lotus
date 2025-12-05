@@ -2375,11 +2375,43 @@ function displayMarkerGenes(markers, nMarkers, stats) {
     tableBody.innerHTML = '';
     
     // Convert markers dict to array and sort by absolute log2fc (descending)
+    // Handle 'N/A' placeholders (e.g., from logistic regression)
     const markersArray = Object.values(markers).map(m => {
-        // Ensure all values are valid numbers
-        const log2fc = typeof m.log2fc === 'number' ? m.log2fc : parseFloat(m.log2fc) || 0;
-        const pval = typeof m.pval === 'number' ? m.pval : parseFloat(m.pval) || 1;
-        const pval_adj = typeof m.pval_adj === 'number' ? m.pval_adj : parseFloat(m.pval_adj) || 1;
+        // Check if value is 'N/A' placeholder
+        const isNA = (val) => val === 'N/A' || val === null || val === undefined;
+        
+        let log2fc, pval, pval_adj;
+        
+        // Handle log2fc
+        if (isNA(m.log2fc)) {
+            log2fc = 'N/A';
+        } else if (typeof m.log2fc === 'number') {
+            log2fc = m.log2fc;
+        } else {
+            const parsed = parseFloat(m.log2fc);
+            log2fc = isNaN(parsed) ? 'N/A' : parsed;
+        }
+        
+        // Handle pval
+        if (isNA(m.pval)) {
+            pval = 'N/A';
+        } else if (typeof m.pval === 'number') {
+            pval = m.pval;
+        } else {
+            const parsed = parseFloat(m.pval);
+            pval = isNaN(parsed) ? 'N/A' : parsed;
+        }
+        
+        // Handle pval_adj
+        if (isNA(m.pval_adj)) {
+            pval_adj = 'N/A';
+        } else if (typeof m.pval_adj === 'number') {
+            pval_adj = m.pval_adj;
+        } else {
+            const parsed = parseFloat(m.pval_adj);
+            pval_adj = isNaN(parsed) ? 'N/A' : parsed;
+        }
+        
         return {
             gene: m.gene || 'unknown',
             log2fc: log2fc,
@@ -2394,27 +2426,37 @@ function displayMarkerGenes(markers, nMarkers, stats) {
         return;
     }
     
-    markersArray.sort((a, b) => Math.abs(b.log2fc) - Math.abs(a.log2fc));
+    // Sort by absolute log2fc (descending), handling 'N/A' placeholders
+    markersArray.sort((a, b) => {
+        const aVal = (typeof a.log2fc === 'number') ? Math.abs(a.log2fc) : -Infinity;
+        const bVal = (typeof b.log2fc === 'number') ? Math.abs(b.log2fc) : -Infinity;
+        return bVal - aVal;
+    });
     
     // Display top markers
     markersArray.forEach(marker => {
         const row = document.createElement('tr');
         row.style.borderBottom = '1px solid var(--border)';
         
-        // Color coding based on log2fc
-        const log2fcColor = marker.log2fc > 0 ? '#10b981' : '#ef4444';
-        const pvalColor = marker.pval_adj < 0.05 ? '#1e40af' : '#64748b';
+        // Color coding based on log2fc and pval_adj
+        // Handle 'N/A' placeholders
+        const log2fcColor = (typeof marker.log2fc === 'number') 
+            ? (marker.log2fc > 0 ? '#10b981' : '#ef4444')
+            : '#64748b'; // Gray for 'N/A'
+        const pvalColor = (typeof marker.pval_adj === 'number' && marker.pval_adj < 0.05)
+            ? '#1e40af'
+            : '#64748b';
         
         row.innerHTML = `
             <td style="padding: 8px; font-weight: 500;">${marker.gene}</td>
             <td style="padding: 8px; text-align: right; color: ${log2fcColor}; font-weight: 500;">
-                ${marker.log2fc.toFixed(3)}
+                ${typeof marker.log2fc === 'number' ? marker.log2fc.toFixed(3) : 'N/A'}
             </td>
             <td style="padding: 8px; text-align: right; color: ${pvalColor};">
-                ${marker.pval.toExponential(2)}
+                ${typeof marker.pval === 'number' ? marker.pval.toExponential(2) : 'N/A'}
             </td>
             <td style="padding: 8px; text-align: right; color: ${pvalColor};">
-                ${marker.pval_adj.toExponential(2)}
+                ${typeof marker.pval_adj === 'number' ? marker.pval_adj.toExponential(2) : 'N/A'}
             </td>
         `;
         

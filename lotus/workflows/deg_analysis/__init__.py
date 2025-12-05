@@ -227,46 +227,67 @@ def _marker_genes_scanpy(
     key_added = "rank_genes_groups"
     
     # Try multiple strategies if first attempt fails
+    # Note: scanpy's rank_genes_groups expects log-transformed data
+    # Priority: use_raw (usually log-transformed) > adata.X (may be log-transformed) > layer (may be raw counts)
     strategies = []
     
-    # Strategy 1: Use layer if provided
-    if layer is not None:
-        strategies.append({
-            'layer': layer,
-            'use_raw': False,
-            'name': f'layer={layer}'
-        })
-    
-    # Strategy 2: Use raw data if available
+    # Strategy 1: Use raw data if available (usually contains log-transformed data)
+    # This is preferred because adata.raw typically contains normalized+log1p data
     if adata.raw is not None:
         strategies.append({
             'layer': None,
             'use_raw': True,
-            'name': 'use_raw=True'
+            'name': 'use_raw=True (log-transformed)'
         })
     
-    # Strategy 3: Use adata.X
+    # Strategy 2: Use adata.X (may already be log-transformed)
     strategies.append({
         'layer': None,
         'use_raw': False,
         'name': 'adata.X'
     })
     
+    # Strategy 3: Use layer if provided (may be raw counts - will trigger warning)
+    # Only use layer as fallback since it may contain raw counts
+    if layer is not None:
+        strategies.append({
+            'layer': layer,
+            'use_raw': False,
+            'name': f'layer={layer} (may trigger log warning)'
+        })
+    
+    # Special handling for logistic regression:
+    # - Logistic regression with groups=[group_a] fails with "single cluster" error
+    # - Must use groups='all' for logistic regression, but this may not provide pvals/logfoldchanges
+    # - We'll try groups='all' for logistic regression, and accept missing stats if necessary
+    is_logreg = (scanpy_method or "wilcoxon") == "logreg"
+    
     last_error = None
     for strategy_idx, strategy in enumerate(strategies):
         try:
             print(f"[DEG] Trying strategy {strategy_idx + 1}/{len(strategies)}: {strategy['name']}")
-            rank_genes_groups(
-                adata,
-                groupby=cluster_key_to_use,  # Use the compatible cluster key
-                groups=[group_a],  # Use the matched group name
-                reference="rest",
-                method=scanpy_method or "wilcoxon",
-                use_raw=strategy['use_raw'],
-                layer=strategy['layer'],
-                key_added=key_added,
-                pts=True,  # Include percentage of cells expressing gene
-            )
+            
+            # Prepare rank_genes_groups parameters
+            rank_params = {
+                'groupby': cluster_key_to_use,  # Use the compatible cluster key
+                'method': scanpy_method or "wilcoxon",
+                'use_raw': strategy['use_raw'],
+                'layer': strategy['layer'],
+                'key_added': key_added,
+                'pts': True,  # Include percentage of cells expressing gene
+            }
+            
+            # For logistic regression, use groups='all' (required by scanpy)
+            # For other methods, use groups=[group_a] with reference='rest'
+            if is_logreg:
+                rank_params['groups'] = 'all'
+                print(f"[DEG] Using groups='all' for logistic regression method (required)")
+            else:
+                rank_params['groups'] = [group_a]  # Use the matched group name
+                rank_params['reference'] = "rest"
+                print(f"[DEG] Using groups=[{group_a}], reference='rest' for {scanpy_method or 'wilcoxon'} method")
+            
+            rank_genes_groups(adata, **rank_params)
             print(f"[DEG] Success with strategy: {strategy['name']}")
             break  # Success, exit loop
         except Exception as e:
@@ -286,6 +307,16 @@ def _marker_genes_scanpy(
                     if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
                         del adata.obs[cluster_key_to_use]
                     return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+            elif "single cluster" in error_msg.lower() or "cannot perform logistic regression" in error_msg.lower():
+                # This should not happen with groups='all', but handle it anyway
+                print(f"[DEG] Logistic regression error: {error_msg}")
+                if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+                    del adata.obs[cluster_key_to_use]
+                raise ValueError(
+                    f"Logistic regression method requires at least 2 clusters with sufficient cells. "
+                    f"Found {len(unique_labels)} unique clusters: {unique_labels}. "
+                    f"Please try a different statistical method (e.g., 'wilcoxon' or 't-test') or ensure you have at least 2 clusters with enough cells."
+                ) from e
             else:
                 # Other errors, try next strategy
                 if strategy_idx < len(strategies) - 1:
@@ -457,29 +488,142 @@ def _convert_scanpy_rank_genes_groups_to_dataframe(
             print(f"[DEG] Warning: Group '{group_a}' not found in available groups {available_groups}, using first available group")
             group_to_use = available_groups[0]
     
-    # Use scanpy's rank_genes_groups_df to get results - it handles all the format details
-    # This is the most reliable way to extract results
+    # Extract results directly from adata.uns['rank_genes_groups']
+    # rank_genes_groups_df may not return all columns for logistic regression
+    print(f"[DEG] Extracting results directly from adata.uns['{key}'] for group '{group_to_use}'")
     try:
-        df_result = sc_get.rank_genes_groups_df(
-            adata,
-            group=group_to_use,
-            key=key,
-        )
+        rank_result = adata.uns[key]
+        
+        # Check the structure of rank_result
+        print(f"[DEG] rank_result keys: {list(rank_result.keys())}")
+        
+        # Handle different data structures
+        # scanpy stores results as structured arrays or dicts
+        if isinstance(rank_result['names'], np.ndarray):
+            # Structured array format - access by field name
+            if hasattr(rank_result['names'].dtype, 'names') and group_to_use in rank_result['names'].dtype.names:
+                names = rank_result['names'][group_to_use]
+            else:
+                # Try accessing as structured array
+                names = rank_result['names'][group_to_use] if group_to_use in rank_result['names'].dtype.names else rank_result['names']
+        elif isinstance(rank_result['names'], dict):
+            # Dict format - access by group name
+            names = rank_result['names'][group_to_use]
+        else:
+            # Fallback: try direct access
+            names = rank_result['names']
+        
+        # Get scores
+        if 'scores' in rank_result:
+            if isinstance(rank_result['scores'], np.ndarray):
+                if hasattr(rank_result['scores'].dtype, 'names') and group_to_use in rank_result['scores'].dtype.names:
+                    scores = rank_result['scores'][group_to_use]
+                else:
+                    scores = rank_result['scores']
+            elif isinstance(rank_result['scores'], dict):
+                scores = rank_result['scores'].get(group_to_use, np.zeros(len(names)))
+            else:
+                scores = rank_result['scores']
+        else:
+            scores = np.zeros(len(names))
+        
+        # Check if this is logistic regression with groups='all' (which doesn't provide pvals/logfoldchanges)
+        # We'll use placeholders instead of default values
+        use_placeholders = 'logfoldchanges' not in rank_result or 'pvals' not in rank_result
+        
+        # Get logfoldchanges
+        if 'logfoldchanges' in rank_result:
+            if isinstance(rank_result['logfoldchanges'], np.ndarray):
+                if hasattr(rank_result['logfoldchanges'].dtype, 'names') and group_to_use in rank_result['logfoldchanges'].dtype.names:
+                    logfoldchanges = rank_result['logfoldchanges'][group_to_use]
+                else:
+                    logfoldchanges = rank_result['logfoldchanges']
+            elif isinstance(rank_result['logfoldchanges'], dict):
+                logfoldchanges = rank_result['logfoldchanges'].get(group_to_use, np.zeros(len(names)))
+            else:
+                logfoldchanges = rank_result['logfoldchanges']
+        else:
+            logfoldchanges = None  # Will use placeholder
+            print(f"[DEG] Warning: 'logfoldchanges' not found in rank_result, will use placeholder")
+        
+        # Get pvals
+        if 'pvals' in rank_result:
+            if isinstance(rank_result['pvals'], np.ndarray):
+                if hasattr(rank_result['pvals'].dtype, 'names') and group_to_use in rank_result['pvals'].dtype.names:
+                    pvals = rank_result['pvals'][group_to_use]
+                else:
+                    pvals = rank_result['pvals']
+            elif isinstance(rank_result['pvals'], dict):
+                pvals = rank_result['pvals'].get(group_to_use, np.ones(len(names)))
+            else:
+                pvals = rank_result['pvals']
+        else:
+            pvals = None  # Will use placeholder
+            print(f"[DEG] Warning: 'pvals' not found in rank_result, will use placeholder")
+        
+        # Get pvals_adj
+        if 'pvals_adj' in rank_result:
+            if isinstance(rank_result['pvals_adj'], np.ndarray):
+                if hasattr(rank_result['pvals_adj'].dtype, 'names') and group_to_use in rank_result['pvals_adj'].dtype.names:
+                    pvals_adj = rank_result['pvals_adj'][group_to_use]
+                else:
+                    pvals_adj = rank_result['pvals_adj']
+            elif isinstance(rank_result['pvals_adj'], dict):
+                pvals_adj = rank_result['pvals_adj'].get(group_to_use, np.ones(len(names)))
+            else:
+                pvals_adj = rank_result['pvals_adj']
+        else:
+            pvals_adj = None  # Will use placeholder
+            print(f"[DEG] Warning: 'pvals_adj' not found in rank_result, will use placeholder")
+        
+        # Ensure all arrays have the same length
+        min_len = len(names)
+        names = names[:min_len]
+        scores = scores[:min_len] if len(scores) >= min_len else np.zeros(min_len)
+        
+        # Use placeholders for missing values (e.g., logistic regression with groups='all')
+        if logfoldchanges is None:
+            logfoldchanges = np.array(['N/A'] * min_len, dtype=object)
+        else:
+            logfoldchanges = logfoldchanges[:min_len] if len(logfoldchanges) >= min_len else np.array(['N/A'] * min_len, dtype=object)
+        
+        if pvals is None:
+            pvals = np.array(['N/A'] * min_len, dtype=object)
+        else:
+            pvals = pvals[:min_len] if len(pvals) >= min_len else np.array(['N/A'] * min_len, dtype=object)
+        
+        if pvals_adj is None:
+            pvals_adj = np.array(['N/A'] * min_len, dtype=object)
+        else:
+            pvals_adj = pvals_adj[:min_len] if len(pvals_adj) >= min_len else np.array(['N/A'] * min_len, dtype=object)
+        
+        # Create DataFrame
+        df_result = pd.DataFrame({
+            'names': names,
+            'scores': scores,
+            'logfoldchanges': logfoldchanges,
+            'pvals': pvals,
+            'pvals_adj': pvals_adj,
+        })
+        print(f"[DEG] Direct extraction: {len(df_result)} rows, columns: {list(df_result.columns)}")
+        if len(df_result) > 0:
+            first_row = df_result.iloc[0]
+            log2fc_val = first_row['logfoldchanges']
+            pval_val = first_row['pvals']
+            pval_adj_val = first_row['pvals_adj']
+            log2fc_str = str(log2fc_val) if log2fc_val == 'N/A' else f"{log2fc_val:.4f}"
+            pval_str = str(pval_val) if pval_val == 'N/A' else f"{pval_val:.4f}"
+            pval_adj_str = str(pval_adj_val) if pval_adj_val == 'N/A' else f"{pval_adj_val:.4f}"
+            print(f"[DEG] First row: gene={first_row['names']}, log2fc={log2fc_str}, pval={pval_str}, pval_adj={pval_adj_str}")
     except Exception as e:
-        # If rank_genes_groups_df fails, return empty DataFrame
         error_msg = str(e)
-        print(f"[DEG] Warning: Could not extract results for group '{group_to_use}' using rank_genes_groups_df: {error_msg}")
+        print(f"[DEG] Error extracting directly from adata.uns: {error_msg}")
         import traceback
         traceback.print_exc()
-        # Return empty DataFrame instead of raising error
         return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
     
     # Check if result is empty or None
-    if df_result is None:
-        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
-    
-    # Handle empty DataFrame
-    if len(df_result) == 0:
+    if df_result is None or len(df_result) == 0:
         return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
     
     # Format the DataFrame to match expected format
@@ -504,14 +648,64 @@ def _format_scanpy_dataframe(df_result: pd.DataFrame, group_a: str) -> pd.DataFr
         return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
     
     # Extract data from DataFrame
+    # Note: rank_genes_groups_df column names may vary by method
+    # Common columns: 'names', 'logfoldchanges', 'pvals', 'pvals_adj', 'scores'
     for idx, row in df_result.iterrows():
         try:
-            # Get values from row, with defaults
-            gene = str(row.get('names', str(idx)))
-            log2fc = float(row.get('logfoldchanges', 0.0))
-            pvalue = float(row.get('pvals', 1.0))
-            p_adj = float(row.get('pvals_adj', 1.0))
-            score = float(row.get('scores', 0.0))
+            # Get gene name - try different possible column names
+            gene = None
+            for gene_col in ['names', 'gene', 'gene_name', 'gene_id']:
+                if gene_col in row.index:
+                    gene = str(row[gene_col])
+                    break
+            if gene is None:
+                gene = str(idx)
+            
+            # Get log2fc - try different possible column names
+            # Use placeholder if value is 'N/A' or missing
+            log2fc = 'N/A'
+            for fc_col in ['logfoldchanges', 'log2fc', 'log_fold_change', 'fold_change']:
+                if fc_col in row.index:
+                    val = row[fc_col]
+                    if val != 'N/A' and val is not None:
+                        try:
+                            log2fc = float(val)
+                        except (ValueError, TypeError):
+                            log2fc = 'N/A'
+                    break
+            
+            # Get pvalue - try different possible column names
+            # Use placeholder if value is 'N/A' or missing
+            pvalue = 'N/A'
+            for pval_col in ['pvals', 'pvalue', 'p_value', 'pval']:
+                if pval_col in row.index:
+                    val = row[pval_col]
+                    if val != 'N/A' and val is not None:
+                        try:
+                            pvalue = float(val)
+                        except (ValueError, TypeError):
+                            pvalue = 'N/A'
+                    break
+            
+            # Get p_adj - try different possible column names
+            # Use placeholder if value is 'N/A' or missing
+            p_adj = 'N/A'
+            for padj_col in ['pvals_adj', 'p_adj', 'pval_adj', 'padj', 'p_adjusted']:
+                if padj_col in row.index:
+                    val = row[padj_col]
+                    if val != 'N/A' and val is not None:
+                        try:
+                            p_adj = float(val)
+                        except (ValueError, TypeError):
+                            p_adj = 'N/A'
+                    break
+            
+            # Get score - try different possible column names
+            score = 0.0
+            for score_col in ['scores', 'score', 'z_score', 'statistic']:
+                if score_col in row.index:
+                    score = float(row[score_col])
+                    break
             
             result_list.append({
                 'gene': gene,
@@ -526,6 +720,7 @@ def _format_scanpy_dataframe(df_result: pd.DataFrame, group_a: str) -> pd.DataFr
             })
         except (ValueError, TypeError, KeyError) as e:
             # Skip rows with invalid data
+            print(f"[DEG] Warning: Skipping row {idx} due to error: {e}")
             continue
     
     if not result_list:
@@ -534,8 +729,25 @@ def _format_scanpy_dataframe(df_result: pd.DataFrame, group_a: str) -> pd.DataFr
     result_df = pd.DataFrame(result_list)
     
     # Sort by p_adj and log2fc
+    # Handle placeholders ('N/A') in sorting - treat 'N/A' as high values for p_adj, low values for log2fc
     if len(result_df) > 0:
-        result_df = result_df.sort_values(['p_adj', 'log2fc'], ascending=[True, False])
+        def safe_float_sort(val, default_for_na=float('inf')):
+            """Convert value to float for sorting, handling 'N/A' placeholder."""
+            if val == 'N/A' or val is None:
+                return default_for_na
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return default_for_na
+        
+        # Create temporary sort keys
+        sort_p_adj = result_df['p_adj'].apply(lambda x: safe_float_sort(x, float('inf')))
+        sort_log2fc = result_df['log2fc'].apply(lambda x: safe_float_sort(x, float('-inf')))
+        
+        # Sort by p_adj first (ascending), then by log2fc (descending)
+        # Use numpy argsort for stable sorting
+        sort_indices = np.lexsort([-sort_log2fc.values, sort_p_adj.values])
+        result_df = result_df.iloc[sort_indices]
     
     return result_df
 

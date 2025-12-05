@@ -221,8 +221,12 @@ def run_marker_genes():
                 # Calculate statistics matching lotus_workflow.py
                 stats['total'] = len(result)
                 if 'p_adj' in result.columns:
-                    stats['significant_p05'] = int(np.sum(result['p_adj'] < 0.05))
-                    stats['significant_p01'] = int(np.sum(result['p_adj'] < 0.01))
+                    # Filter out 'N/A' placeholders before comparison
+                    p_adj_numeric = result['p_adj'].apply(
+                        lambda x: float(x) if x != 'N/A' and x is not None else None
+                    )
+                    stats['significant_p05'] = int(np.sum(p_adj_numeric < 0.05) if p_adj_numeric.notna().any() else 0)
+                    stats['significant_p01'] = int(np.sum(p_adj_numeric < 0.01) if p_adj_numeric.notna().any() else 0)
                 
                 print(f"[DEG] Statistics: total={stats['total']}, p_adj<0.05={stats['significant_p05']}, p_adj<0.01={stats['significant_p01']}")
                 
@@ -235,9 +239,26 @@ def run_marker_genes():
                     if gene_name is None or (isinstance(gene_name, float) and np.isnan(gene_name)):
                         gene_name = str(idx)
                     
-                    log2fc_val = float(row.get('log2fc', 0)) if 'log2fc' in row else 0.0
-                    pval_val = float(row.get('pvalue', 1)) if 'pvalue' in row else 1.0
-                    pval_adj_val = float(row.get('p_adj', 1)) if 'p_adj' in row else 1.0
+                    # Handle 'N/A' placeholders (e.g., from logistic regression)
+                    log2fc_raw = row.get('log2fc', 0) if 'log2fc' in row else 0.0
+                    pval_raw = row.get('pvalue', 1) if 'pvalue' in row else 1.0
+                    pval_adj_raw = row.get('p_adj', 1) if 'p_adj' in row else 1.0
+                    
+                    # Convert to float if not 'N/A', otherwise keep as string
+                    try:
+                        log2fc_val = float(log2fc_raw) if log2fc_raw != 'N/A' and log2fc_raw is not None else 'N/A'
+                    except (ValueError, TypeError):
+                        log2fc_val = 'N/A'
+                    
+                    try:
+                        pval_val = float(pval_raw) if pval_raw != 'N/A' and pval_raw is not None else 'N/A'
+                    except (ValueError, TypeError):
+                        pval_val = 'N/A'
+                    
+                    try:
+                        pval_adj_val = float(pval_adj_raw) if pval_adj_raw != 'N/A' and pval_adj_raw is not None else 'N/A'
+                    except (ValueError, TypeError):
+                        pval_adj_val = 'N/A'
                     
                     markers_dict[str(idx)] = {
                         'gene': str(gene_name),
