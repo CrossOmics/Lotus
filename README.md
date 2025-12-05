@@ -6,6 +6,16 @@ A single-cell RNA sequencing analysis package for preprocessing, clustering, vis
 
 ## Installation
 
+**Python Version Requirement:** Lotus requires Python 3.11.7.
+
+Check your Python version:
+
+```bash
+python --version
+# or
+python3 --version
+```
+
 Install the lotus package:
 
 ```bash

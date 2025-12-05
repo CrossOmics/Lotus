@@ -90,10 +90,6 @@ def main():
     print(f"Lotus available: {LOTUS_AVAILABLE}")
     print(f"Scanpy available: {SCANPY_AVAILABLE}")
     print(f"Upload folder: {UPLOAD_FOLDER}")
-    print("\nStarting server on http://localhost:5000")
-    print("Open http://localhost:5000 in your browser")
-    print("=" * 60)
-    print("\n[INFO] Server logs will appear below:\n")
     
     # Try to find static folder (Interactive-Lotus directory)
     # When running from Interactive-Lotus/app.py, we need to go up one level
@@ -119,7 +115,16 @@ def main():
             static_folder = cwd
     
     app = create_app(static_folder=str(static_folder) if static_folder else None)
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+    
+    # Get port from environment variable, default to 5259 (5000 is often used by AirPlay on macOS)
+    port = int(os.environ.get('PORT', 5259))
+    
+    print(f"\nStarting server on http://localhost:{port}")
+    print(f"Open http://localhost:{port} in your browser")
+    print("=" * 60)
+    print("\n[INFO] Server logs will appear below:\n")
+    
+    app.run(debug=True, host='0.0.0.0', port=port, use_reloader=False)
 
 
 # Create app instance for Gunicorn production deployment

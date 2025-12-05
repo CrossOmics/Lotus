@@ -8,9 +8,27 @@ from typing import Any
 from ...methods.deg import find_markers as _scRNA_seq_find_markers
 from ...methods.deg.find_markers import DEAnalyzer, DEOptions, de_from_model, de_from_adata
 
+# Import wrapped functions from external module
+from .external.cplearn import corespect, coremap_embedding
+
+# Create a namespace object for backward compatibility
+class _CplearnNamespace:
+    """Namespace object for cplearn functions and classes."""
+    def __init__(self, module_getattr):
+        self._module_getattr = module_getattr
+        self.corespect = corespect
+        self.coremap_embedding = coremap_embedding
+    
+    def __getattr__(self, name: str) -> Any:
+        # Delegate to module-level __getattr__ for dynamic imports
+        # This allows access to CorespectModel, Coremap, etc.
+        return self._module_getattr(name)
+
 __all__ = [
+    "cplearn",
     "coremap",
     "corespect",
+    "coremap_embedding",
     "utils",
     "anchored_map",
     "Coremap",
@@ -83,15 +101,33 @@ def _ensure_subpackage(name: str) -> ModuleType:
     return module
 
 
-def __getattr__(name: str) -> Any:
+def _module_getattr(name: str) -> Any:
+    """Internal function for module-level attribute access."""
     if name in _SUBPACKAGES:
         return _ensure_subpackage(name)
+
+    # Direct imports (already available)
+    if name == "corespect":
+        return corespect
+    if name == "coremap_embedding":
+        return coremap_embedding
 
     module_name = _ATTR_SOURCES.get(name)
     if module_name is None:
         raise AttributeError(f"cplearn has no attribute {name!r}") from None
     module = _import_module(module_name)
     return getattr(module, name)
+
+
+def __getattr__(name: str) -> Any:
+    if name == "cplearn":
+        return _cplearn_namespace
+    
+    return _module_getattr(name)
+
+
+# Create the namespace object
+_cplearn_namespace = _CplearnNamespace(_module_getattr)
 
 
 def __dir__() -> list[str]:

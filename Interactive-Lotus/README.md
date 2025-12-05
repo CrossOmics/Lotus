@@ -23,17 +23,27 @@ pip install -e .. --no-deps
 python3 app.py
 ```
 
+**Note:** By default, the server runs on port 5259 (instead of 5000) because macOS often uses port 5000 for AirPlay Receiver. You can change the port by setting the `PORT` environment variable:
+
+```bash
+# Use a custom port
+PORT=8080 python3 app.py
+
+# Or use port 5000 if it's available
+PORT=5000 python3 app.py
+```
+
 ## Access the Application
 
-Open your browser and navigate to: http://localhost:5000
+Open your browser and navigate to: http://localhost:5259 (or the port you specified)
 
 ## Restart Server
 
 If the server is already running, you may need to stop it first:
 
 ```bash
-# Find and stop the process
-lsof -ti:5000 | xargs kill -9
+# Find and stop the process (replace 5259 with your port)
+lsof -ti:5259 | xargs kill -9
 
 # Then restart
 cd Interactive-Lotus

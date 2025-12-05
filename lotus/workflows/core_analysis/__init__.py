@@ -1,21 +1,33 @@
 from __future__ import annotations
 
+from typing import Any, Mapping
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 
 
 def core_analyze(
     adata: AnnData,
-    model: cplearn.CorespectModel,
+    model: cplearn.CorespectModel | None = None,
     *,
     use_rep: str | None = None,
     key_added: str = "X_cplearn_coremap",
     cluster_key: str | None = None,
     print_summary: bool = True,
-) -> None:
+    # corespect parameters (only used when model=None)
+    flowrank: Mapping[str, Any] | None = None,
+    stable: Mapping[str, Any] | None = None,
+    fine: Mapping[str, Any] | None = None,
+    cluster: Mapping[str, Any] | None = None,
+    propagate_cfg: Mapping[str, Any] | None = None,
+    fine_grained: bool = False,
+    propagate: bool = True,
+    cplearn_key: str = "cplearn",
+    **kwargs,
+) -> cplearn.CorespectModel | None:
     """
     CoreAnalysis step: Compute core map embedding and extract core layer information
     
@@ -23,21 +35,36 @@ def core_analyze(
     In addition, it is compatible with scanpy workflow because it works with scanpy neighbors graph (stored in adata.obsp),
     accepts scanpy standard representations (X_pca, X_umap, etc.), outputs embedding in adata.obsm compatible with scanpy format and saves core layer information in adata.obs for scanpy plotting
     
+    If `model` is None, automatically calls `cplearn.corespect()` internally to generate the model.
+    This allows for a simplified workflow: core_analyze -> clustering.
+    
     Parameters:
         adata: AnnData object (compatible with scanpy AnnData)
-        model: CorespectModel object from clustering step
+        model: CorespectModel object from clustering step. If None, will automatically
+               call `cplearn.corespect()` internally.
         use_rep: Representation to use for computation.
                  If None, auto-detects: "X_latent" > "X_pca" > "X"
                  Default is None (auto-detect)
         key_added: Key name for embedding results in adata.obsm
                    Compatible with scanpy embedding keys
         cluster_key: Key name for cluster labels in adata.obs.
-                     If None, auto-detects: "cplearn_labels" > "leiden" > "louvain"
+                     If None, auto-detects: "cplearn" > "leiden" > "louvain"
                      Default is None (auto-detect)
         print_summary: Whether to print assignment summary
+        
+        # corespect parameters (only used when model=None)
+        flowrank: FlowRank configuration dict
+        stable: Stable core configuration dict
+        fine: Fine-grained configuration dict
+        cluster: Clustering configuration dict
+        propagate_cfg: Propagation configuration dict
+        fine_grained: Whether to run fine-grained refinement
+        propagate: Whether to run propagation (default: True for slider support)
+        cplearn_key: Key name for cplearn labels in adata.obs (default: "cplearn")
+        **kwargs: Additional arguments passed to cplearn.corespect()
     
     Returns:
-        None. Updates `adata.obsm` with coremap embedding in `adata.obsm[key_added]` and `adata.obs` with core layer information in `adata.obs[f'{key_added}_is_core']`.
+        The CorespectModel object (useful for visualization with coremap())
     """
     # Auto-detect representation if not specified
     if use_rep is None:
@@ -47,6 +74,39 @@ def core_analyze(
             use_rep = "X_pca"
         else:
             use_rep = "X"
+    
+    # If model is None, automatically call corespect to generate model
+    if model is None:
+        if print_summary:
+            print("Running cplearn.corespect() to generate clustering model...")
+        
+        model = cplearn.corespect(
+            adata,
+            use_rep=use_rep,
+            flowrank=flowrank,
+            stable=stable,
+            fine=fine,
+            cluster=cluster,
+            propagate_cfg=propagate_cfg,
+            fine_grained=fine_grained,
+            propagate=propagate,
+            key_added=cplearn_key,
+            **kwargs,
+        )
+        
+        # Save marker: core_analyze has been done
+        if 'core_analyze' not in adata.uns:
+            adata.uns['core_analyze'] = {}
+        
+        adata.uns['core_analyze']['done'] = True
+        adata.uns['core_analyze']['cplearn_clustering_done'] = True
+        adata.uns['core_analyze']['cplearn_key'] = cplearn_key
+        adata.uns['core_analyze']['use_rep'] = use_rep
+        adata.uns['core_analyze']['stable'] = stable or {}
+        adata.uns['core_analyze']['cluster'] = cluster or {}
+        
+        if print_summary:
+            print(f"Saved core_analyze marker in adata.uns['core_analyze']")
     
     # Auto-detect cluster key if not specified
     if cluster_key is None:
@@ -169,6 +229,8 @@ def core_analyze(
         if cplearn_key in adata.obs:
             n_clusters = adata.obs[cplearn_key].nunique()
             print(f"Stored cplearn labels: `adata.obs['{cplearn_key}']` ({n_clusters} clusters).")
+    
+    return model
 
 
 __all__ = [

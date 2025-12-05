@@ -6,10 +6,245 @@ from flask import Blueprint, request, jsonify
 import pandas as pd
 from anndata import AnnData
 from pathlib import Path
-from ..config import UPLOAD_FOLDER, LOTUS_AVAILABLE, read, read_10x_h5, sc
+import shutil
+import tempfile
+from ..config import UPLOAD_FOLDER, LOTUS_AVAILABLE, read, read_10x_h5, read_10x_mtx, sc
 from ..utils import get_session_dir, save_adata
 
 bp = Blueprint('upload', __name__, url_prefix='/api')
+
+def handle_mtx_multi_upload():
+    """Handle upload of multiple MTX files (matrix, features, barcodes)"""
+    try:
+        print(f"[UPLOAD] Handling MTX multi-file upload")
+        
+        # Check for required files
+        if 'matrix_file' not in request.files:
+            return jsonify({'error': 'No matrix file provided'}), 400
+        if 'features_file' not in request.files:
+            return jsonify({'error': 'No features file provided'}), 400
+        if 'barcodes_file' not in request.files:
+            return jsonify({'error': 'No barcodes file provided'}), 400
+        
+        matrix_file = request.files['matrix_file']
+        features_file = request.files['features_file']
+        barcodes_file = request.files['barcodes_file']
+        session_id = request.form.get('session_id')
+        
+        if matrix_file.filename == '' or features_file.filename == '' or barcodes_file.filename == '':
+            return jsonify({'error': 'One or more files are empty'}), 400
+        
+        print(f"[UPLOAD] MTX files: matrix={matrix_file.filename}, features={features_file.filename}, barcodes={barcodes_file.filename}")
+        
+        # Check if scanpy is available
+        if sc is None:
+            return jsonify({'error': 'scanpy not available. Please install scanpy to read mtx files.'}), 500
+        
+        # Create temporary directory for MTX files
+        import tempfile
+        import numpy as np
+        temp_dir = Path(tempfile.mkdtemp(prefix='lotus_mtx_', dir=str(UPLOAD_FOLDER)))
+        print(f"[UPLOAD] Created temp directory: {temp_dir}")
+        
+        try:
+            # Save files
+            matrix_path = temp_dir / matrix_file.filename
+            features_path = temp_dir / 'features.tsv'
+            barcodes_path = temp_dir / 'barcodes.tsv'
+            
+            matrix_file.save(matrix_path)
+            features_file.save(features_path)
+            barcodes_file.save(barcodes_path)
+            
+            # 1. 用 scanpy.read_mtx() 读取矩阵
+            print(f"[UPLOAD] Reading matrix with scanpy.read_mtx: {matrix_path}")
+            adata = sc.read_mtx(str(matrix_path))
+            print(f"[UPLOAD] Matrix loaded: {adata.shape}")
+            
+            # 读取 MTX header 来确认格式
+            with open(matrix_path, 'r') as f:
+                header_line = f.readline().strip()
+                dims_line = f.readline().strip()
+                mtx_rows, mtx_cols = map(int, dims_line.split()[:2])
+            print(f"[UPLOAD] MTX header: {mtx_rows} rows, {mtx_cols} columns")
+            
+            # 2. 判断 scanpy.read_mtx() 的格式
+            # scanpy.read_mtx() 可能返回 (genes, cells) 或 (cells, genes)
+            # 需要根据 MTX header 和实际 shape 来判断
+            format_warning = None
+            if adata.shape[0] == mtx_rows and adata.shape[1] == mtx_cols:
+                # scanpy 没有转置：shape = (MTX行数, MTX列数)
+                # 在 10x 格式中：MTX行数 = 基因，MTX列数 = 细胞
+                # 所以：adata.shape = (genes, cells)，需要转置
+                # 这可能是 Seurat 格式（行=基因，列=细胞）
+                print(f"[UPLOAD] scanpy.read_mtx() returned (genes, cells) format, transposing...")
+                print(f"[UPLOAD] WARNING: Detected Seurat format (genes x cells). Lotus is optimized for scanpy format (cells x genes).")
+                format_warning = "Detected Seurat format (genes x cells). Data has been automatically transposed to scanpy format (cells x genes)."
+                adata = adata.T
+                print(f"[UPLOAD] After transpose: {adata.shape} (cells x genes)")
+                n_genes_needed = adata.shape[1]
+                n_cells_needed = adata.shape[0]
+            elif adata.shape[0] == mtx_cols and adata.shape[1] == mtx_rows:
+                # scanpy 已经转置：shape = (MTX列数, MTX行数) = (cells, genes)
+                print(f"[UPLOAD] scanpy.read_mtx() returned (cells, genes) format, no transpose needed")
+                n_genes_needed = adata.shape[1]
+                n_cells_needed = adata.shape[0]
+            else:
+                # 无法确定，尝试根据 features/barcodes 行数判断
+                print(f"[UPLOAD] Cannot determine format from MTX header, will infer from features/barcodes")
+                n_genes_needed = None
+                n_cells_needed = None
+            
+            # 3. 读取 features.tsv 第一列（只有一列）
+            features_df = pd.read_csv(features_path, sep='\t', header=None)
+            n_features = len(features_df)
+            
+            # 4. 读取 barcodes.tsv 第一列（只有一列）
+            barcodes_df = pd.read_csv(barcodes_path, sep='\t', header=None)
+            n_barcodes = len(barcodes_df)
+            
+            print(f"[UPLOAD] Features file: {n_features} rows")
+            print(f"[UPLOAD] Barcodes file: {n_barcodes} rows")
+            
+            # 5. 根据 features 和 barcodes 的行数判断格式
+            if n_genes_needed is None:
+                # 需要推断格式
+                if n_features == adata.shape[0] and n_barcodes == adata.shape[1]:
+                    # shape = (genes, cells)，需要转置
+                    # 这可能是 Seurat 格式
+                    print(f"[UPLOAD] Inferred format: (genes, cells), transposing...")
+                    print(f"[UPLOAD] WARNING: Detected Seurat format (genes x cells). Lotus is optimized for scanpy format (cells x genes).")
+                    format_warning = "Detected Seurat format (genes x cells). Data has been automatically transposed to scanpy format (cells x genes)."
+                    adata = adata.T
+                    n_genes_needed = adata.shape[1]
+                    n_cells_needed = adata.shape[0]
+                elif n_features == adata.shape[1] and n_barcodes == adata.shape[0]:
+                    # shape = (cells, genes)，不需要转置
+                    print(f"[UPLOAD] Inferred format: (cells, genes), no transpose needed")
+                    n_genes_needed = adata.shape[1]
+                    n_cells_needed = adata.shape[0]
+                else:
+                    return jsonify({
+                        'error': f'Cannot determine matrix format. Features has {n_features} rows, barcodes has {n_barcodes} rows, but matrix shape is {adata.shape}. Please check your data files.'
+                    }), 400
+            
+            print(f"[UPLOAD] Final format: {adata.shape} (cells x genes)")
+            print(f"[UPLOAD] Need {n_genes_needed} genes, {n_cells_needed} cells")
+            
+            # 6. 检查 features.tsv 行数
+            if n_features < n_genes_needed:
+                return jsonify({
+                    'error': f'Data mismatch: features.tsv has {n_features} rows, but matrix has {n_genes_needed} genes. Please check your data files.'
+                }), 400
+            elif n_features > n_genes_needed:
+                # 矩阵可能是过滤后的，只取前 n_genes_needed 行
+                print(f"[UPLOAD] Features has {n_features} rows, matrix has {n_genes_needed} genes. Using first {n_genes_needed} rows.")
+                features_df = features_df.iloc[:n_genes_needed].reset_index(drop=True)
+                n_features = len(features_df)
+            
+            # 读取第一列
+            gene_names = features_df.iloc[:, 0].values.astype(str)
+            
+            # 检查内容是否为空/无效，如果是则按顺序补齐（0, 1, 2, ...）
+            # 检查：全部为空、全部是NaN、全部是空字符串、或全部相同（可能是占位符）
+            is_empty = len(gene_names) == 0
+            is_all_na = all(pd.isna(gene_names)) if len(gene_names) > 0 else True
+            is_all_empty_str = all(gene_names == '') if len(gene_names) > 0 else True
+            is_all_same = len(set(gene_names)) == 1 if len(gene_names) > 0 else True
+            
+            if is_empty or is_all_na or is_all_empty_str or (is_all_same and len(gene_names) > 0 and (pd.isna(gene_names[0]) or gene_names[0] == '')):
+                print(f"[UPLOAD] Features file appears empty or invalid, using sequential labels (0-{n_genes_needed-1})")
+                gene_names = np.array([str(i) for i in range(n_genes_needed)])
+            else:
+                # 检查是否有空值，如果有则用索引补齐
+                mask = pd.isna(gene_names) | (gene_names == '')
+                if mask.any():
+                    print(f"[UPLOAD] Found {mask.sum()} empty values in features.tsv, filling with sequential indices")
+                    gene_names = np.where(mask, [str(i) for i in range(n_genes_needed)], gene_names)
+            
+            adata.var_names = gene_names
+            
+            # 7. 检查 barcodes.tsv 行数
+            if n_barcodes < n_cells_needed:
+                return jsonify({
+                    'error': f'Data mismatch: barcodes.tsv has {n_barcodes} rows, but matrix has {n_cells_needed} cells. Please check your data files.'
+                }), 400
+            elif n_barcodes > n_cells_needed:
+                # 矩阵可能是过滤后的，只取前 n_cells_needed 行
+                print(f"[UPLOAD] Barcodes has {n_barcodes} rows, matrix has {n_cells_needed} cells. Using first {n_cells_needed} rows.")
+                barcodes_df = barcodes_df.iloc[:n_cells_needed].reset_index(drop=True)
+                n_barcodes = len(barcodes_df)
+            
+            # 读取第一列
+            cell_names = barcodes_df.iloc[:, 0].values.astype(str)
+            
+            # 检查内容是否为空/无效，如果是则按顺序补齐（0, 1, 2, ...）
+            # 检查：全部为空、全部是NaN、全部是空字符串、或全部相同（可能是占位符）
+            is_empty = len(cell_names) == 0
+            is_all_na = all(pd.isna(cell_names)) if len(cell_names) > 0 else True
+            is_all_empty_str = all(cell_names == '') if len(cell_names) > 0 else True
+            is_all_same = len(set(cell_names)) == 1 if len(cell_names) > 0 else True
+            
+            if is_empty or is_all_na or is_all_empty_str or (is_all_same and len(cell_names) > 0 and (pd.isna(cell_names[0]) or cell_names[0] == '')):
+                print(f"[UPLOAD] Barcodes file appears empty or invalid, using sequential labels (0-{n_cells_needed-1})")
+                cell_names = np.array([str(i) for i in range(n_cells_needed)])
+            else:
+                # 检查是否有空值，如果有则用索引补齐
+                mask = pd.isna(cell_names) | (cell_names == '')
+                if mask.any():
+                    print(f"[UPLOAD] Found {mask.sum()} empty values in barcodes.tsv, filling with sequential indices")
+                    cell_names = np.where(mask, [str(i) for i in range(n_cells_needed)], cell_names)
+            
+            adata.obs_names = cell_names
+            
+            # 4. 确保基因名唯一（scanpy要求）
+            if len(adata.var_names) != len(set(adata.var_names)):
+                print(f"[UPLOAD] Making gene names unique...")
+                seen = {}
+                unique_names = []
+                for name in adata.var_names:
+                    if name in seen:
+                        seen[name] += 1
+                        unique_names.append(f"{name}-{seen[name]}")
+                    else:
+                        seen[name] = 0
+                        unique_names.append(name)
+                adata.var_names = unique_names
+            
+            print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
+            
+            # Save to session
+            save_adata(adata, session_id)
+            
+            result = {
+                'success': True,
+                'session_id': session_id,
+                'shape': list(adata.shape),
+                'obs_columns': list(adata.obs.columns),
+                'obsm_keys': list(adata.obsm.keys()),
+                'message': f'Loaded {adata.shape[0]} cells and {adata.shape[1]} genes from MTX files'
+            }
+            
+            # Add warning if Seurat format was detected
+            if format_warning:
+                result['warning'] = format_warning
+            
+            return jsonify(result)
+            
+        finally:
+            # Clean up temporary directory AFTER reading is complete
+            if temp_dir.exists():
+                try:
+                    shutil.rmtree(temp_dir)
+                    print(f"[UPLOAD] Cleaned up temp directory: {temp_dir}")
+                except Exception as e:
+                    print(f"[UPLOAD] Warning: Could not clean up temp directory: {e}")
+    
+    except Exception as e:
+        print(f"[UPLOAD] Error in handle_mtx_multi_upload: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to process MTX files: {str(e)}'}), 500
 
 # Default datasets directory - check multiple possible locations
 def get_default_datasets_dir():
@@ -40,12 +275,18 @@ def upload_data():
     try:
         print(f"[UPLOAD] Request received. Files: {list(request.files.keys())}, Form: {list(request.form.keys())}")
         
+        file_type = request.form.get('type', 'h5ad')
+        
+        # Handle multiple MTX files upload
+        if file_type == 'mtx_multi':
+            return handle_mtx_multi_upload()
+        
+        # Handle single file upload
         if 'file' not in request.files:
             print("[UPLOAD] Error: No file in request")
             return jsonify({'error': 'No file provided'}), 400
         
         file = request.files['file']
-        file_type = request.form.get('type', 'h5ad')
         
         print(f"[UPLOAD] File: {file.filename}, Type: {file_type}")
         
@@ -53,18 +294,18 @@ def upload_data():
             print("[UPLOAD] Error: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
         
-        # Validate file type (only h5ad, csv, tsv allowed)
+        # Validate file type (h5ad, csv, tsv allowed; mtx should use multi-file upload)
         allowed_types = ['h5ad', 'csv', 'tsv']
         if file_type not in allowed_types:
             print(f"[UPLOAD] Error: Unsupported file type: {file_type}")
-            return jsonify({'error': f'Unsupported file format. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
+            return jsonify({'error': f'Unsupported file format. Only .h5ad, .csv, and .tsv files are allowed. For MTX format, please use the separate file upload option.'}), 400
         
         # Additional validation: check file extension
         file_ext = Path(file.filename).suffix.lower()
         allowed_extensions = ['.h5ad', '.csv', '.tsv']
         if file_ext not in allowed_extensions:
             print(f"[UPLOAD] Error: Invalid file extension: {file_ext}")
-            return jsonify({'error': f'Invalid file extension. Only .h5ad, .csv, and .tsv files are allowed.'}), 400
+            return jsonify({'error': f'Invalid file extension. Only .h5ad, .csv, and .tsv files are allowed. For MTX format, please use the separate file upload option.'}), 400
         
         # Save uploaded file
         filepath = UPLOAD_FOLDER / file.filename
@@ -91,7 +332,7 @@ def upload_data():
                 adata = AnnData(df.T)  # Transpose: genes as vars, cells as obs
                 print(f"[UPLOAD] Loaded: {adata.shape[0]} cells, {adata.shape[1]} genes")
             else:
-                return jsonify({'error': f'Unsupported file type: {file_type}. Only .h5ad, .csv, and .tsv are supported.'}), 400
+                return jsonify({'error': f'Unsupported file type: {file_type}. For MTX format, please use the separate file upload option.'}), 400
         except Exception as e:
             import traceback
             error_msg = f'Failed to load file: {str(e)}'

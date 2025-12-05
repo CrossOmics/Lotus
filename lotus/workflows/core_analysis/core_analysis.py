@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-from lotus.methods.cplearn.external import cplearn
+from lotus.methods.cplearn import cplearn
 
 
 def core_analysis(
