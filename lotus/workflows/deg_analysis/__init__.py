@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,358 @@ from anndata import AnnData
 
 from lotus.methods.cplearn import cplearn
 from lotus.methods.scanpy import tl as sc_tl
+from lotus.methods.scanpy import get as sc_get
+
+
+def _marker_genes_scanpy(
+    adata: AnnData,
+    *,
+    cluster_key: str,
+    groups_a: set[int] | set[str] | None = None,
+    groups_b: set[int] | set[str] | None = None,
+    layer: str | None = None,
+    auto_pick_groups: bool = True,
+    scanpy_method: str | None = None,
+    use_raw: bool | None = None,
+) -> pd.DataFrame:
+    """
+    Identify marker genes using scanpy's rank_genes_groups method.
+    
+    Parameters:
+        adata: AnnData object
+        cluster_key: Key name for cluster labels in adata.obs
+        groups_a: Set of cluster labels for first group
+        groups_b: Set of cluster labels for second group
+        layer: Layer to use for analysis
+        auto_pick_groups: Auto-select first two non-negative clusters
+        scanpy_method: Statistical method (wilcoxon, t-test, logreg, etc.)
+        use_raw: Whether to use raw data
+        
+    Returns:
+        pd.DataFrame: Differential expression analysis results
+    """
+    # Get cluster labels
+    labels_raw = adata.obs[cluster_key]
+    
+    # Ensure labels are in Categorical format with string categories (scanpy standard)
+    # This is important for cplearn clusters which might be integers
+    # scanpy works best with string Categorical categories
+    def get_categories_safe(series: pd.Series) -> list:
+        """Safely get categories from a pandas Series."""
+        if isinstance(series.dtype, pd.CategoricalDtype):
+            try:
+                return list(series.cat.categories)
+            except (AttributeError, TypeError):
+                try:
+                    return list(series.dtype.categories)
+                except (AttributeError, TypeError):
+                    return sorted(set(series.unique()))
+        else:
+            return sorted(set(series.unique()))
+    
+    # Always ensure labels are in string Categorical format (scanpy standard)
+    # This is important for cplearn clusters which might be integers
+    # scanpy works best with string Categorical categories
+    original_dtype = labels_raw.dtype
+    print(f"[DEG] Original label dtype: {original_dtype}, Is Categorical: {isinstance(original_dtype, pd.CategoricalDtype)}")
+    
+    # Check if we need to convert to string Categorical
+    needs_conversion = False
+    if not isinstance(labels_raw.dtype, pd.CategoricalDtype):
+        # Not Categorical, needs conversion
+        needs_conversion = True
+        print(f"[DEG] Not Categorical, will convert to string Categorical")
+    else:
+        # Already Categorical, check if categories are all strings
+        categories = get_categories_safe(labels_raw)
+        print(f"[DEG] Already Categorical, categories: {categories}, types: {[type(c).__name__ for c in categories]}")
+        if not categories or not all(isinstance(c, str) for c in categories):
+            # Categories are not all strings (e.g., integers), need conversion
+            needs_conversion = True
+            print(f"[DEG] Categories are not all strings, will convert to string Categorical")
+        else:
+            print(f"[DEG] Categories are already strings, no conversion needed")
+    
+    if needs_conversion:
+        # Convert to string first, then to Categorical
+        labels_str = [str(x) for x in labels_raw]
+        # Create temporary Categorical column with string categories
+        temp_key = f"{cluster_key}_scanpy_temp"
+        adata.obs[temp_key] = pd.Categorical(labels_str)
+        cluster_key_to_use = temp_key
+        labels_raw = adata.obs[temp_key]
+        print(f"[DEG] Created temporary Categorical column '{temp_key}' with string categories: {list(labels_raw.cat.categories)}")
+    else:
+        cluster_key_to_use = cluster_key
+        print(f"[DEG] Using original cluster key '{cluster_key}' with categories: {list(labels_raw.cat.categories)}")
+    
+    # Convert labels to strings (scanpy uses string labels)
+    labels_str = [str(x) for x in labels_raw]
+    
+    # Filter out invalid labels (e.g., -1, NaN, empty strings)
+    unique_labels = sorted(set([l for l in labels_str if l and str(l).strip() and str(l) != '-1' and str(l).lower() != 'nan']))
+    
+    # Auto-pick groups if needed
+    if auto_pick_groups and (groups_a is None or groups_b is None):
+        # Pick first two groups
+        if len(unique_labels) < 2:
+            raise ValueError(
+                f"At least two valid clusters are required for DEG analysis. "
+                f"Found {len(unique_labels)} valid cluster(s): {unique_labels}. "
+                f"Total unique labels (including invalid): {len(set(labels_str))}"
+            )
+        if len(unique_labels) == 0:
+            raise ValueError("No valid clusters found in cluster_key. Please check your clustering results.")
+        groups_a = {unique_labels[0]}
+        groups_b = {unique_labels[1]}
+    
+    if groups_a is None or groups_b is None:
+        raise ValueError("Must specify groups_a and groups_b, or set auto_pick_groups=True")
+    
+    # Convert to string sets for scanpy
+    groups_a_str = {str(g) for g in groups_a}
+    groups_b_str = {str(g) for g in groups_b}
+    
+    # Validate groups are not empty
+    if not groups_a_str:
+        raise ValueError("groups_a cannot be empty after conversion to strings")
+    if not groups_b_str:
+        raise ValueError("groups_b cannot be empty after conversion to strings")
+    
+    # Get the first group for comparison
+    group_a_str = list(groups_a_str)[0]
+    
+    # Get the actual Categorical values to ensure correct matching
+    # Categorical might have integer categories but string representations
+    # For pandas Series, safely access categories
+    def get_categories(series: pd.Series) -> list:
+        """Safely get categories from a pandas Series."""
+        if isinstance(series.dtype, pd.CategoricalDtype):
+            try:
+                # Try accessing through .cat accessor (standard way)
+                return list(series.cat.categories)
+            except (AttributeError, TypeError):
+                try:
+                    # Fallback to dtype.categories
+                    return list(series.dtype.categories)
+                except (AttributeError, TypeError):
+                    # Final fallback: use unique values
+                    return sorted(set(series.unique()))
+        else:
+            # Not categorical, just return unique values
+            return sorted(set(series.unique()))
+    
+    categorical_categories = get_categories(labels_raw)
+    categorical_str_values = [str(cat) for cat in categorical_categories]
+    
+    # Find the matching group in Categorical categories
+    # After conversion, categories should all be strings
+    # Use string type for group name to match scanpy's expectation
+    group_a = None
+    for cat_val in categorical_categories:
+        if str(cat_val) == group_a_str:
+            # Use string representation to match scanpy's expectation
+            group_a = str(cat_val)
+            break
+    
+    # If not found in categories, use the string value directly
+    if group_a is None:
+        # Check if group_a_str matches any category by string comparison
+        for cat_val in categorical_categories:
+            if str(cat_val) == group_a_str:
+                group_a = str(cat_val)
+                break
+        if group_a is None:
+            # Use the string value directly (should match after conversion)
+            group_a = group_a_str
+    
+    # Validate that group_a exists in the cluster labels
+    # Check both string and actual values
+    if group_a not in unique_labels and str(group_a) not in unique_labels:
+        # Try to find a match by comparing string representations
+        found_match = False
+        for ul in unique_labels:
+            if str(ul) == str(group_a) or str(ul) == group_a:
+                group_a = str(ul)
+                found_match = True
+                break
+        if not found_match:
+            # Try matching with Categorical categories
+            for cat_val in categorical_categories:
+                if str(cat_val) in unique_labels or str(cat_val) == group_a_str:
+                    group_a = str(cat_val)
+                    found_match = True
+                    break
+        if not found_match:
+            raise ValueError(
+                f"Group '{group_a}' (from '{group_a_str}') not found in cluster_key '{cluster_key}'. "
+                f"Available groups: {unique_labels}, Categorical categories: {categorical_categories}"
+            )
+    
+    print(f"[DEG] Selected group_a: '{group_a}' (from unique_labels: {unique_labels})")
+    
+    # Auto-detect layer or use_raw
+    # Important: When layer is specified, use_raw should be False
+    if layer is not None:
+        use_raw = False  # Cannot use both layer and use_raw
+        print(f"[DEG] Using layer '{layer}' for analysis (use_raw=False)")
+    elif use_raw is None:
+        # Check if raw data exists
+        use_raw = adata.raw is not None
+        if use_raw:
+            print(f"[DEG] Using raw data (adata.raw)")
+        else:
+            print(f"[DEG] Using adata.X (no layer or raw data)")
+    
+    # Debug: Print group information before calling rank_genes_groups
+    print(f"[DEG] Calling rank_genes_groups with group_a={group_a!r} (type: {type(group_a).__name__}), groupby='{cluster_key_to_use}'")
+    print(f"[DEG] Unique labels in data: {unique_labels}")
+    # Safely print categories information
+    print(f"[DEG] Label dtype: {labels_raw.dtype}, categories: {categorical_categories}")
+    print(f"[DEG] Category types: {[type(c).__name__ for c in categorical_categories]}")
+    # Check actual values in the Categorical
+    sample_values = labels_raw.head(5)
+    print(f"[DEG] Sample label values: {sample_values.tolist()}, types: {[type(v).__name__ for v in sample_values]}")
+    print(f"[DEG] Layer: {layer}, use_raw: {use_raw}")
+    
+    # Run scanpy's rank_genes_groups
+    # Compare group_a vs rest (which includes group_b)
+    key_added = "rank_genes_groups"
+    
+    # Try multiple strategies if first attempt fails
+    strategies = []
+    
+    # Strategy 1: Use layer if provided
+    if layer is not None:
+        strategies.append({
+            'layer': layer,
+            'use_raw': False,
+            'name': f'layer={layer}'
+        })
+    
+    # Strategy 2: Use raw data if available
+    if adata.raw is not None:
+        strategies.append({
+            'layer': None,
+            'use_raw': True,
+            'name': 'use_raw=True'
+        })
+    
+    # Strategy 3: Use adata.X
+    strategies.append({
+        'layer': None,
+        'use_raw': False,
+        'name': 'adata.X'
+    })
+    
+    last_error = None
+    for strategy_idx, strategy in enumerate(strategies):
+        try:
+            print(f"[DEG] Trying strategy {strategy_idx + 1}/{len(strategies)}: {strategy['name']}")
+            rank_genes_groups(
+                adata,
+                groupby=cluster_key_to_use,  # Use the compatible cluster key
+                groups=[group_a],  # Use the matched group name
+                reference="rest",
+                method=scanpy_method or "wilcoxon",
+                use_raw=strategy['use_raw'],
+                layer=strategy['layer'],
+                key_added=key_added,
+                pts=True,  # Include percentage of cells expressing gene
+            )
+            print(f"[DEG] Success with strategy: {strategy['name']}")
+            break  # Success, exit loop
+        except Exception as e:
+            error_msg = str(e)
+            last_error = e
+            print(f"[DEG] Strategy {strategy_idx + 1} failed: {error_msg}")
+            
+            # Check if this is a fatal error (not just data format issue)
+            if "index" in error_msg.lower() and ("out of bounds" in error_msg.lower() or "size 0" in error_msg.lower()):
+                # Try next strategy if available
+                if strategy_idx < len(strategies) - 1:
+                    print(f"[DEG] Index error, trying next strategy...")
+                    continue
+                else:
+                    # Last strategy failed, return empty result
+                    print(f"[DEG] All strategies failed. Last error: {error_msg}")
+                    if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+                        del adata.obs[cluster_key_to_use]
+                    return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+            else:
+                # Other errors, try next strategy
+                if strategy_idx < len(strategies) - 1:
+                    continue
+                else:
+                    # All strategies exhausted
+                    raise ValueError(f"Marker genes analysis failed with all strategies. Last error: {error_msg}") from e
+    else:
+        # All strategies failed
+        if last_error is not None:
+            error_msg = str(last_error)
+            if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+                del adata.obs[cluster_key_to_use]
+            if "index" in error_msg.lower() and ("out of bounds" in error_msg.lower() or "size 0" in error_msg.lower()):
+                print(f"[DEG] All strategies failed with index error: {error_msg}")
+                return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+            raise ValueError(f"Marker genes analysis failed: {error_msg}") from last_error
+    
+    # Check if results were actually stored
+    if key_added not in adata.uns:
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+        print(f"[DEG] Warning: rank_genes_groups did not store results in adata.uns['{key_added}']")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Check if results are empty before trying to extract
+    rank_result = adata.uns[key_added]
+    if 'names' not in rank_result:
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+        print(f"[DEG] Warning: rank_genes_groups results missing 'names' field")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Check if results are actually empty
+    names = rank_result['names']
+    # Check if names is empty
+    if hasattr(names, 'size') and names.size == 0:
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+        print(f"[DEG] Warning: rank_genes_groups results are empty (no genes found)")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    elif hasattr(names, '__len__') and len(names) == 0:
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+        print(f"[DEG] Warning: rank_genes_groups results are empty (no genes found)")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Convert results to DataFrame
+    try:
+        result = _convert_scanpy_rank_genes_groups_to_dataframe(
+            adata,
+            cluster_key=cluster_key,
+            groups_a=groups_a_str,
+            groups_b=groups_b_str,
+            key=key_added,
+        )
+    except Exception as e:
+        error_msg = str(e)
+        # If conversion fails, return empty DataFrame instead of raising error
+        print(f"[DEG] Warning: Failed to convert rank_genes_groups results to DataFrame: {error_msg}")
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    finally:
+        # Clean up temporary cluster key if created
+        if cluster_key_to_use != cluster_key and cluster_key_to_use in adata.obs:
+            del adata.obs[cluster_key_to_use]
+    
+    return result
 
 
 def pick_groups(labels: Sequence[int]) -> tuple[set[int], set[int]]:
@@ -26,6 +378,168 @@ def pick_groups(labels: Sequence[int]) -> tuple[set[int], set[int]]:
     return {unique[0]}, {unique[1]}
 
 
+def _convert_scanpy_rank_genes_groups_to_dataframe(
+    adata: AnnData,
+    cluster_key: str,
+    groups_a: set[int] | set[str],
+    groups_b: set[int] | set[str],
+    key: str = "rank_genes_groups",
+) -> pd.DataFrame:
+    """
+    Convert scanpy rank_genes_groups results to unified DataFrame format.
+    
+    This function extracts results from adata.uns[key] and converts them to
+    a DataFrame format compatible with cplearn.de_from_adata output.
+    
+    Parameters:
+        adata: AnnData object with rank_genes_groups results
+        cluster_key: Key name for cluster labels
+        groups_a: Set of group labels for first group
+        groups_b: Set of group labels for second group
+        key: Key in adata.uns containing rank_genes_groups results
+        
+    Returns:
+        pd.DataFrame: Unified format DataFrame with columns: gene, log2fc, pvalue, p_adj, etc.
+    """
+    if key not in adata.uns:
+        raise KeyError(f"rank_genes_groups results not found in adata.uns['{key}']")
+    
+    # Convert group sets to strings for scanpy (it uses string labels)
+    groups_a_str = {str(g) for g in groups_a}
+    
+    # Get unique groups (take first from each set)
+    group_a = list(groups_a_str)[0] if groups_a_str else None
+    
+    if group_a is None:
+        raise ValueError("groups_a must contain at least one element")
+    
+    # First, validate the results structure and find the correct group name
+    rank_result = adata.uns[key]
+    
+    # Check if results are empty before proceeding
+    if 'names' not in rank_result:
+        print(f"[DEG] Warning: rank_genes_groups results missing 'names' field")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    names = rank_result['names']
+    
+    # Check if names array is empty
+    if hasattr(names, 'size') and names.size == 0:
+        print(f"[DEG] Warning: rank_genes_groups results are empty (names.size == 0)")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    elif hasattr(names, '__len__') and len(names) == 0:
+        print(f"[DEG] Warning: rank_genes_groups results are empty (len(names) == 0)")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Check available groups in the results
+    available_groups = []
+    # scanpy stores results as structured arrays with group names as field names
+    if hasattr(names, 'dtype') and hasattr(names.dtype, 'names') and names.dtype.names:
+        available_groups = list(names.dtype.names)
+    elif isinstance(names, dict):
+        available_groups = list(names.keys())
+    
+    # If no groups found, results might be empty
+    if not available_groups:
+        print(f"[DEG] Warning: No groups found in rank_genes_groups results")
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Try to match group_a with available groups
+    group_to_use = group_a
+    if group_a not in available_groups:
+        # Try string matching
+        for ag in available_groups:
+            if str(ag) == str(group_a):
+                group_to_use = ag
+                break
+        # If still not found, use first available group
+        if group_to_use not in available_groups:
+            print(f"[DEG] Warning: Group '{group_a}' not found in available groups {available_groups}, using first available group")
+            group_to_use = available_groups[0]
+    
+    # Use scanpy's rank_genes_groups_df to get results - it handles all the format details
+    # This is the most reliable way to extract results
+    try:
+        df_result = sc_get.rank_genes_groups_df(
+            adata,
+            group=group_to_use,
+            key=key,
+        )
+    except Exception as e:
+        # If rank_genes_groups_df fails, return empty DataFrame
+        error_msg = str(e)
+        print(f"[DEG] Warning: Could not extract results for group '{group_to_use}' using rank_genes_groups_df: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        # Return empty DataFrame instead of raising error
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Check if result is empty or None
+    if df_result is None:
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Handle empty DataFrame
+    if len(df_result) == 0:
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Format the DataFrame to match expected format
+    return _format_scanpy_dataframe(df_result, group_a)
+
+
+def _format_scanpy_dataframe(df_result: pd.DataFrame, group_a: str) -> pd.DataFrame:
+    """
+    Format scanpy rank_genes_groups_df result to unified format.
+    
+    Parameters:
+        df_result: DataFrame from rank_genes_groups_df
+        group_a: Group name (for reference)
+        
+    Returns:
+        pd.DataFrame: Formatted DataFrame with expected columns
+    """
+    result_list = []
+    
+    # Check if DataFrame is empty
+    if df_result is None or len(df_result) == 0:
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    # Extract data from DataFrame
+    for idx, row in df_result.iterrows():
+        try:
+            # Get values from row, with defaults
+            gene = str(row.get('names', str(idx)))
+            log2fc = float(row.get('logfoldchanges', 0.0))
+            pvalue = float(row.get('pvals', 1.0))
+            p_adj = float(row.get('pvals_adj', 1.0))
+            score = float(row.get('scores', 0.0))
+            
+            result_list.append({
+                'gene': gene,
+                'log2fc': log2fc,
+                'pvalue': pvalue,
+                'p_adj': p_adj,
+                'z_score': score,
+                'mean_a': 0.0,  # Not directly available from rank_genes_groups
+                'mean_b': 0.0,  # Not directly available from rank_genes_groups
+                'pct_expr_a': 0.0,  # Could be extracted from pts if needed
+                'pct_expr_b': 0.0,
+            })
+        except (ValueError, TypeError, KeyError) as e:
+            # Skip rows with invalid data
+            continue
+    
+    if not result_list:
+        return pd.DataFrame(columns=['gene', 'log2fc', 'pvalue', 'p_adj', 'z_score', 'mean_a', 'mean_b', 'pct_expr_a', 'pct_expr_b'])
+    
+    result_df = pd.DataFrame(result_list)
+    
+    # Sort by p_adj and log2fc
+    if len(result_df) > 0:
+        result_df = result_df.sort_values(['p_adj', 'log2fc'], ascending=[True, False])
+    
+    return result_df
+
+
 def marker_genes(
     adata: AnnData,
     *,
@@ -36,6 +550,9 @@ def marker_genes(
     min_detect_pct: float = 0.0,
     min_cells_per_group: int = 5,
     auto_pick_groups: bool = True,
+    method: str = "cplearn",
+    scanpy_method: str | None = None,
+    use_raw: bool | None = None,
 ) -> pd.DataFrame:
     """
     Identify differentially expressed genes (marker genes) between groups.
@@ -46,9 +563,12 @@ def marker_genes(
         groups_a (set[int] | None): Set of cluster labels for first group. Default: None
         groups_b (set[int] | None): Set of cluster labels for second group. Default: None
         layer (str | None): Layer to use for analysis. Default: None (auto-detect)
-        min_detect_pct (float): Minimum detection percentage. Default: 0.0
-        min_cells_per_group (int): Minimum number of cells per group. Default: 5
+        min_detect_pct (float): Minimum detection percentage. Default: 0.0 (only used with cplearn method)
+        min_cells_per_group (int): Minimum number of cells per group. Default: 5 (only used with cplearn method)
         auto_pick_groups (bool): Auto-select first two non-negative clusters. Default: True
+        method (str): DEG analysis method. Options: "cplearn" (default), "scanpy"
+        scanpy_method (str | None): Statistical method for scanpy. Options: "wilcoxon" (default), "t-test", "logreg", etc.
+        use_raw (bool | None): Whether to use raw data (scanpy method only). Default: None (auto-detect)
     
     Returns:
         pd.DataFrame: Differential expression analysis results
@@ -64,6 +584,19 @@ def marker_genes(
                 "No cluster key found. Please specify cluster_key or run clustering first. "
                 "Compatible keys: 'cplearn', 'leiden', 'louvain'"
             )
+    
+    # Handle scanpy method
+    if method == "scanpy":
+        return _marker_genes_scanpy(
+            adata,
+            cluster_key=cluster_key,
+            groups_a=groups_a,
+            groups_b=groups_b,
+            layer=layer,
+            auto_pick_groups=auto_pick_groups,
+            scanpy_method=scanpy_method,
+            use_raw=use_raw,
+        )
     
     # Auto-detect layer if not specified
     if layer is None:

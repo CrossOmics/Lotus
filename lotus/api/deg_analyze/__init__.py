@@ -22,6 +22,8 @@ def run_marker_genes():
         data = request.json
         session_id = data.get('session_id', 'default')
         cluster_key = data.get('cluster_key', 'cplearn')
+        method = data.get('method', 'cplearn')  # 'cplearn' or 'scanpy'
+        scanpy_method = data.get('scanpy_method', 'wilcoxon')  # Statistical method for scanpy
         
         adata = load_adata(session_id)
         
@@ -48,6 +50,9 @@ def run_marker_genes():
         print(f"[DEG] Label counts: {label_counts}")
         print(f"[DEG] Data shape: {adata.shape}, n_obs={adata.n_obs}, n_vars={adata.n_vars}")
         print(f"[DEG] Available layers: {list(adata.layers.keys())}")
+        import pandas as pd
+        is_categorical = isinstance(labels.dtype, pd.CategoricalDtype)
+        print(f"[DEG] Label dtype: {labels.dtype}, Is Categorical: {is_categorical}")
         
         if len(unique_labels) < 2:
             error_msg = f'Need at least 2 clusters for DEG analysis. Found {len(unique_labels)} cluster(s): {unique_labels}'
@@ -94,7 +99,7 @@ def run_marker_genes():
                     save_adata(adata, session_id)
         
         # Run marker genes analysis
-        print(f"[DEG] Running marker genes analysis with cluster_key={cluster_key}")
+        print(f"[DEG] Running marker genes analysis with cluster_key={cluster_key}, method={method}")
         # Auto-detect layer (prefer raw_counts for DEG analysis, matching lotus_workflow.py)
         layer = None
         for layer_name in ["raw_counts", "raw", "counts"]:
@@ -104,12 +109,15 @@ def run_marker_genes():
                 break
         
         # Use exact same parameters as lotus_workflow.py
-        print(f"[DEG] Calling marker_genes with: cluster_key={cluster_key}, layer={layer}, min_detect_pct=0.0, min_cells_per_group=5")
+        print(f"[DEG] Calling marker_genes with: cluster_key={cluster_key}, layer={layer}, method={method}")
         
         # Additional validation before calling marker_genes
         labels_check = adata.obs[cluster_key]
         unique_check = sorted([l for l in labels_check.unique() if l != -1])
         print(f"[DEG] Pre-call validation: {len(unique_check)} unique labels, labels={unique_check}")
+        import pandas as pd
+        is_categorical_check = isinstance(labels_check.dtype, pd.CategoricalDtype)
+        print(f"[DEG] Label dtype: {labels_check.dtype}, Is Categorical: {is_categorical_check}")
         
         # Check layer data
         if layer:
@@ -129,21 +137,59 @@ def run_marker_genes():
                 print(f"[DEG] Could not count non-zero values: {e}")
         
         try:
-            result = marker_genes(
-                adata,
-                cluster_key=cluster_key,
-                layer=layer,  # Explicitly pass layer (should be "raw_counts" if available)
-                min_detect_pct=0.0,  # Match lotus_workflow.py exactly
-                min_cells_per_group=5,  # Match lotus_workflow.py exactly
-                auto_pick_groups=True  # Match lotus_workflow.py exactly
-            )
+            # Prepare parameters based on method
+            marker_params = {
+                'cluster_key': cluster_key,
+                'layer': layer,  # Explicitly pass layer (should be "raw_counts" if available)
+                'auto_pick_groups': True,  # Match lotus_workflow.py exactly
+                'method': method,
+            }
+            
+            # Add method-specific parameters
+            if method == 'cplearn':
+                marker_params.update({
+                    'min_detect_pct': 0.0,  # Match lotus_workflow.py exactly
+                    'min_cells_per_group': 5,  # Match lotus_workflow.py exactly
+                })
+            elif method == 'scanpy':
+                marker_params.update({
+                    'scanpy_method': scanpy_method,
+                    'use_raw': None,  # Auto-detect
+                    # Keep layer parameter - pipeline uses layer without issues
+                    # Fallback mechanism in _marker_genes_scanpy will handle any problems
+                })
+            else:
+                return jsonify({
+                    'error': f'Unknown method: {method}. Supported methods: cplearn, scanpy'
+                }), 400
+            
+            print(f"[DEG] Using method: {method}" + (f" (statistical method: {scanpy_method})" if method == 'scanpy' else ""))
+            print(f"[DEG] Marker params: {marker_params}")
+            
+            result = marker_genes(adata, **marker_params)
             print(f"[DEG] marker_genes returned: type={type(result)}, length={len(result) if hasattr(result, '__len__') else 'N/A'}")
+            
+            if result is None:
+                print(f"[DEG] ERROR: marker_genes returned None!")
+                return jsonify({
+                    'error': 'Marker genes analysis returned no results. This may happen if groups are too similar or data format is incompatible.',
+                    'details': 'marker_genes function returned None'
+                }), 500
+            
             if hasattr(result, '__len__') and len(result) == 0:
-                print(f"[DEG] WARNING: Empty result! Checking why...")
+                print(f"[DEG] WARNING: Empty result DataFrame! Checking why...")
                 # Re-check labels after marker_genes call
                 labels_after = adata.obs[cluster_key]
                 unique_after = sorted([l for l in labels_after.unique() if l != -1])
                 print(f"[DEG] Labels after call: {len(unique_after)} unique labels, labels={unique_after}")
+                
+                # Return informative error
+                return jsonify({
+                    'error': 'No differentially expressed genes found. This may happen if: (1) clusters are too similar, (2) insufficient cells per cluster, (3) data needs preprocessing. Try: different statistical method, check data quality, or verify cluster labels.',
+                    'details': f'Found {len(unique_after)} clusters: {unique_after}',
+                    'stats': {'total': 0, 'significant_p05': 0, 'significant_p01': 0}
+                }), 200  # Return 200 but with error message
+            
         except Exception as e:
             error_msg = f'Marker genes analysis failed: {str(e)}'
             print(f"[DEG] ERROR in marker_genes call: {error_msg}")
@@ -169,6 +215,8 @@ def run_marker_genes():
             print(f"[DEG] Result type: {type(result)}, length: {len(result) if hasattr(result, '__len__') else 'N/A'}")
             if len(result) > 0:
                 print(f"[DEG] Result columns: {list(result.columns)}")
+                print(f"[DEG] First few rows:")
+                print(result.head(3))
                 
                 # Calculate statistics matching lotus_workflow.py
                 stats['total'] = len(result)
@@ -182,17 +230,23 @@ def run_marker_genes():
                 # Note: result columns are: gene, log2fc, z_score, pvalue, p_adj, mean_a, mean_b, pct_expr_a, pct_expr_b, ...
                 for idx, row in result.head(50).iterrows():
                     gene_name = row.get('gene', idx) if 'gene' in row else str(idx)
+                    
+                    # Handle different possible column names
+                    if gene_name is None or (isinstance(gene_name, float) and np.isnan(gene_name)):
+                        gene_name = str(idx)
+                    
                     log2fc_val = float(row.get('log2fc', 0)) if 'log2fc' in row else 0.0
                     pval_val = float(row.get('pvalue', 1)) if 'pvalue' in row else 1.0
                     pval_adj_val = float(row.get('p_adj', 1)) if 'p_adj' in row else 1.0
                     
                     markers_dict[str(idx)] = {
-                        'gene': gene_name,
+                        'gene': str(gene_name),
                         'log2fc': log2fc_val,
                         'pval': pval_val,
                         'pval_adj': pval_adj_val,
                     }
                 print(f"[DEG] Formatted {len(markers_dict)} markers for response")
+                print(f"[DEG] First marker example: {list(markers_dict.values())[0] if markers_dict else 'empty'}")
             else:
                 print("[DEG] WARNING: Result DataFrame is empty!")
         else:
@@ -217,4 +271,3 @@ def run_marker_genes():
             'error': error_msg,
             'details': str(e)
         }), 500
-

@@ -935,6 +935,19 @@ function setupPipelineButtons() {
         } else {
             console.error('[SETUP] btn-marker-genes not found');
         }
+        
+        // Setup DEG method selector
+        const degMethodSelect = document.getElementById('deg-method');
+        if (degMethodSelect) {
+            degMethodSelect.addEventListener('change', function() {
+                const scanpyMethodGroup = document.getElementById('deg-scanpy-method-group');
+                if (this.value === 'scanpy') {
+                    if (scanpyMethodGroup) scanpyMethodGroup.style.display = 'block';
+                } else {
+                    if (scanpyMethodGroup) scanpyMethodGroup.style.display = 'none';
+                }
+            });
+        }
     } catch (error) {
         console.error('[SETUP] Error setting up pipeline buttons:', error);
     }
@@ -2260,14 +2273,23 @@ async function runMarkerGenes() {
 
     try {
         const cluster_key = document.getElementById('deg-cluster-key').value || clusterInfo.cluster_key;
+        const method = document.getElementById('deg-method').value || 'cplearn';
+        const scanpy_method = document.getElementById('deg-scanpy-method').value || 'wilcoxon';
+
+        const requestBody = {
+            session_id: sessionId,
+            cluster_key: cluster_key,
+            method: method
+        };
+        
+        if (method === 'scanpy') {
+            requestBody.scanpy_method = scanpy_method;
+        }
 
         const response = await fetch(`${API_BASE}/marker-genes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: sessionId,
-                cluster_key: cluster_key
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();

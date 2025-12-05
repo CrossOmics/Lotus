@@ -866,6 +866,25 @@
                             <span style="font-weight: 600; font-size: 14px;">Marker Genes (DEG)</span>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Method</label>
+                            <select id="deg-method" class="form-input">
+                                <option value="cplearn">Lotus cplearn</option>
+                                <option value="scanpy">Scanpy (rank_genes_groups)</option>
+                            </select>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                Choose DEG analysis method: cplearn (Lotus native) or scanpy (wilcoxon, t-test, etc.)
+                            </div>
+                        </div>
+                        <div class="form-group" id="deg-scanpy-method-group" style="display: none;">
+                            <label class="form-label">Scanpy Statistical Method</label>
+                            <select id="deg-scanpy-method" class="form-input">
+                                <option value="wilcoxon">Wilcoxon (default)</option>
+                                <option value="t-test">t-test</option>
+                                <option value="logreg">Logistic Regression</option>
+                                <option value="t-test_overestim_var">t-test (overestimate variance)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Cluster Key</label>
                             <select id="deg-cluster-key" class="form-input">
                                 <option value="">No cluster keys available - Run clustering first</option>

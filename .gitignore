@@ -63,3 +63,11 @@ docstrings_to_paraphrase.jsonl
 
 #result
 /result_*/
+
+# commit message
+commit*.md
+COMMIT*.md
+GIT*.txt
+GIT*.md
+commit*.txt
+COMMIT*.txt
