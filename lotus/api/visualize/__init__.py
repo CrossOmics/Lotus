@@ -36,6 +36,60 @@ def run_visualization():
             use_rep = data.get('use_rep', None)
             method = data.get('method', 'umap')
             
+            # scanpy UMAP-specific parameters (FormData - need type conversion)
+            maxiter = data.get('maxiter', None)
+            if maxiter:
+                try:
+                    maxiter = int(maxiter)
+                except (ValueError, TypeError):
+                    maxiter = None
+            
+            alpha = data.get('alpha', None)
+            if alpha:
+                try:
+                    alpha = float(alpha)
+                except (ValueError, TypeError):
+                    alpha = None
+            
+            gamma = data.get('gamma', None)
+            if gamma:
+                try:
+                    gamma = float(gamma)
+                except (ValueError, TypeError):
+                    gamma = None
+            
+            negative_sample_rate = data.get('negative_sample_rate', None)
+            if negative_sample_rate:
+                try:
+                    negative_sample_rate = int(negative_sample_rate)
+                except (ValueError, TypeError):
+                    negative_sample_rate = None
+            
+            init_pos = data.get('init_pos', None) or None
+            random_state = data.get('random_state', None)
+            if random_state:
+                try:
+                    random_state = int(random_state)
+                except (ValueError, TypeError):
+                    random_state = None
+            
+            a = data.get('a', None)
+            if a:
+                try:
+                    a = float(a)
+                except (ValueError, TypeError):
+                    a = None
+            
+            b = data.get('b', None)
+            if b:
+                try:
+                    b = float(b)
+                except (ValueError, TypeError):
+                    b = None
+            
+            umap_method = data.get('umap_method', None) or None
+            neighbors_key = data.get('neighbors_key', None) or None
+            
             # Handle ground truth file if provided
             truth_json_content = None
             if 'truth_json_file' in request.files:
@@ -62,6 +116,18 @@ def run_visualization():
             method = data.get('method', 'umap')
             truth_key = data.get('truth_key', None)
             truth_json_content = None
+            
+            # scanpy UMAP-specific parameters (JSON - already typed)
+            maxiter = data.get('maxiter', None)
+            alpha = data.get('alpha', None)
+            gamma = data.get('gamma', None)
+            negative_sample_rate = data.get('negative_sample_rate', None)
+            init_pos = data.get('init_pos', None)
+            random_state = data.get('random_state', None)
+            a = data.get('a', None)
+            b = data.get('b', None)
+            umap_method = data.get('umap_method', None)
+            neighbors_key = data.get('neighbors_key', None)
         
         adata = load_adata(session_id)
         
@@ -109,12 +175,38 @@ def run_visualization():
                         if sc is None:
                             return jsonify({'error': 'scanpy not available for UMAP computation'}), 500
                         print(f"[VISUALIZE] Using scanpy UMAP (Lotus not available)")
-                        sc.tl.umap(
-                            adata,
-                            n_components=n_components,
-                            min_dist=min_dist,
-                            spread=spread
-                        )
+                        
+                        # Prepare UMAP parameters
+                        umap_params = {
+                            'n_components': n_components,
+                            'min_dist': min_dist,
+                            'spread': spread,
+                        }
+                        
+                        # Add optional scanpy UMAP parameters if provided
+                        if maxiter is not None:
+                            umap_params['maxiter'] = maxiter
+                        if alpha is not None:
+                            umap_params['alpha'] = alpha
+                        if gamma is not None:
+                            umap_params['gamma'] = gamma
+                        if negative_sample_rate is not None:
+                            umap_params['negative_sample_rate'] = negative_sample_rate
+                        if init_pos is not None:
+                            umap_params['init_pos'] = init_pos
+                        if random_state is not None:
+                            umap_params['random_state'] = random_state
+                        if a is not None:
+                            umap_params['a'] = a
+                        if b is not None:
+                            umap_params['b'] = b
+                        if umap_method is not None:
+                            umap_params['method'] = umap_method
+                        if neighbors_key is not None:
+                            umap_params['neighbors_key'] = neighbors_key
+                        
+                        print(f"[VISUALIZE] UMAP parameters: {umap_params}")
+                        sc.tl.umap(adata, **umap_params)
                 coords = adata.obsm['X_umap'].tolist()
             elif method == 'tsne':
                 # Compute t-SNE if not exists

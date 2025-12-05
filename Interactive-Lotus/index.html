@@ -599,6 +599,42 @@
                             <span class="pipeline-step-number">1</span>
                             <span style="font-weight: 600; font-size: 14px;">Preprocessing</span>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">Min Genes per Cell</label>
+                            <input type="number" id="min-genes" class="form-input" value="" placeholder="Auto" min="1">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Mitochondrial %</label>
+                            <input type="number" id="pct-mt-max" class="form-input" value="" placeholder="10" min="0" max="100" step="0.1">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Filter cells with pct_mt above this value (e.g., 10)</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Top Variable Genes</label>
+                            <input type="number" id="n-top-genes" class="form-input" value="" placeholder="1000" min="100" max="10000">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for default (1000) or specify custom value</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">PCA Components</label>
+                            <input type="number" id="n-pcs" class="form-input" value="" placeholder="Auto" min="5" max="100">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for automatic selection (recommended), or specify number of principal components</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Batch Key (for batch correction)</label>
+                            <input type="text" id="batch-key" class="form-input" value="" placeholder="batch">
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Key in obs for batch information</div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="use-combat" style="cursor: pointer;">
+                                <span class="form-label" style="margin: 0;">Use ComBat for Batch Correction</span>
+                            </label>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; margin-left: 24px;">Requires batch_key to be set</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Neighbors</label>
+                            <input type="number" id="n-neighbors" class="form-input" value="15" min="5" max="50">
+                        </div>
                         <details style="margin-bottom: 12px;">
                             <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters</summary>
                             <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
@@ -657,42 +693,6 @@
                                 </div>
                             </div>
                         </details>
-                        <div class="form-group">
-                            <label class="form-label">Min Genes per Cell</label>
-                            <input type="number" id="min-genes" class="form-input" value="" placeholder="Auto" min="1">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for no filtering</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Max Mitochondrial %</label>
-                            <input type="number" id="pct-mt-max" class="form-input" value="" placeholder="10" min="0" max="100" step="0.1">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Filter cells with pct_mt above this value (e.g., 10)</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Top Variable Genes</label>
-                            <input type="number" id="n-top-genes" class="form-input" value="" placeholder="1000" min="100" max="10000">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for default (1000) or specify custom value</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">PCA Components</label>
-                            <input type="number" id="n-pcs" class="form-input" value="" placeholder="Auto" min="5" max="100">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Leave empty for automatic selection (recommended), or specify number of principal components</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Batch Key (for batch correction)</label>
-                            <input type="text" id="batch-key" class="form-input" value="" placeholder="batch">
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Key in obs for batch information</div>
-                        </div>
-                        <div class="form-group">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" id="use-combat" style="cursor: pointer;">
-                                <span class="form-label" style="margin: 0;">Use ComBat for Batch Correction</span>
-                            </label>
-                            <div style="font-size: 11px; color: #64748b; margin-top: 4px; margin-left: 24px;">Requires batch_key to be set</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Neighbors</label>
-                            <input type="number" id="n-neighbors" class="form-input" value="15" min="5" max="50">
-                        </div>
                         <button id="btn-preprocess" class="btn" disabled>Run Preprocessing</button>
                     </div>
 
@@ -772,75 +772,81 @@
                                 <option value="X">X</option>
                             </select>
                         </div>
-                        <div id="cplearn-advanced-params" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">Stable Core Fraction</label>
-                                <input type="number" id="stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Stable Neighbors Number</label>
-                                <input type="number" id="stable-ng-num" class="form-input" value="8" min="4" max="20">
-                            </div>
-                            <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="fine-grained" style="cursor: pointer;">
-                                    <span class="form-label" style="margin: 0;">Fine Grained</span>
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="propagate" checked style="cursor: pointer;">
-                                    <span class="form-label" style="margin: 0;">Propagate Labels</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div id="scanpy-advanced-params" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">Random State</label>
-                                <input type="number" id="cluster-random-state" class="form-input" value="" placeholder="Auto (0)" min="0" step="1">
-                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                    Random seed for reproducibility. Leave empty for default (0).
+                        <details id="cplearn-advanced-params" style="display: none; margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Stable Core Fraction</label>
+                                    <input type="number" id="stable-core-frac" class="form-input" value="0.25" min="0.1" max="1.0" step="0.05">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Stable Neighbors Number</label>
+                                    <input type="number" id="stable-ng-num" class="form-input" value="8" min="4" max="20">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="fine-grained" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Fine Grained</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="propagate" checked style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Propagate Labels</span>
+                                    </label>
                                 </div>
                             </div>
-                            <div class="form-group" id="cluster-n-iterations-group" style="display: none;">
-                                <label class="form-label">N Iterations (Leiden only)</label>
-                                <input type="number" id="cluster-n-iterations" class="form-input" value="" placeholder="Auto (-1)" min="-1" step="1">
-                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                    Number of iterations. -1 means until convergence. Leave empty for default.
+                        </details>
+                        <details id="scanpy-advanced-params" style="display: none; margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Random State</label>
+                                    <input type="number" id="cluster-random-state" class="form-input" value="" placeholder="Auto (0)" min="0" step="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Random seed for reproducibility. Leave empty for default (0).
+                                    </div>
+                                </div>
+                                <div class="form-group" id="cluster-n-iterations-group" style="display: none;">
+                                    <label class="form-label">N Iterations (Leiden only)</label>
+                                    <input type="number" id="cluster-n-iterations" class="form-input" value="" placeholder="Auto (-1)" min="-1" step="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Number of iterations. -1 means until convergence. Leave empty for default.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Flavor</label>
+                                    <select id="cluster-flavor" class="form-input">
+                                        <option value="">Default</option>
+                                        <option value="leidenalg">leidenalg (Leiden default)</option>
+                                        <option value="igraph">igraph</option>
+                                        <option value="vtraag">vtraag (Louvain default)</option>
+                                        <option value="rapids">rapids (Louvain only)</option>
+                                    </select>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Algorithm implementation flavor. Default: leidenalg for Leiden, vtraag for Louvain.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cluster-use-weights" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Use Weights</span>
+                                    </label>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Use edge weights in clustering. Default: True for Leiden, False for Louvain.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cluster-directed" style="cursor: pointer;">
+                                        <span class="form-label" style="margin: 0;">Directed Graph</span>
+                                    </label>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Treat graph as directed. Default: None (auto-detect) for Leiden, True for Louvain.
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Flavor</label>
-                                <select id="cluster-flavor" class="form-input">
-                                    <option value="">Default</option>
-                                    <option value="leidenalg">leidenalg (Leiden default)</option>
-                                    <option value="igraph">igraph</option>
-                                    <option value="vtraag">vtraag (Louvain default)</option>
-                                    <option value="rapids">rapids (Louvain only)</option>
-                                </select>
-                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                    Algorithm implementation flavor. Default: leidenalg for Leiden, vtraag for Louvain.
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="cluster-use-weights" style="cursor: pointer;">
-                                    <span class="form-label" style="margin: 0;">Use Weights</span>
-                                </label>
-                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                    Use edge weights in clustering. Default: True for Leiden, False for Louvain.
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                    <input type="checkbox" id="cluster-directed" style="cursor: pointer;">
-                                    <span class="form-label" style="margin: 0;">Directed Graph</span>
-                                </label>
-                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                                    Treat graph as directed. Default: None (auto-detect) for Leiden, True for Louvain.
-                                </div>
-                            </div>
-                        </div>
+                        </details>
                         <button id="btn-cluster" class="btn" disabled>Run Clustering</button>
                     </div>
 
@@ -882,6 +888,82 @@
                             <label class="form-label">UMAP Spread</label>
                             <input type="number" id="umap-spread" class="form-input" value="1.0" min="0.5" max="3.0" step="0.1">
                         </div>
+                        <details id="umap-advanced-params" style="display: none; margin-bottom: 12px;">
+                            <summary style="cursor: pointer; color: #64748b; font-size: 12px;">Advanced Parameters</summary>
+                            <div style="margin-top: 8px; padding-left: 8px; border-left: 2px solid #e2e8f0;">
+                                <div class="form-group">
+                                    <label class="form-label">Random State</label>
+                                    <input type="number" id="umap-random-state" class="form-input" value="" placeholder="Auto (0)" min="0" step="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Random seed for reproducibility. Leave empty for default (0).
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Max Iterations</label>
+                                    <input type="number" id="umap-maxiter" class="form-input" value="" placeholder="Auto (None)" min="0" step="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Maximum number of iterations. Leave empty for default (None, until convergence).
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Alpha (Learning Rate)</label>
+                                    <input type="number" id="umap-alpha" class="form-input" value="" placeholder="Auto (1.0)" min="0.1" max="10.0" step="0.1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Initial learning rate. Leave empty for default (1.0).
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Gamma</label>
+                                    <input type="number" id="umap-gamma" class="form-input" value="" placeholder="Auto (1.0)" min="0.1" max="10.0" step="0.1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Weighting factor for repulsive forces. Leave empty for default (1.0).
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Negative Sample Rate</label>
+                                    <input type="number" id="umap-negative-sample-rate" class="form-input" value="" placeholder="Auto (5)" min="1" max="20" step="1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Number of negative samples per positive sample. Leave empty for default (5).
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Initialization</label>
+                                    <select id="umap-init-pos" class="form-input">
+                                        <option value="">Default (spectral)</option>
+                                        <option value="spectral">Spectral</option>
+                                        <option value="random">Random</option>
+                                    </select>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Initial embedding position. Default: spectral.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Method</label>
+                                    <select id="umap-method" class="form-input">
+                                        <option value="">Default (umap)</option>
+                                        <option value="umap">UMAP</option>
+                                        <option value="rapids">RAPIDS (GPU accelerated)</option>
+                                    </select>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        UMAP implementation method. Default: umap.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Parameter a</label>
+                                    <input type="number" id="umap-a" class="form-input" value="" placeholder="Auto (None)" min="0" step="0.1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Parameter a for UMAP cost function. Leave empty for auto-calculation.
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Parameter b</label>
+                                    <input type="number" id="umap-b" class="form-input" value="" placeholder="Auto (None)" min="0" step="0.1">
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                        Parameter b for UMAP cost function. Leave empty for auto-calculation.
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                         <div class="form-group" id="coremap-fast-view-group" style="display: none;">
                             <label class="form-label">
                                 <input type="checkbox" id="viz-fast-view" checked style="margin-right: 8px;">

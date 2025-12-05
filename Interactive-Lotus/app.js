@@ -32,7 +32,57 @@ function getVisualizationParams() {
     const n_components = document.getElementById('dimension').value === '3d' ? 3 : 2;
     const min_dist = parseFloat(document.getElementById('umap-min-dist').value) || 0.5;
     const spread = parseFloat(document.getElementById('umap-spread').value) || 1.0;
-    return { method, n_components, min_dist, spread };
+    
+    // scanpy UMAP-specific parameters (optional)
+    const params = { method, n_components, min_dist, spread };
+    
+    // Get optional UMAP parameters if provided
+    const random_state_elem = document.getElementById('umap-random-state');
+    if (random_state_elem?.value?.trim()) {
+        params.random_state = parseInt(random_state_elem.value);
+    }
+    
+    const maxiter_elem = document.getElementById('umap-maxiter');
+    if (maxiter_elem?.value?.trim()) {
+        params.maxiter = parseInt(maxiter_elem.value);
+    }
+    
+    const alpha_elem = document.getElementById('umap-alpha');
+    if (alpha_elem?.value?.trim()) {
+        params.alpha = parseFloat(alpha_elem.value);
+    }
+    
+    const gamma_elem = document.getElementById('umap-gamma');
+    if (gamma_elem?.value?.trim()) {
+        params.gamma = parseFloat(gamma_elem.value);
+    }
+    
+    const negative_sample_rate_elem = document.getElementById('umap-negative-sample-rate');
+    if (negative_sample_rate_elem?.value?.trim()) {
+        params.negative_sample_rate = parseInt(negative_sample_rate_elem.value);
+    }
+    
+    const init_pos_elem = document.getElementById('umap-init-pos');
+    if (init_pos_elem?.value?.trim()) {
+        params.init_pos = init_pos_elem.value;
+    }
+    
+    const umap_method_elem = document.getElementById('umap-method');
+    if (umap_method_elem?.value?.trim()) {
+        params.umap_method = umap_method_elem.value;
+    }
+    
+    const a_elem = document.getElementById('umap-a');
+    if (a_elem?.value?.trim()) {
+        params.a = parseFloat(a_elem.value);
+    }
+    
+    const b_elem = document.getElementById('umap-b');
+    if (b_elem?.value?.trim()) {
+        params.b = parseFloat(b_elem.value);
+    }
+    
+    return params;
 }
 
 // Function to update visualization method selector based on Core Analysis availability
@@ -81,6 +131,7 @@ function updateUMAPParamsVisibility() {
     const methodSelect = document.getElementById('viz-method');
     const umapParamsGroup = document.getElementById('umap-params-group');
     const umapSpreadGroup = document.getElementById('umap-spread-group');
+    const umapAdvancedParams = document.getElementById('umap-advanced-params');
     const vizClusterKeyGroup = document.getElementById('viz-cluster-key')?.closest('.form-group');
     const dimensionGroup = document.getElementById('dimension')?.closest('.form-group');
     const coremapGroundTruthGroup = document.getElementById('coremap-ground-truth-group');
@@ -92,6 +143,7 @@ function updateUMAPParamsVisibility() {
             // Hide UMAP parameters, Cluster Key, and Dimension for coremap
             if (umapParamsGroup) umapParamsGroup.style.display = 'none';
             if (umapSpreadGroup) umapSpreadGroup.style.display = 'none';
+            if (umapAdvancedParams) umapAdvancedParams.style.display = 'none';
             if (vizClusterKeyGroup) vizClusterKeyGroup.style.display = 'none';
             if (dimensionGroup) dimensionGroup.style.display = 'none';
             // Show Fast View and Ground Truth upload for coremap
@@ -103,10 +155,13 @@ function updateUMAPParamsVisibility() {
             if (method === 'umap') {
                 if (umapParamsGroup) umapParamsGroup.style.display = 'block';
                 if (umapSpreadGroup) umapSpreadGroup.style.display = 'block';
+                // Show advanced params for UMAP (details element - aligned with other advanced params style)
+                if (umapAdvancedParams) umapAdvancedParams.style.display = 'block';
             } else {
                 // Hide UMAP-specific parameters for other methods
                 if (umapParamsGroup) umapParamsGroup.style.display = 'none';
                 if (umapSpreadGroup) umapSpreadGroup.style.display = 'none';
+                if (umapAdvancedParams) umapAdvancedParams.style.display = 'none';
             }
             // Show Cluster Key and Dimension for all standard methods
             if (vizClusterKeyGroup) vizClusterKeyGroup.style.display = 'block';
@@ -815,12 +870,12 @@ function setupControls() {
         if (clusterMethodSelect) {
             const method = clusterMethodSelect.value;
             
-            // Update cplearn params visibility
+            // Update cplearn params visibility (details element)
             if (cplearnAdvancedParams) {
                 cplearnAdvancedParams.style.display = (method === 'cplearn') ? 'block' : 'none';
             }
             
-            // Update scanpy params visibility
+            // Update scanpy params visibility (details element)
             if (scanpyAdvancedParams) {
                 scanpyAdvancedParams.style.display = (method === 'leiden' || method === 'louvain') ? 'block' : 'none';
             }
@@ -842,35 +897,36 @@ function setupControls() {
     const umapMinDistInput = document.getElementById('umap-min-dist');
     const umapSpreadInput = document.getElementById('umap-spread');
     
+    // Function to clear cache when UMAP parameters change
+    const clearUMAPCache = () => {
+        const vizClusterKeySelect = document.getElementById('viz-cluster-key');
+        const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
+        if (selectedKey && selectedKey !== '') {
+            Object.keys(visualizationCache).forEach(key => {
+                if (key.startsWith(selectedKey + '_')) {
+                    delete visualizationCache[key];
+                }
+            });
+        }
+    };
+    
     if (umapMinDistInput) {
-        umapMinDistInput.addEventListener('change', () => {
-            // Clear cache for current cluster key when min_dist changes
-            const vizClusterKeySelect = document.getElementById('viz-cluster-key');
-            const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
-            if (selectedKey && selectedKey !== '') {
-                Object.keys(visualizationCache).forEach(key => {
-                    if (key.startsWith(selectedKey + '_')) {
-                        delete visualizationCache[key];
-                    }
-                });
-            }
-        });
+        umapMinDistInput.addEventListener('change', clearUMAPCache);
     }
     
     if (umapSpreadInput) {
-        umapSpreadInput.addEventListener('change', () => {
-            // Clear cache for current cluster key when spread changes
-            const vizClusterKeySelect = document.getElementById('viz-cluster-key');
-            const selectedKey = vizClusterKeySelect ? vizClusterKeySelect.value : null;
-            if (selectedKey && selectedKey !== '') {
-                Object.keys(visualizationCache).forEach(key => {
-                    if (key.startsWith(selectedKey + '_')) {
-                        delete visualizationCache[key];
-                    }
-                });
-            }
-        });
+        umapSpreadInput.addEventListener('change', clearUMAPCache);
     }
+    
+    // Clear cache when advanced UMAP parameters change
+    const advancedUMAPParams = ['umap-random-state', 'umap-maxiter', 'umap-alpha', 'umap-gamma', 
+                                'umap-negative-sample-rate', 'umap-init-pos', 'umap-method', 'umap-a', 'umap-b'];
+    advancedUMAPParams.forEach(paramId => {
+        const elem = document.getElementById(paramId);
+        if (elem) {
+            elem.addEventListener('change', clearUMAPCache);
+        }
+    });
     
     // Add event listener for Visualization cluster key selector
     const vizClusterKeySelect = document.getElementById('viz-cluster-key');
@@ -1687,6 +1743,17 @@ async function runVisualizationForClusterKey(cluster_key) {
         if (params.method === 'umap') {
             requestBody.min_dist = params.min_dist;
             requestBody.spread = params.spread;
+            
+            // Add optional scanpy UMAP parameters if provided
+            if (params.random_state !== undefined) requestBody.random_state = params.random_state;
+            if (params.maxiter !== undefined) requestBody.maxiter = params.maxiter;
+            if (params.alpha !== undefined) requestBody.alpha = params.alpha;
+            if (params.gamma !== undefined) requestBody.gamma = params.gamma;
+            if (params.negative_sample_rate !== undefined) requestBody.negative_sample_rate = params.negative_sample_rate;
+            if (params.init_pos !== undefined) requestBody.init_pos = params.init_pos;
+            if (params.umap_method !== undefined) requestBody.umap_method = params.umap_method;
+            if (params.a !== undefined) requestBody.a = params.a;
+            if (params.b !== undefined) requestBody.b = params.b;
         } else if (params.method === 'draw_graph') {
             requestBody.layout = 'fa'; // Default layout
         }
