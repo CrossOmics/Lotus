@@ -18,6 +18,12 @@ class _CplearnNamespace:
         self._module_getattr = module_getattr
         self.corespect = corespect
         self.coremap_embedding = coremap_embedding
+        # Add DEG analysis classes and functions
+        self.DEOptions = DEOptions
+        self.DEAnalyzer = DEAnalyzer
+        self.de_from_model = de_from_model
+        self.de_from_adata = de_from_adata
+        self.find_markers = find_markers
     
     def __getattr__(self, name: str) -> Any:
         # Delegate to module-level __getattr__ for dynamic imports
@@ -111,6 +117,18 @@ def _module_getattr(name: str) -> Any:
         return corespect
     if name == "coremap_embedding":
         return coremap_embedding
+    
+    # DEG analysis classes and functions
+    if name == "DEOptions":
+        return DEOptions
+    if name == "DEAnalyzer":
+        return DEAnalyzer
+    if name == "de_from_model":
+        return de_from_model
+    if name == "de_from_adata":
+        return de_from_adata
+    if name == "find_markers":
+        return find_markers
 
     module_name = _ATTR_SOURCES.get(name)
     if module_name is None:
