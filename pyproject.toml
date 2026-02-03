@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lotus"       # Package name
+version = "0.1.0"
+description = "A biological analysis engine for single-cell data"
+requires-python = ">=3.9"
+dependencies = [
+    "scanpy>=1.9.0",
+    "pandas",
+    "numpy",
+    "anndata",
+    "scipy",
+    "matplotlib",
+    "cplearn"
+]
+
+# Go to src and package the lotus folder
+[tool.hatch.build.targets.wheel]
+packages = ["src/lotus"]
