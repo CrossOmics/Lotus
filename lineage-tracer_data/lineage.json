@@ -1,0 +1,84 @@
+{
+  "bf4bcb2d-582b-4828-8fbb-d6e7d5fe5cc1": {
+    "lid": "bf4bcb2d-582b-4828-8fbb-d6e7d5fe5cc1",
+    "parents": [],
+    "created_at": "2026-02-12T01:09:00.666348",
+    "creation_op": "create",
+    "description": "synthetic 100x50",
+    "shape": [
+      100,
+      50
+    ],
+    "operations": [
+      {
+        "method": "preprocessing.normalize_total",
+        "args": {
+          "target_sum": 10000.0
+        },
+        "timestamp": "2026-02-12T01:09:00.669130"
+      },
+      {
+        "method": "preprocessing.log1p",
+        "args": {},
+        "timestamp": "2026-02-12T01:09:00.669903"
+      }
+    ]
+  },
+  "8d9de6fa-97c6-4d23-a7cf-f1e20352e5a9": {
+    "lid": "8d9de6fa-97c6-4d23-a7cf-f1e20352e5a9",
+    "parents": [
+      "bf4bcb2d-582b-4828-8fbb-d6e7d5fe5cc1"
+    ],
+    "created_at": "2026-02-12T01:09:00.673875",
+    "creation_op": "slice",
+    "description": "slice from bf4bcb2d",
+    "shape": [
+      35,
+      50
+    ],
+    "operations": []
+  },
+  "5f81d2bb-94d9-40ba-a612-13c2aad1c49e": {
+    "lid": "5f81d2bb-94d9-40ba-a612-13c2aad1c49e",
+    "parents": [
+      "bf4bcb2d-582b-4828-8fbb-d6e7d5fe5cc1"
+    ],
+    "created_at": "2026-02-12T01:09:00.675802",
+    "creation_op": "slice",
+    "description": "slice from bf4bcb2d",
+    "shape": [
+      34,
+      50
+    ],
+    "operations": []
+  },
+  "310c2070-3771-4c00-983b-7355356b0d97": {
+    "lid": "310c2070-3771-4c00-983b-7355356b0d97",
+    "parents": [
+      "8d9de6fa-97c6-4d23-a7cf-f1e20352e5a9"
+    ],
+    "created_at": "2026-02-12T01:09:00.677419",
+    "creation_op": "copy",
+    "description": "copy of 8d9de6fa",
+    "shape": [
+      35,
+      50
+    ],
+    "operations": []
+  },
+  "7e9d4516-e394-4058-b406-67a199431a7b": {
+    "lid": "7e9d4516-e394-4058-b406-67a199431a7b",
+    "parents": [
+      "8d9de6fa-97c6-4d23-a7cf-f1e20352e5a9",
+      "5f81d2bb-94d9-40ba-a612-13c2aad1c49e"
+    ],
+    "created_at": "2026-02-12T01:09:00.732795",
+    "creation_op": "concat",
+    "description": "concat of [8d9de6fa, 5f81d2bb]",
+    "shape": [
+      69,
+      50
+    ],
+    "operations": []
+  }
+}
