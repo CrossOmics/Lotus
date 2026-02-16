@@ -14,7 +14,10 @@ dependencies = [
     "anndata",
     "scipy",
     "matplotlib",
-    "cplearn"
+    "cplearn",
+    "pydantic>=2.0",
+    "loguru",
+    "networkx",
 ]
 
 # Go to src and package the lotus folder

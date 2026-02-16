@@ -1,0 +1,19 @@
+# Virtual environments
+.venv/
+
+# IDE
+.idea/
+
+# Lineage tracker data (generated at runtime)
+lineage-tracer_data/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
