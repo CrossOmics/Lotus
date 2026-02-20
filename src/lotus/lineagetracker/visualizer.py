@@ -47,7 +47,7 @@ def _topological_layout(G: nx.DiGraph) -> dict:
 def visualize(lineage_file: Path, output_file: Path):
     """Read the lineage JSON file, build a DAG, and save as PNG.
 
-    Each node box shows: short UUID, description, shape, and operation
+    Each node box shows: display name, shape, and operation
     history.  Directed arrows point from parent to child.
     """
     if not lineage_file.exists():
@@ -66,8 +66,13 @@ def visualize(lineage_file: Path, output_file: Path):
     labels: dict[str, str] = {}
 
     for lid, node in nodes.items():
-        short_lid = lid[:8]
-        parts = [short_lid, node.description, f"{node.shape[0]} x {node.shape[1]}"]
+        display_name = node.display_name or node.description or lid[:8]
+        parts = [display_name]
+
+        if node.description and node.description != display_name:
+            parts.append(node.description)
+
+        parts.append(f"{node.shape[0]} x {node.shape[1]}")
 
         if node.operations:
             op_names = [op.method.split(".")[-1] for op in node.operations]

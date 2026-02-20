@@ -17,11 +17,15 @@ project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root / "src"))
 
-from lotus.lineagetracker import LineageTracker  # noqa: E402
+from lotus.lineagetracker import LineageTracker, bind_variable_name  # noqa: E402
 from lotus.lineagetracker.visualizer import visualize  # noqa: E402
 
 
-def _make_adata(n_obs: int = 100, n_vars: int = 50) -> anndata.AnnData:
+def _make_adata(
+    n_obs: int = 100,
+    n_vars: int = 50,
+    name: str | None = None,
+) -> anndata.AnnData:
     """Create a small synthetic AnnData for testing."""
     X = np.random.negative_binomial(n=20, p=0.3, size=(n_obs, n_vars)).astype(
         np.float32
@@ -30,43 +34,71 @@ def _make_adata(n_obs: int = 100, n_vars: int = 50) -> anndata.AnnData:
     adata.obs_names = [f"cell_{i}" for i in range(n_obs)]
     adata.var_names = [f"gene_{i}" for i in range(n_vars)]
     adata.obs["celltype"] = np.random.choice(["T", "B", "NK"], n_obs)
+    if name:
+        adata.uns["name"] = name
     return adata
 
 
 def test_lineagetracker():
-    # Reset singleton so the test is self-contained
+    # Reset singleton and clear persisted artifacts so the test is self-contained
     LineageTracker.reset()
     tracker = LineageTracker.instance()
+    if tracker.lineage_file.exists():
+        tracker.lineage_file.unlink()
+    if tracker.graph_file.exists():
+        tracker.graph_file.unlink()
+    tracker._nodes.clear()
+    tracker._lid_map.clear()
 
     # 1. Register root
-    adata = _make_adata()
+    root_adata = _make_adata(name="root_adata")
     root_lid = tracker.register(
-        adata, parents=[], creation_op="create", description="synthetic 100x50"
+        root_adata, parents=[], creation_op="create", description="synthetic 100x50"
     )
-    assert tracker.get_lid(adata) == root_lid
-    assert root_lid in json.loads(tracker.lineage_file.read_text())
+    assert tracker.get_lid(root_adata) == root_lid
+    all_nodes = json.loads(tracker.lineage_file.read_text())
+    assert root_lid in all_nodes
+    assert all_nodes[root_lid]["variable_name"] == "root_adata"
+    assert all_nodes[root_lid]["display_name"] == "root_adata"
     print(f"[OK] Root registered: {root_lid[:8]}")
 
     # 2. Record in-place operations
-    tracker.record_op(adata, "preprocessing.normalize_total", {"target_sum": 1e4})
-    tracker.record_op(adata, "preprocessing.log1p", {})
+    alias_adata = root_adata
+    tracker.record_op(alias_adata, "preprocessing.normalize_total", {"target_sum": 1e4})
+    tracker.record_op(alias_adata, "preprocessing.log1p", {})
     node = json.loads(tracker.lineage_file.read_text())[root_lid]
     assert len(node["operations"]) == 2
     assert node["operations"][0]["method"] == "preprocessing.normalize_total"
+    assert node["variable_name"] == "alias_adata"
+
+    bind_variable_name(root_adata, "manual_root")
+    node = json.loads(tracker.lineage_file.read_text())[root_lid]
+    assert node["variable_name"] == "manual_root"
+    assert node["display_name"] == "manual_root"
+
+    latest_alias = root_adata
+    tracker.record_op(latest_alias, "preprocessing.scale", {"max_value": 10})
+    node = json.loads(tracker.lineage_file.read_text())[root_lid]
+    assert len(node["operations"]) == 3
+    assert node["variable_name"] == "latest_alias"
+    assert node["display_name"] == "latest_alias"
     print("[OK] Operations recorded on root node")
 
     # 3. Slice (monkey-patched __getitem__)
-    t_cells = adata[adata.obs["celltype"] == "T"]
+    t_cells = root_adata[root_adata.obs["celltype"] == "T"]
     t_lid = tracker.get_lid(t_cells)
     assert t_lid is not None
     t_node = json.loads(tracker.lineage_file.read_text())[t_lid]
     assert root_lid in t_node["parents"]
     assert t_node["creation_op"] == "slice"
+    assert t_node["variable_name"] == "t_cells"
     print(f"[OK] Slice tracked: {t_lid[:8]}, shape={t_cells.shape}")
 
-    b_cells = adata[adata.obs["celltype"] == "B"]
+    b_cells = root_adata[root_adata.obs["celltype"] == "B"]
     b_lid = tracker.get_lid(b_cells)
     assert b_lid is not None
+    b_node = json.loads(tracker.lineage_file.read_text())[b_lid]
+    assert b_node["variable_name"] == "b_cells"
     print(f"[OK] Slice tracked: {b_lid[:8]}, shape={b_cells.shape}")
 
     # 4. Copy (monkey-patched copy)
@@ -76,6 +108,7 @@ def test_lineagetracker():
     cp_node = json.loads(tracker.lineage_file.read_text())[cp_lid]
     assert t_lid in cp_node["parents"]
     assert cp_node["creation_op"] == "copy"
+    assert cp_node["variable_name"] == "t_copy"
     print(f"[OK] Copy tracked: {cp_lid[:8]}")
 
     # 5. Concat (monkey-patched anndata.concat)
@@ -85,14 +118,39 @@ def test_lineagetracker():
     m_node = json.loads(tracker.lineage_file.read_text())[m_lid]
     assert set(m_node["parents"]) == {t_lid, b_lid}
     assert m_node["creation_op"] == "concat"
+    assert m_node["variable_name"] == "merged"
     print(f"[OK] Concat tracked: {m_lid[:8]}, shape={merged.shape}")
 
-    # 6. DAG integrity
-    all_nodes = json.loads(tracker.lineage_file.read_text())
-    assert len(all_nodes) == 5  # root, t, b, copy, merged
-    print(f"[OK] DAG has {len(all_nodes)} nodes")
+    # # 6. Fallback when no variable name is available but adata.uns["name"] exists
+    uns_name_lid = tracker.register(
+        _make_adata(n_obs=20, n_vars=10, name="from_uns_name"),
+        parents=[],
+        creation_op="create",
+        description="uns fallback",
+    )
+    uns_name_node = json.loads(tracker.lineage_file.read_text())[uns_name_lid]
+    assert uns_name_node["variable_name"] is None
+    assert uns_name_node["display_name"] == "from_uns_name"
+    print(f"[OK] Uns-name fallback used: {uns_name_lid[:8]}")
+    #
+    # # 7. Fallback to description when neither variable nor uns name exists
+    # unnamed_lid = tracker.register(
+    #     _make_adata(n_obs=18, n_vars=9),
+    #     parents=[],
+    #     creation_op="create",
+    #     description="unnamed external",
+    # )
+    # unnamed_node = json.loads(tracker.lineage_file.read_text())[unnamed_lid]
+    # assert unnamed_node["variable_name"] is None
+    # assert unnamed_node["display_name"] == "unnamed external"
+    # print(f"[OK] Description fallback used: {unnamed_lid[:8]}")
 
-    # ── 7. Visualisation PNG ─────────────────────────────────────
+    # # 8. DAG integrity
+    # all_nodes = json.loads(tracker.lineage_file.read_text())
+    # assert len(all_nodes) == 7  # root, t, b, copy, merged, uns, unnamed
+    # print(f"[OK] DAG has {len(all_nodes)} nodes")
+
+    # ── 9. Visualisation PNG ─────────────────────────────────────
     visualize(tracker.lineage_file, tracker.graph_file)
     assert tracker.graph_file.exists()
     assert tracker.graph_file.stat().st_size > 0

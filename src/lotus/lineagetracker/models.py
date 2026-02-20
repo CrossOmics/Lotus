@@ -33,5 +33,7 @@ class LineageNode(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     creation_op: str | None = None  # "slice", "copy", "concat", or func name
     description: str = ""  # Human-readable origin summary
+    variable_name: str | None = None  # Latest observed Python variable name
+    display_name: str | None = None  # Preferred label for graph rendering
     shape: tuple[int, int] = (0, 0)  # (n_obs, n_vars) at registration time
     operations: list[OperationRecord] = []  # Chronological list of in-place ops

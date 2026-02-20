@@ -14,7 +14,7 @@ import atexit
 from .metadata import LoggingMeta, logged, track_module, tracked
 from .models import LineageNode, OperationRecord
 from .patch import install_patches
-from .tracker import LineageTracker
+from .tracker import LineageTracker, bind_variable_name
 from .visualizer import visualize
 
 # Apply AnnData monkey-patches on import
@@ -39,6 +39,7 @@ __all__ = [
     "LineageNode",
     "OperationRecord",
     "LineageTracker",
+    "bind_variable_name",
     "LoggingMeta",
     "logged",
     "tracked",

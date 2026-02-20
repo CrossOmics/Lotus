@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import ast
+import inspect
 import json
+import textwrap
 import uuid
 from pathlib import Path
 from typing import Any
@@ -11,6 +14,15 @@ import numpy as np
 from anndata import AnnData
 
 from .models import LineageNode, OperationRecord
+
+_INTERNAL_DIR = Path(__file__).resolve().parent
+
+
+def _is_internal_frame(filename: str) -> bool:
+    try:
+        return Path(filename).resolve().is_relative_to(_INTERNAL_DIR)
+    except (RuntimeError, OSError, ValueError):
+        return False
 
 
 # ── argument serialisation helpers ───────────────────────────────
@@ -148,6 +160,147 @@ class LineageTracker:
 
     # ── core operations ──────────────────────────────────────────
 
+    @staticmethod
+    def _normalize_name(value: Any) -> str | None:
+        if value is None:
+            return None
+        name = str(value).strip()
+        return name or None
+
+    @classmethod
+    def _resolve_display_name(
+        cls,
+        adata: AnnData,
+        description: str,
+        variable_name: str | None = None,
+    ) -> str:
+        """Name priority: variable name > ``adata.uns['name']`` > description."""
+        resolved_variable_name = cls._normalize_name(variable_name)
+        if resolved_variable_name:
+            return resolved_variable_name
+
+        uns_name = cls._normalize_name(adata.uns.get("name"))
+        if uns_name:
+            return uns_name
+
+        return description
+
+    @staticmethod
+    def _iter_target_names(target: ast.AST):
+        if isinstance(target, ast.Name):
+            yield target.id
+            return
+        if isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                yield from LineageTracker._iter_target_names(elt)
+
+    @staticmethod
+    def _parse_frame_tree(frameinfo: inspect.FrameInfo) -> ast.Module | None:
+        if not frameinfo.code_context:
+            return None
+        source = textwrap.dedent("".join(frameinfo.code_context)).strip()
+        if not source:
+            return None
+        try:
+            parsed = ast.parse(source)
+        except SyntaxError:
+            return None
+        if isinstance(parsed, ast.Module):
+            return parsed
+        return None
+
+    @classmethod
+    def _extract_name_from_call_args(
+        cls,
+        frameinfo: inspect.FrameInfo,
+        adata: AnnData,
+    ) -> str | None:
+        tree = cls._parse_frame_tree(frameinfo)
+        if tree is None:
+            return None
+
+        local_scope = frameinfo.frame.f_locals
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Name) and local_scope.get(arg.id) is adata:
+                    return arg.id
+            for kw in node.keywords:
+                if (
+                    kw.arg
+                    and isinstance(kw.value, ast.Name)
+                    and local_scope.get(kw.value.id) is adata
+                ):
+                    return kw.value.id
+        return None
+
+    @staticmethod
+    def _is_register_call(call: ast.Call) -> bool:
+        if isinstance(call.func, ast.Attribute):
+            return call.func.attr == "register"
+        if isinstance(call.func, ast.Name):
+            return call.func.id == "register"
+        return False
+
+    @classmethod
+    def _extract_name_from_assignment(
+        cls,
+        frameinfo: inspect.FrameInfo,
+    ) -> str | None:
+        tree = cls._parse_frame_tree(frameinfo)
+        if tree is None:
+            return None
+
+        for stmt in tree.body:
+            if isinstance(stmt, ast.Assign):
+                if isinstance(stmt.value, ast.Call) and cls._is_register_call(stmt.value):
+                    continue
+                for target in stmt.targets:
+                    for name in cls._iter_target_names(target):
+                        return name
+            if isinstance(stmt, ast.AnnAssign):
+                if isinstance(stmt.value, ast.Call) and cls._is_register_call(stmt.value):
+                    continue
+                for name in cls._iter_target_names(stmt.target):
+                    return name
+        return None
+
+    @staticmethod
+    def _extract_name_from_locals(
+        frameinfo: inspect.FrameInfo,
+        adata: AnnData,
+    ) -> str | None:
+        for name, value in frameinfo.frame.f_locals.items():
+            if name.startswith("_"):
+                continue
+            if value is adata:
+                return name
+        return None
+
+    def _detect_variable_name(self, adata: AnnData) -> str | None:
+        """Best-effort variable-name detection from non-lineagetracker frames."""
+        stack = inspect.stack(context=1)
+        try:
+            for frameinfo in stack[2:]:
+                if _is_internal_frame(frameinfo.filename):
+                    continue
+
+                from_call_args = self._extract_name_from_call_args(frameinfo, adata)
+                if from_call_args:
+                    return from_call_args
+
+                from_assignment = self._extract_name_from_assignment(frameinfo)
+                if from_assignment:
+                    return from_assignment
+
+                from_locals = self._extract_name_from_locals(frameinfo, adata)
+                if from_locals:
+                    return from_locals
+        finally:
+            del stack
+        return None
+
     def register(
         self,
         adata: AnnData,
@@ -155,6 +308,7 @@ class LineageTracker:
         parents: list[str],
         creation_op: str | None,
         description: str = "",
+        variable_name: str | None = None,
     ) -> str:
         """Create a new DAG node for *adata* and persist the change.
 
@@ -162,11 +316,20 @@ class LineageTracker:
         ``adata.uns['_lotus_lid']`` so it survives h5ad round-trips.
         """
         lid = str(uuid.uuid4())
+        resolved_variable_name = (
+            self._normalize_name(variable_name) or self._detect_variable_name(adata)
+        )
         node = LineageNode(
             lid=lid,
             parents=parents,
             creation_op=creation_op,
             description=description,
+            variable_name=resolved_variable_name,
+            display_name=self._resolve_display_name(
+                adata,
+                description,
+                resolved_variable_name,
+            ),
             shape=(adata.n_obs, adata.n_vars),
         )
         self._nodes[lid] = node
@@ -178,12 +341,48 @@ class LineageTracker:
         self.save()
         return lid
 
-    def record_op(self, adata: AnnData, method: str, args: dict):
+    def bind_variable_name(self, adata: AnnData, variable_name: str) -> str:
+        """Explicitly bind or replace the variable name associated with *adata*."""
+        normalized = self._normalize_name(variable_name)
+        if normalized is None:
+            raise ValueError("variable_name must be a non-empty string.")
+
+        lid = self.ensure_registered(adata)
+        node = self._nodes[lid]
+        node.variable_name = normalized
+        node.display_name = self._resolve_display_name(
+            adata, node.description, node.variable_name
+        )
+        self.save()
+        return lid
+
+    def record_op(
+        self,
+        adata: AnnData,
+        method: str,
+        args: dict,
+        *,
+        variable_name: str | None = None,
+    ):
         """Append an in-place operation record to *adata*'s node."""
         lid = self.ensure_registered(adata)
+        node = self._nodes[lid]
+        observed_variable_name = (
+            self._normalize_name(variable_name) or self._detect_variable_name(adata)
+        )
+        if observed_variable_name:
+            node.variable_name = observed_variable_name
+        node.display_name = self._resolve_display_name(
+            adata, node.description, node.variable_name
+        )
         record = OperationRecord(
             method=method,
             args=serialize_args(args, self),
         )
-        self._nodes[lid].operations.append(record)
+        node.operations.append(record)
         self.save()
+
+
+def bind_variable_name(adata: AnnData, variable_name: str) -> str:
+    """Explicit helper API for binding an AnnData variable name to its lineage ID."""
+    return LineageTracker.instance().bind_variable_name(adata, variable_name)
