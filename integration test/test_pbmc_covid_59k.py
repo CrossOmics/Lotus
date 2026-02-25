@@ -1,19 +1,16 @@
 """
 Integration test: lotus I/O + cplearn core_selection on covid PBMC 59k dataset.
 
-Workflow:
-  1. Load covid.h5ad via lotus.io
-  2. Ensure X_pca is present (run lightweight preprocessing if not)
-  3. Run core_selection(adata, 0.30)
-  4. Assert key outputs and invariants
+Uses precomputed covid_cplearn.h5ad (load + core_selection already run), so tests
+reuse layer and only re-run percentage selection (fast). Generate that file once with:
 
-Run locally (loads covid.h5ad from absolute path):
+    python "integration test/make_covid_cplearn.py"
+
+(Requires covid.h5ad in repo root; writes covid_cplearn.h5ad there.)
+
+Run tests:
     cd "integration test" && python test_pbmc_covid_59k.py
-    # or from repo root:
-    python "integration test/test_pbmc_covid_59k.py"
-
-Or with pytest:
-    pytest "integration test/test_pbmc_covid_59k.py" -v -s
+    # or: pytest "integration test/test_pbmc_covid_59k.py" -v -s
 """
 import sys
 import json
@@ -29,10 +26,10 @@ for p in (str(project_root), str(src_root)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-# Absolute path so "python test_pbmc_covid_59k.py" works from any cwd
-DATA_PATH = Path("/Users/liuzhenke/Desktop/Lotus/covid.h5ad")
+# Precomputed cplearn result (generate with make_covid_cplearn.py)
+DATA_PATH = Path("/Users/liuzhenke/Desktop/Lotus/covid_cplearn.h5ad")
 PERCENTAGE = 0.30
-CPLEARN_COLS = ("cplearn", "cplearn_is_core", "cplearn_layer", "cplearn_core_selection")
+CPLEARN_COLS = ("cplearn", "cplearn_cluster", "cplearn_is_core", "cplearn_layer", "cplearn_core_selection")
 
 
 def _ensure_pca(adata):
@@ -90,41 +87,25 @@ def test_io_and_core_selection():
     vals = set(adata.obs["cplearn_core_selection"].unique())
     assert vals <= {"core", "noncore"}, f"Unexpected categories: {vals}"
 
-    # 4c. Cell count matches target percentage (ceil rounding)
+    # 4c. Core uses whole layers only: n_core >= target (may overshoot), never split a layer
     n_core = (adata.obs["cplearn_core_selection"] == "core").sum()
     n_noncore = (adata.obs["cplearn_core_selection"] == "noncore").sum()
-    expected_core = int(np.ceil(PERCENTAGE * n_obs))
-    assert n_core == expected_core, (
-        f"Expected {expected_core} core cells, got {n_core}."
+    target_min = int(np.ceil(PERCENTAGE * n_obs))
+    assert n_core >= target_min, (
+        f"Core cells {n_core} should be >= target {target_min} (whole-layer policy)."
     )
     assert n_core + n_noncore == n_obs, "core + noncore must equal total cells."
 
-    # 4d. Actual fraction stored in uns
+    # 4d. Actual fraction stored in uns; layers_in_core lists whole layers included
     cs_meta = adata.uns["cplearn"]["core_selection"]
     assert cs_meta["n_core"] == int(n_core)
     assert cs_meta["n_noncore"] == int(n_noncore)
     assert abs(cs_meta["actual_fraction_core"] - n_core / n_obs) < 1e-9
-
-    # 4e. Layer -1 ordering: core is filled by layer order 0,1,2,..., then -1.
-    #     So no layer=-1 cell is core until all assigned layers are exhausted.
+    assert "layers_in_core" in cs_meta
     layer_vals = adata.obs["cplearn_layer"].values
     is_core_mask = adata.obs["cplearn_core_selection"].values == "core"
-    n_assigned = (layer_vals >= 0).sum()
-    n_unassigned = (layer_vals == -1).sum()
-    if n_assigned > 0:
-        if n_core <= n_assigned:
-            core_layers = layer_vals[is_core_mask]
-            assert np.all(core_layers >= 0), (
-                "Layer-ordering bug: core should only use assigned layers when "
-                "quota <= n_assigned."
-            )
-        else:
-            # We take all n_assigned + (n_core - n_assigned) from layer -1
-            n_core_from_unassigned = (layer_vals == -1) & is_core_mask
-            assert n_core_from_unassigned.sum() == (n_core - n_assigned), (
-                f"Expected (n_core - n_assigned) = {n_core - n_assigned} core cells "
-                f"from layer=-1, got {n_core_from_unassigned.sum()}."
-            )
+    # Every core cell must be in one of the declared whole layers
+    assert np.all(np.isin(layer_vals[is_core_mask], cs_meta["layers_in_core"]))
 
     # 4f. uns layers_indices_json is valid JSON and non-empty
     layers_json = adata.uns["cplearn"]["layers_indices_json"]
@@ -173,6 +154,24 @@ def test_io_roundtrip_after_core_selection():
         assert n_core == adata.uns["cplearn"]["core_selection"]["n_core"]
     finally:
         path.unlink(missing_ok=True)
+
+
+def test_core_percentages_10_30_50():
+    """Load covid_cplearn.h5ad, run core_selection at 10%, 30%, 50%; check n_core and layers."""
+    import lotus.io as io
+    from lotus.core_analysis import core_selection
+
+    if not DATA_PATH.exists():
+        pytest.skip(f"Dataset not found: {DATA_PATH}")
+
+    adata = io.standardize_load(DATA_PATH)
+    n_obs = adata.n_obs
+
+    for pct in (0.10, 0.30, 0.50):
+        adata_run, _ = core_selection(adata, pct)
+        n_core = (adata_run.obs["cplearn_core_selection"] == "core").sum()
+        target_min = int(np.ceil(pct * n_obs))
+        assert n_core >= target_min, f"percentage={pct}: need at least {target_min} core (whole layers), got {n_core}"
 
 
 if __name__ == "__main__":
