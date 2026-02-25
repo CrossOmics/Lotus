@@ -52,10 +52,11 @@ def _corespect_impl(
 
     # Write Results back to AnnData
 
-    # Write Cluster Labels
+    # Write Cluster Labels (CoreSpect classification: one label per cell)
     labels = model.labels_.astype(str)
     labels[labels == "-1"] = "Unassigned"
     adata.obs[key_added] = pd.Categorical(labels)
+    adata.obs[f"{key_added}_cluster"] = adata.obs[key_added]
 
     # Write Core Identity (Boolean mask) and per-cell layer index (0=core, 1, 2, ...)
     is_core = np.zeros(adata.n_obs, dtype=bool)
@@ -91,7 +92,9 @@ def _corespect_impl(
         },
         # Store as JSON string.
         # Downstream tools should use json.loads(adata.uns[key]['layers_indices_json'])
-        'layers_indices_json': layers_json_str
+        'layers_indices_json': layers_json_str,
+        # So we can skip CoreSpect when user only changes percentage (and did not filter cells)
+        'n_obs_at_corespect': int(adata.n_obs),
     }
 
     # Return Logic
@@ -110,12 +113,21 @@ def _run_corespect(
     if copy:
         adata = adata.copy()
 
-    has_labels = key_added in adata.obs
-    has_metadata = key_added in adata.uns
-
-    if has_labels and has_metadata and not force_recalc:
+    layer_key = f"{key_added}_layer"
+    n_obs = adata.n_obs
+    # Reuse only if layer column exists, length matches current cell count, and was computed on this n_obs (no filter since)
+    uns_c = adata.uns.get(key_added) or {}
+    stored_n = uns_c.get("n_obs_at_corespect")
+    has_layer = layer_key in adata.obs and len(adata.obs[layer_key]) == n_obs
+    can_skip = (
+        not force_recalc
+        and has_layer
+        and stored_n is not None
+        and int(stored_n) == n_obs
+    )
+    if can_skip:
         print(
-            f"Info: CoreSpect results found in `adata.obs['{key_added}']`. "
+            f"Info: CoreSpect layer found for this cell set (`adata.obs['{layer_key}']`, n_obs={n_obs}). "
             "Skipping recalculation. Use `force_recalc=True` to override."
         )
         return adata, None
@@ -168,7 +180,8 @@ def core_selection(
     adata : AnnData
         Same object (or copy) with new columns:
         - key_added + "_core_selection": "core" | "noncore" (categorical).
-        - key_added, key_added + "_is_core", key_added + "_layer" (from CoreSpect).
+        - key_added, key_added + "_cluster": CoreSpect cluster label per cell (e.g. "0", "1", "Unassigned").
+        - key_added + "_is_core", key_added + "_layer" (from CoreSpect).
     model : CorespectModel or None
         The fitted model (None if results were loaded from cache). Use for coremap().
 
@@ -202,27 +215,37 @@ def core_selection(
     target_n = int(np.ceil(percentage * n_obs))
     target_n = min(target_n, n_obs)
 
-    # Sort by layer (ascending): layer 0 first, then 1, 2, ...; treat -1 (unassigned) as outermost so it sorts last
+    # Take whole layers only: 0, then 1, then 2, ... then -1; stop when cumulative >= target_n (never split a layer)
     layer_values = adata.obs[layer_key].values
-    sort_key = np.where(layer_values == -1, np.iinfo(np.int32).max, layer_values)
-    order = np.argsort(sort_key)
-    core_positions = order[:target_n]
-    noncore_positions = order[target_n:]
+    # Layer order: 0, 1, 2, ... then -1 (unassigned last)
+    unique_layers = sorted(
+        np.unique(layer_values).tolist(),
+        key=lambda x: (x == -1, x),
+    )
+    layers_in_core = []
+    cum = 0
+    for L in unique_layers:
+        cnt = int((layer_values == L).sum())
+        layers_in_core.append(L)
+        cum += cnt
+        if cum >= target_n:
+            break
+    core_mask = np.isin(layer_values, layers_in_core)
+    n_core = int(core_mask.sum())
 
-    selection = np.full(n_obs, "noncore", dtype=object)
-    selection[core_positions] = "core"
-
+    selection = np.where(core_mask, "core", "noncore")
     selection_key = f"{key_added}_core_selection"
     adata.obs[selection_key] = pd.Categorical(selection, categories=["core", "noncore"])
 
-    actual_frac = target_n / n_obs
+    actual_frac = n_core / n_obs
     if key_added not in adata.uns:
         adata.uns[key_added] = {}
     adata.uns[key_added]["core_selection"] = {
         "percentage_requested": percentage,
         "actual_fraction_core": actual_frac,
-        "n_core": int(target_n),
-        "n_noncore": int(n_obs - target_n),
+        "n_core": n_core,
+        "n_noncore": int(n_obs - n_core),
+        "layers_in_core": [int(x) for x in layers_in_core],
     }
 
     return adata, model

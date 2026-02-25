@@ -1,0 +1,440 @@
+{
+  "926010cb-b072-4f1e-827b-d098de06d38b": {
+    "lid": "926010cb-b072-4f1e-827b-d098de06d38b",
+    "parents": [],
+    "created_at": "2026-02-24T22:52:05.580351",
+    "creation_op": "standardize_load",
+    "description": "standardize_load('/Users/liuzhenke/Desktop/Lotus/covid.h5ad')",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      23562
+    ],
+    "operations": [
+      {
+        "method": "normalize_total",
+        "args": {
+          "adata": "<AnnData:926010cb>",
+          "target_sum": 10000.0,
+          "exclude_highly_expressed": false,
+          "max_fraction": 0.05,
+          "key_added": null,
+          "layer": null,
+          "inplace": true,
+          "copy": false
+        },
+        "timestamp": "2026-02-24T22:52:05.582093"
+      },
+      {
+        "method": "log1p",
+        "args": {
+          "data": "<AnnData:926010cb>",
+          "base": null,
+          "copy": false,
+          "chunked": null,
+          "chunk_size": null,
+          "layer": null,
+          "obsm": null
+        },
+        "timestamp": "2026-02-24T22:52:06.010504"
+      },
+      {
+        "method": "highly_variable_genes",
+        "args": {
+          "adata": "<AnnData:926010cb>",
+          "layer": null,
+          "n_top_genes": 2000,
+          "min_disp": 0.5,
+          "max_disp": null,
+          "min_mean": 0.0125,
+          "max_mean": 3,
+          "span": 0.3,
+          "n_bins": 20,
+          "flavor": "seurat",
+          "subset": false,
+          "inplace": true,
+          "batch_key": null,
+          "check_values": true
+        },
+        "timestamp": "2026-02-24T22:52:06.513980"
+      }
+    ]
+  },
+  "ae4cc734-ea66-4583-94c8-d2a87cad188f": {
+    "lid": "ae4cc734-ea66-4583-94c8-d2a87cad188f",
+    "parents": [
+      "926010cb-b072-4f1e-827b-d098de06d38b"
+    ],
+    "created_at": "2026-02-24T22:52:08.986313",
+    "creation_op": "slice",
+    "description": "slice from 926010cb",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      23562
+    ],
+    "operations": []
+  },
+  "b2914758-ad01-4a69-97fd-bf0270005645": {
+    "lid": "b2914758-ad01-4a69-97fd-bf0270005645",
+    "parents": [
+      "926010cb-b072-4f1e-827b-d098de06d38b"
+    ],
+    "created_at": "2026-02-24T22:52:09.423046",
+    "creation_op": "slice",
+    "description": "slice from 926010cb",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      23562
+    ],
+    "operations": []
+  },
+  "60c99cce-5014-4f37-9cc2-748f120c6c64": {
+    "lid": "60c99cce-5014-4f37-9cc2-748f120c6c64",
+    "parents": [
+      "926010cb-b072-4f1e-827b-d098de06d38b"
+    ],
+    "created_at": "2026-02-24T22:52:09.769970",
+    "creation_op": "slice",
+    "description": "slice from 926010cb",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      2000
+    ],
+    "operations": []
+  },
+  "1e391ec6-b3d1-45ea-95fc-9b8622692096": {
+    "lid": "1e391ec6-b3d1-45ea-95fc-9b8622692096",
+    "parents": [
+      "60c99cce-5014-4f37-9cc2-748f120c6c64"
+    ],
+    "created_at": "2026-02-24T22:52:10.302919",
+    "creation_op": "copy",
+    "description": "copy of 60c99cce",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      2000
+    ],
+    "operations": [
+      {
+        "method": "scale",
+        "args": {
+          "data": "<AnnData:1e391ec6>",
+          "zero_center": true,
+          "max_value": 10,
+          "copy": false,
+          "layer": null,
+          "obsm": null,
+          "mask_obs": null
+        },
+        "timestamp": "2026-02-24T22:52:10.304403"
+      },
+      {
+        "method": "pca",
+        "args": {
+          "data": "<AnnData:1e391ec6>",
+          "n_comps": 50,
+          "layer": null,
+          "zero_center": true,
+          "svd_solver": null,
+          "chunked": false,
+          "chunk_size": null,
+          "random_state": 0,
+          "return_info": false,
+          "mask_var": null,
+          "use_highly_variable": null,
+          "dtype": "float32",
+          "key_added": null,
+          "copy": false
+        },
+        "timestamp": "2026-02-24T22:52:11.239768"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:1e391ec6>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T22:52:59.174525"
+      }
+    ]
+  },
+  "212e139d-63ed-4ff6-92c2-3b3c69da924a": {
+    "lid": "212e139d-63ed-4ff6-92c2-3b3c69da924a",
+    "parents": [
+      "1e391ec6-b3d1-45ea-95fc-9b8622692096"
+    ],
+    "created_at": "2026-02-24T22:53:00.258639",
+    "creation_op": "copy",
+    "description": "copy of 1e391ec6",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      59506,
+      2000
+    ],
+    "operations": [
+      {
+        "method": "write",
+        "args": {
+          "filename": "/Users/liuzhenke/Desktop/Lotus/covid_cplearn.h5ad",
+          "adata": "<AnnData:212e139d>",
+          "ext": null,
+          "compression": "gzip",
+          "compression_opts": null
+        },
+        "timestamp": "2026-02-24T22:56:32.072682"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T22:57:30.119190"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.2,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T22:57:35.299215"
+      },
+      {
+        "method": "write",
+        "args": {
+          "filename": "/var/folders/ym/dzlmp1xd0516ty7jrdg36g6c0000gn/T/tmpkhs88rkb.h5ad",
+          "adata": "<AnnData:212e139d>",
+          "ext": null,
+          "compression": "gzip",
+          "compression_opts": null
+        },
+        "timestamp": "2026-02-24T22:57:35.313277"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.1,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:26:08.063942"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:26:08.082972"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.5,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:26:08.096771"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.1,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:27:13.850296"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:27:13.889075"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.1,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:28:12.725548"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:28:12.762863"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.5,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:28:12.798411"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.1,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:32:42.488846"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:32:42.512795"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.5,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:32:42.530210"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:33:11.426239"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.2,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:33:16.990395"
+      },
+      {
+        "method": "write",
+        "args": {
+          "filename": "/var/folders/ym/dzlmp1xd0516ty7jrdg36g6c0000gn/T/tmpjsuybf37.h5ad",
+          "adata": "<AnnData:212e139d>",
+          "ext": null,
+          "compression": "gzip",
+          "compression_opts": null
+        },
+        "timestamp": "2026-02-24T23:33:17.028109"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.1,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:33:52.651438"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.3,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:33:52.688093"
+      },
+      {
+        "method": "core_selection",
+        "args": {
+          "adata": "<AnnData:212e139d>",
+          "percentage": 0.5,
+          "key_added": "cplearn",
+          "force_recalc": false,
+          "copy": false,
+          "kwargs": {}
+        },
+        "timestamp": "2026-02-24T23:33:52.724708"
+      }
+    ]
+  }
+}

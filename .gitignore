@@ -1,6 +1,7 @@
 # Data (local)
 covid_raw.h5ad
 covid.h5ad
+covid_cplearn.h5ad
 
 # Virtual environments
 .venv/

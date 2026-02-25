@@ -1,6 +1,6 @@
 
 from ..utils.densify import densify_knn
-from ..utils.stable_core_utils import choose_stopping_res
+from ..corespect.stable_core_utils import choose_stopping_res
 
 import leidenalg
 import numpy as np
