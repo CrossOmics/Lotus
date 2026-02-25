@@ -7,32 +7,22 @@ from .cplearn.corespect import CorespectModel
 from .cplearn.corespect.config import CoreSpectConfig
 
 
-def corespect(
+def _corespect_impl(
         adata: AnnData,
         *,
         use_rep: str = "X_pca",
         key_added: str = "cplearn",
-        # CoreSpect Config Parameters
         q: int = 20,
         r: int = 10,
         core_frac: float = 0.2,
         densify: bool = False,
         granularity: float = 0.5,
         resolution: float = 0.5,
-        # Run Parameters
         fine_grained: bool = True,
         propagate: bool = True,
         copy: bool = False,
 ) -> Optional[Tuple[AnnData, CorespectModel]]:
-    """
-    Cluster cells using the CoreSpect algorithm.
-
-    Writes to adata.obs:
-    - key_added: cluster labels (categorical).
-    - key_added + "_is_core": boolean, True for layer-0 (core) cells.
-    - key_added + "_layer": int, layer index per cell (0=core, 1, 2, ...).
-      Use this to sort or filter by layer, e.g. adata.obs.sort_values(key_added + "_layer").
-    """
+    """Run CoreSpect and write cluster labels, is_core, layer to adata.obs/uns. Internal only."""
 
     # Handle In-Place vs Copy Mode
     if copy:
@@ -108,20 +98,15 @@ def corespect(
     return adata, model
 
 
-def corespect_clustering(
+def _run_corespect(
         adata: AnnData,
         *,
-        key_added: str = "corespect",
+        key_added: str = "cplearn",
         force_recalc: bool = False,
         copy: bool = False,
         **kwargs,
 ) -> tuple[AnnData, CorespectModel | None]:
-    """
-    Execute CoreSpect clustering with a cache check.
-
-    This is a convenience wrapper around `corespect` that skips recomputation
-    when results already exist in `adata`.
-    """
+    """Run CoreSpect with cache check; used only by core_selection. Internal only."""
     if copy:
         adata = adata.copy()
 
@@ -138,11 +123,11 @@ def corespect_clustering(
     if force_recalc:
         print("Info: Force recalculation enabled. Re-running CoreSpect...")
 
-    adata, model = corespect(
+    adata, model = _corespect_impl(
         adata,
         key_added=key_added,
         copy=True,
-        **kwargs
+        **kwargs,
     )
     return adata, model
 
@@ -176,7 +161,7 @@ def core_selection(
     copy : bool
         If True, copy adata before modifying.
     **kwargs
-        Passed to corespect (e.g. use_rep, q, r, resolution).
+        Passed to CoreSpect (e.g. use_rep, q, r, resolution).
 
     Returns
     -------
@@ -198,7 +183,7 @@ def core_selection(
     if copy:
         adata = adata.copy()
 
-    adata, model = corespect_clustering(
+    adata, model = _run_corespect(
         adata,
         key_added=key_added,
         force_recalc=force_recalc,
@@ -209,8 +194,8 @@ def core_selection(
     layer_key = f"{key_added}_layer"
     if layer_key not in adata.obs:
         raise RuntimeError(
-            f"Expected '{layer_key}' in adata.obs after corespect_clustering. "
-            "Ensure key_added matches or re-run with force_recalc=True."
+            f"Expected '{layer_key}' in adata.obs. "
+            "Re-run with force_recalc=True or check key_added."
         )
 
     n_obs = adata.n_obs
