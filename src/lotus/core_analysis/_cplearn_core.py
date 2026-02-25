@@ -202,8 +202,10 @@ def core_selection(
     target_n = int(np.ceil(percentage * n_obs))
     target_n = min(target_n, n_obs)
 
-    # Sort by layer (ascending): layer 0 first, then 1, 2, ...
-    order = adata.obs[layer_key].values.argsort()
+    # Sort by layer (ascending): layer 0 first, then 1, 2, ...; treat -1 (unassigned) as outermost so it sorts last
+    layer_values = adata.obs[layer_key].values
+    sort_key = np.where(layer_values == -1, np.iinfo(np.int32).max, layer_values)
+    order = np.argsort(sort_key)
     core_positions = order[:target_n]
     noncore_positions = order[target_n:]
 
