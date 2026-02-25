@@ -1,10 +1,12 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 import numpy as np
 import pandas as pd
 import json
 from anndata import AnnData
 from .cplearn.corespect import CorespectModel
 from .cplearn.corespect.config import CoreSpectConfig
+from .cplearn.coremap import Coremap
+from .cplearn.coremap.vizualizer import visualize_coremap
 
 
 def corespect(
@@ -94,4 +96,91 @@ def corespect(
 
     # Return Logic
     return adata, model
+
+
+def corespect_clustering(
+        adata: AnnData,
+        *,
+        key_added: str = "corespect",
+        force_recalc: bool = False,
+        copy: bool = False,
+        **kwargs,
+) -> tuple[AnnData, CorespectModel | None]:
+    """
+    Execute CoreSpect clustering with a cache check.
+
+    This is a convenience wrapper around `corespect` that skips recomputation
+    when results already exist in `adata`.
+    """
+    if copy:
+        adata = adata.copy()
+
+    has_labels = key_added in adata.obs
+    has_metadata = key_added in adata.uns
+
+    if has_labels and has_metadata and not force_recalc:
+        print(
+            f"Info: CoreSpect results found in `adata.obs['{key_added}']`. "
+            "Skipping recalculation. Use `force_recalc=True` to override."
+        )
+        return adata, None
+
+    if force_recalc:
+        print("Info: Force recalculation enabled. Re-running CoreSpect...")
+
+    adata, model = corespect(
+        adata,
+        key_added=key_added,
+        copy=True,
+        **kwargs
+    )
+    return adata, model
+
+
+def coremap(
+        model: Any,
+        adata: AnnData | None = None,
+        *,
+        fast_view: bool = True,
+        anchor_finding_mode: str = "default",
+        anchor_reach: int | None = None,
+        labels: np.ndarray | None = None,
+        use_webgl: bool = True,
+        show: bool = True,
+        return_fig: bool = False,
+) -> Any | None:
+    """
+    Visualize CoreSpect results using the internal cplearn coremap implementation.
+    """
+    global_umap = None
+    if adata is not None:
+        if "X_umap" in adata.obsm:
+            global_umap = adata.obsm["X_umap"]
+        else:
+            print("Warning: 'X_umap' not found in adata.obsm. Coremap will compute its own UMAP layout.")
+
+    cmap = Coremap(
+        corespect_obj=model,
+        global_umap=global_umap,
+        fast_view=fast_view,
+        anchor_finding_mode=anchor_finding_mode,
+        anchor_reach=anchor_reach,
+    )
+
+    if labels is None:
+        labels = model.labels_
+
+    fig = visualize_coremap(
+        cmap,
+        labels=labels,
+        use_webgl=use_webgl,
+    )
+
+    if show:
+        fig.show()
+
+    if return_fig:
+        return fig
+
+    return None
 

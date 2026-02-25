@@ -4,8 +4,8 @@ import scanpy as sc
 from anndata import AnnData
 from scipy.sparse import csr_matrix, csc_matrix
 
-from ..core_analysis import corespect
-from cplearn.corespect import CorespectModel
+from ..core_analysis import corespect_clustering as _core_corespect_clustering
+from ..core_analysis.cplearn.corespect import CorespectModel
 
 
 def leiden(
@@ -158,32 +158,13 @@ def corespect_clustering(
     Returns:
         AnnData object or  AnnData object and CoreSpect model
     """
-    if copy:
-        adata = adata.copy()
-
-    # 1. Checks if CoreSpect analysis has already been performed.
-    has_labels = key_added in adata.obs
-    has_metadata = key_added in adata.uns
-
-    if has_labels and has_metadata and not force_recalc:
-        print(f"Info: CoreSpect results found in `adata.obs['{key_added}']`. "
-              "Skipping recalculation. Use `force_recalc=True` to override.")
-        return adata, None
-
-    # 2. If it has not been run before, or if it is forced to be recalculated ->
-    # the core algorithm will be called again
-    if force_recalc:
-        print(f"Info: Force recalculation enabled. Re-running CoreSpect...")
-
-    # invoke corespect wrapper to process the data
-    adata, model = corespect(
+    return _core_corespect_clustering(
         adata,
         key_added=key_added,
-        copy=True,
-        **kwargs
+        force_recalc=force_recalc,
+        copy=copy,
+        **kwargs,
     )
-
-    return adata, model
 
 
 def dendrogram(

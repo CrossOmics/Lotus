@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 import numpy as np
 from anndata import AnnData
-from cplearn.coremap import Coremap
-from cplearn.coremap.vizualizer import visualize_coremap
+from ..core_analysis.cplearn.coremap import Coremap
+from ..core_analysis.cplearn.coremap.vizualizer import visualize_coremap
 
 
 def coremap(
