@@ -1,4 +1,20 @@
+# Data (local)
 covid_raw.h5ad
 covid.h5ad
+
+# Virtual environments
+.venv/
+
+# IDE
+.idea/
+
+# Python
 __pycache__/
 *.pyc
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

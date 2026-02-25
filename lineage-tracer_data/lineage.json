@@ -1,0 +1,115 @@
+{
+  "d959e65a-ccda-43ee-b9c1-118e3250f046": {
+    "lid": "d959e65a-ccda-43ee-b9c1-118e3250f046",
+    "parents": [],
+    "created_at": "2026-02-20T11:46:51.373867",
+    "creation_op": "create",
+    "description": "synthetic 100x50",
+    "variable_name": "latest_alias",
+    "display_name": "latest_alias",
+    "shape": [
+      100,
+      50
+    ],
+    "operations": [
+      {
+        "method": "preprocessing.normalize_total",
+        "args": {
+          "target_sum": 10000.0
+        },
+        "timestamp": "2026-02-20T11:46:51.376378"
+      },
+      {
+        "method": "preprocessing.log1p",
+        "args": {},
+        "timestamp": "2026-02-20T11:46:51.378134"
+      },
+      {
+        "method": "preprocessing.scale",
+        "args": {
+          "max_value": 10
+        },
+        "timestamp": "2026-02-20T11:46:51.380945"
+      }
+    ]
+  },
+  "5b862a7a-f568-4175-ab94-ca26454cf2f3": {
+    "lid": "5b862a7a-f568-4175-ab94-ca26454cf2f3",
+    "parents": [
+      "d959e65a-ccda-43ee-b9c1-118e3250f046"
+    ],
+    "created_at": "2026-02-20T11:46:51.385085",
+    "creation_op": "slice",
+    "description": "slice from d959e65a",
+    "variable_name": "t_cells",
+    "display_name": "t_cells",
+    "shape": [
+      39,
+      50
+    ],
+    "operations": []
+  },
+  "f64dd646-8cb7-4c1e-b418-8c6abe53be15": {
+    "lid": "f64dd646-8cb7-4c1e-b418-8c6abe53be15",
+    "parents": [
+      "d959e65a-ccda-43ee-b9c1-118e3250f046"
+    ],
+    "created_at": "2026-02-20T11:46:51.388166",
+    "creation_op": "slice",
+    "description": "slice from d959e65a",
+    "variable_name": "b_cells",
+    "display_name": "b_cells",
+    "shape": [
+      34,
+      50
+    ],
+    "operations": []
+  },
+  "badaff6a-44d4-498e-b9b5-38e1c752909c": {
+    "lid": "badaff6a-44d4-498e-b9b5-38e1c752909c",
+    "parents": [
+      "5b862a7a-f568-4175-ab94-ca26454cf2f3"
+    ],
+    "created_at": "2026-02-20T11:46:51.391964",
+    "creation_op": "copy",
+    "description": "copy of 5b862a7a",
+    "variable_name": "t_copy",
+    "display_name": "t_copy",
+    "shape": [
+      39,
+      50
+    ],
+    "operations": []
+  },
+  "bb2c21d3-1dac-4e8d-8303-7582752c563e": {
+    "lid": "bb2c21d3-1dac-4e8d-8303-7582752c563e",
+    "parents": [
+      "5b862a7a-f568-4175-ab94-ca26454cf2f3",
+      "f64dd646-8cb7-4c1e-b418-8c6abe53be15"
+    ],
+    "created_at": "2026-02-20T11:46:51.398376",
+    "creation_op": "concat",
+    "description": "concat of [5b862a7a, f64dd646]",
+    "variable_name": "merged",
+    "display_name": "merged",
+    "shape": [
+      73,
+      50
+    ],
+    "operations": []
+  },
+  "3bba33fb-fd51-4c83-82ad-20e9296f744c": {
+    "lid": "3bba33fb-fd51-4c83-82ad-20e9296f744c",
+    "parents": [],
+    "created_at": "2026-02-20T11:46:51.402995",
+    "creation_op": "create",
+    "description": "uns fallback",
+    "variable_name": null,
+    "display_name": "from_uns_name",
+    "shape": [
+      20,
+      10
+    ],
+    "operations": []
+  }
+}
