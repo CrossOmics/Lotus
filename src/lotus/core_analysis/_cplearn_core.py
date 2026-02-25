@@ -1,12 +1,10 @@
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional
 import numpy as np
 import pandas as pd
 import json
 from anndata import AnnData
 from .cplearn.corespect import CorespectModel
 from .cplearn.corespect.config import CoreSpectConfig
-from .cplearn.coremap import Coremap
-from .cplearn.coremap.vizualizer import visualize_coremap
 
 
 def corespect(
@@ -28,6 +26,12 @@ def corespect(
 ) -> Optional[Tuple[AnnData, CorespectModel]]:
     """
     Cluster cells using the CoreSpect algorithm.
+
+    Writes to adata.obs:
+    - key_added: cluster labels (categorical).
+    - key_added + "_is_core": boolean, True for layer-0 (core) cells.
+    - key_added + "_layer": int, layer index per cell (0=core, 1, 2, ...).
+      Use this to sort or filter by layer, e.g. adata.obs.sort_values(key_added + "_layer").
     """
 
     # Handle In-Place vs Copy Mode
@@ -63,14 +67,20 @@ def corespect(
     labels[labels == "-1"] = "Unassigned"
     adata.obs[key_added] = pd.Categorical(labels)
 
-    # Write Core Identity (Boolean mask)
+    # Write Core Identity (Boolean mask) and per-cell layer index (0=core, 1, 2, ...)
     is_core = np.zeros(adata.n_obs, dtype=bool)
+    layer_index = np.full(adata.n_obs, -1, dtype=np.int32)  # -1 = not in any layer
     if model.layers_ and len(model.layers_) > 0:
         core_indices = model.layers_[0]
         is_core[core_indices] = True
+        for k, layer_cells in enumerate(model.layers_):
+            idx = np.asarray(layer_cells).ravel()
+            layer_index[idx] = k
 
     core_key = f"{key_added}_is_core"
     adata.obs[core_key] = is_core
+    layer_key = f"{key_added}_layer"
+    adata.obs[layer_key] = pd.Series(layer_index, index=adata.obs.index, dtype="int32")
 
     # Prepare Ragged Array for HDF5/h5py Compatibility
     # model.layers_ is a list of lists with different lengths (Ragged Array).
@@ -137,50 +147,96 @@ def corespect_clustering(
     return adata, model
 
 
-def coremap(
-        model: Any,
-        adata: AnnData | None = None,
+def core_selection(
+        adata: AnnData,
+        percentage: float,
         *,
-        fast_view: bool = True,
-        anchor_finding_mode: str = "default",
-        anchor_reach: int | None = None,
-        labels: np.ndarray | None = None,
-        use_webgl: bool = True,
-        show: bool = True,
-        return_fig: bool = False,
-) -> Any | None:
+        key_added: str = "cplearn",
+        force_recalc: bool = False,
+        copy: bool = False,
+        **kwargs,
+) -> Tuple[AnnData, Optional[CorespectModel]]:
     """
-    Visualize CoreSpect results using the internal cplearn coremap implementation.
-    """
-    global_umap = None
-    if adata is not None:
-        if "X_umap" in adata.obsm:
-            global_umap = adata.obsm["X_umap"]
-        else:
-            print("Warning: 'X_umap' not found in adata.obsm. Coremap will compute its own UMAP layout.")
+    Run cplearn (CoreSpect) and select a fraction of cells as "core" by layer order.
 
-    cmap = Coremap(
-        corespect_obj=model,
-        global_umap=global_umap,
-        fast_view=fast_view,
-        anchor_finding_mode=anchor_finding_mode,
-        anchor_reach=anchor_reach,
+    This is the main user-facing API: you choose a percentage (e.g. 0.3 = 30%),
+    and the function runs CoreSpect, then labels the top percentage of cells
+    (when sorted by layer: layer 0 first, then 1, 2, ...) as "core", the rest as "noncore".
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix (must have representation in adata.obsm, e.g. "X_pca").
+    percentage : float
+        Fraction of cells to label as "core", in (0, 1]. E.g. 0.3 = 30% core, 70% noncore.
+    key_added : str
+        Prefix for new columns in adata.obs and adata.uns.
+    force_recalc : bool
+        If True, re-run CoreSpect even when results exist.
+    copy : bool
+        If True, copy adata before modifying.
+    **kwargs
+        Passed to corespect (e.g. use_rep, q, r, resolution).
+
+    Returns
+    -------
+    adata : AnnData
+        Same object (or copy) with new columns:
+        - key_added + "_core_selection": "core" | "noncore" (categorical).
+        - key_added, key_added + "_is_core", key_added + "_layer" (from CoreSpect).
+    model : CorespectModel or None
+        The fitted model (None if results were loaded from cache). Use for coremap().
+
+    Notes
+    -----
+    Core cells:  adata[adata.obs[key_added + "_core_selection"] == "core"]
+    Non-core:    adata[adata.obs[key_added + "_core_selection"] == "noncore"]
+    """
+    if not (0.0 < percentage <= 1.0):
+        raise ValueError("percentage must be in (0, 1].")
+
+    if copy:
+        adata = adata.copy()
+
+    adata, model = corespect_clustering(
+        adata,
+        key_added=key_added,
+        force_recalc=force_recalc,
+        copy=False,
+        **kwargs,
     )
 
-    if labels is None:
-        labels = model.labels_
+    layer_key = f"{key_added}_layer"
+    if layer_key not in adata.obs:
+        raise RuntimeError(
+            f"Expected '{layer_key}' in adata.obs after corespect_clustering. "
+            "Ensure key_added matches or re-run with force_recalc=True."
+        )
 
-    fig = visualize_coremap(
-        cmap,
-        labels=labels,
-        use_webgl=use_webgl,
-    )
+    n_obs = adata.n_obs
+    target_n = int(np.ceil(percentage * n_obs))
+    target_n = min(target_n, n_obs)
 
-    if show:
-        fig.show()
+    # Sort by layer (ascending): layer 0 first, then 1, 2, ...
+    order = adata.obs[layer_key].values.argsort()
+    core_positions = order[:target_n]
+    noncore_positions = order[target_n:]
 
-    if return_fig:
-        return fig
+    selection = np.full(n_obs, "noncore", dtype=object)
+    selection[core_positions] = "core"
 
-    return None
+    selection_key = f"{key_added}_core_selection"
+    adata.obs[selection_key] = pd.Categorical(selection, categories=["core", "noncore"])
+
+    actual_frac = target_n / n_obs
+    if key_added not in adata.uns:
+        adata.uns[key_added] = {}
+    adata.uns[key_added]["core_selection"] = {
+        "percentage_requested": percentage,
+        "actual_fraction_core": actual_frac,
+        "n_core": int(target_n),
+        "n_noncore": int(n_obs - target_n),
+    }
+
+    return adata, model
 

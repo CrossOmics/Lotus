@@ -4,10 +4,6 @@ import scanpy as sc
 from anndata import AnnData
 from scipy.sparse import csr_matrix, csc_matrix
 
-from ..core_analysis import corespect_clustering as _core_corespect_clustering
-from ..core_analysis.cplearn.corespect import CorespectModel
-
-
 def leiden(
         adata: AnnData,
         resolution: float = 1,
@@ -129,41 +125,6 @@ def louvain(
         neighbors_key=neighbors_key,
         obsp=obsp,
         copy=copy
-    )
-
-
-def corespect_clustering(
-        adata: AnnData,
-        *,
-        key_added: str = "corespect",
-        force_recalc: bool = False,
-        copy: bool = False,
-        **kwargs,
-) -> (AnnData, CorespectModel):
-    """
-    Execute CoreSpect clustering with a cache check.
-
-    Checks if CoreSpect analysis has already been performed. If results exist,
-    returns immediately to save time. Otherwise, runs the analysis.
-
-    Parameters:
-        adata: The annotated data matrix.
-        key_added: The key in `adata.obs` where results should be stored.
-                   Default is 'corespect'.
-        force_recalc: If True, ignore existing results and re-run the analysis.
-        copy: Whether to return a copy of the AnnData object.
-        **kwargs: Additional arguments passed to the `corespect` function
-                  (e.g., q, r, resolution, use_rep).
-
-    Returns:
-        AnnData object or  AnnData object and CoreSpect model
-    """
-    return _core_corespect_clustering(
-        adata,
-        key_added=key_added,
-        force_recalc=force_recalc,
-        copy=copy,
-        **kwargs,
     )
 
 

@@ -1,13 +1,4 @@
-from ._cplearn_core import (
-    corespect,
-    corespect_clustering,
-    coremap,
-)
+from ._cplearn_core import core_selection
 
-__all__ = [
-    # Corespect algorithm pipeline
-    "corespect",
-    "corespect_clustering",
-    "coremap",
-]
+__all__ = ["core_selection"]
 
