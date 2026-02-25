@@ -14,7 +14,6 @@ Run locally (loads covid.h5ad from absolute path):
 
 Or with pytest:
     pytest "integration test/test_pbmc_covid_59k.py" -v -s
-    pytest "integration test/test_pbmc_covid_59k.py" -m integration -v -s
 """
 import sys
 import json
@@ -54,7 +53,6 @@ def _ensure_pca(adata):
     return adata
 
 
-@pytest.mark.integration
 def test_io_and_core_selection():
     """End-to-end: load → (optional prep) → core_selection → assertions (uses covid.h5ad)."""
     import lotus.io as io
@@ -147,7 +145,6 @@ def test_io_and_core_selection():
     print(f"   Layer distribution (index → count): {layer_dist}")
 
 
-@pytest.mark.integration
 def test_io_roundtrip_after_core_selection():
     """Write adata (with cplearn results) to h5ad and read back; assert key columns/uns preserved (uses covid.h5ad)."""
     from anndata import AnnData
@@ -165,7 +162,7 @@ def test_io_roundtrip_after_core_selection():
     with tempfile.NamedTemporaryFile(suffix=".h5ad", delete=False) as f:
         path = Path(f.name)
     try:
-        io.write(adata, path)
+        io.write(path, adata)
         adata2 = io.read_h5ad(path)
         for col in CPLEARN_COLS:
             assert col in adata2.obs, f"After roundtrip missing: {col}"
