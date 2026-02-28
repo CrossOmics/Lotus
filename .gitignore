@@ -19,3 +19,7 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+.cursor
+.claude
+.github

@@ -140,64 +140,67 @@ def logged(func):
 
         return result
 
+    # Sentinel attributes so track_module() can skip logged functions.
+    # wrapper._lotus_logged = True
+    # wrapper._lotus_tracked = True
     return wrapper
 
 
 # ── lightweight tracking (no X snapshot, no loguru) ─────────────────
 
-def tracked(func):
-    """Minimal decorator that only records lineage — no X snapshot,
-    no loguru logging.  Used by :func:`track_module` to auto-wrap
-    every public function in a Lotus submodule."""
+# def tracked(func):
+#     """Minimal decorator that only records lineage — no X snapshot,
+#     no loguru logging.  Used by :func:`track_module` to auto-wrap
+#     every public function in a Lotus submodule."""
 
-    @functools.wraps(func)
-    def _tracked_wrapper(*args, **kwargs):
-        tracker = LineageTracker.instance()
+#     @functools.wraps(func)
+#     def _tracked_wrapper(*args, **kwargs):
+#         tracker = LineageTracker.instance()
 
-        # Record the operation if an AnnData is among the arguments
-        adata = _extract_adata(*args, **kwargs)
-        if adata is not None:
-            all_args = _build_args_dict(func, args, kwargs)
-            tracker.record_op(adata, func.__name__, all_args)
+#         # Record the operation if an AnnData is among the arguments
+#         adata = _extract_adata(*args, **kwargs)
+#         if adata is not None:
+#             all_args = _build_args_dict(func, args, kwargs)
+#             tracker.record_op(adata, func.__name__, all_args)
 
-        result = func(*args, **kwargs)
+#         result = func(*args, **kwargs)
 
-        # Auto-register any brand-new AnnData returned by the function
-        if isinstance(result, AnnData) and not tracker.get_lid(result):
-            parent_lid = tracker.get_lid(adata) if adata else None
-            parents = [parent_lid] if parent_lid else []
-            desc = func.__name__
-            if not parents and args:
-                desc = f"{func.__name__}('{args[0]}')"
-            tracker.register(
-                result,
-                parents=parents,
-                creation_op=func.__name__,
-                description=desc,
-            )
+#         # Auto-register any brand-new AnnData returned by the function
+#         if isinstance(result, AnnData) and not tracker.get_lid(result):
+#             parent_lid = tracker.get_lid(adata) if adata else None
+#             parents = [parent_lid] if parent_lid else []
+#             desc = func.__name__
+#             if not parents and args:
+#                 desc = f"{func.__name__}('{args[0]}')"
+#             tracker.register(
+#                 result,
+#                 parents=parents,
+#                 creation_op=func.__name__,
+#                 description=desc,
+#             )
 
-        return result
+#         return result
 
-    # Sentinel attribute so track_module() can skip already-wrapped functions
-    _tracked_wrapper._lotus_tracked = True
-    return _tracked_wrapper
+#     # Sentinel attribute so track_module() can skip already-wrapped functions
+#     _tracked_wrapper._lotus_tracked = True
+#     return _tracked_wrapper
 
 
-def track_module(module):
-    """Auto-wrap every public function in *module* with :func:`tracked`.
+# def track_module(module):
+#     """Auto-wrap every public function in *module* with :func:`tracked`.
 
-    Iterates over ``module.__all__`` (falling back to ``dir(module)``)
-    and replaces each public, callable, non-class attribute with a
-    ``tracked``-wrapped version.  Already-wrapped functions are skipped.
-    """
-    names = getattr(module, "__all__", dir(module))
-    for name in names:
-        if name.startswith("_"):
-            continue
-        obj = getattr(module, name, None)
-        if obj is None or not callable(obj) or isinstance(obj, type):
-            continue
-        # Skip functions that are already wrapped
-        if getattr(obj, "_lotus_tracked", False):
-            continue
-        setattr(module, name, tracked(obj))
+#     Iterates over ``module.__all__`` (falling back to ``dir(module)``)
+#     and replaces each public, callable, non-class attribute with a
+#     ``tracked``-wrapped version.  Already-wrapped functions are skipped.
+#     """
+#     names = getattr(module, "__all__", dir(module))
+#     for name in names:
+#         if name.startswith("_"):
+#             continue
+#         obj = getattr(module, name, None)
+#         if obj is None or not callable(obj) or isinstance(obj, type):
+#             continue
+#         # Skip functions that are already wrapped
+#         if getattr(obj, "_lotus_tracked", False) or getattr(obj, "_lotus_logged", False):
+#             continue
+#         setattr(module, name, tracked(obj))

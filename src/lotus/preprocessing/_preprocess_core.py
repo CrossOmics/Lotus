@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 import scanpy.preprocessing as pp_module
+from lotus.lineagetracker import logged
 
 def run_preprocessing(
         adata: AnnData,
@@ -160,7 +161,7 @@ def run_preprocessing(
     # 11. Build the neighbor graph
     neighbors(adata, n_neighbors=n_neighbors, use_rep=use_rep)
 
-
+@logged
 def calculate_qc_metrics(
         adata: AnnData,
         *,
@@ -194,7 +195,7 @@ def calculate_qc_metrics(
         parallel=parallel
     )
 
-
+@logged
 def filter_cells(
         data: AnnData,
         *,
@@ -233,7 +234,7 @@ def filter_cells(
         copy=copy
     )
 
-
+@logged
 def filter_genes(
         data: AnnData,
         *,
@@ -278,7 +279,7 @@ def filter_genes(
         copy=copy
     )
 
-
+@logged
 def highly_variable_genes(
         adata: AnnData,
         *,
@@ -362,7 +363,7 @@ def highly_variable_genes(
         check_values=check_values,
     )
 
-
+@logged
 def normalize_total(
         adata: AnnData,
         *,
@@ -411,7 +412,7 @@ def normalize_total(
         copy=copy
     )
 
-
+@logged
 def log1p(
         data: AnnData | np.ndarray,
         *,
@@ -450,7 +451,7 @@ def log1p(
         obsm=obsm
     )
 
-
+@logged
 def regress_out(
         adata: AnnData,
         keys: str | list[str],
@@ -484,7 +485,7 @@ def regress_out(
         copy=copy
     )
 
-
+@logged
 def scale(
         data: AnnData | np.ndarray,
         *,
@@ -526,7 +527,7 @@ def scale(
         mask_obs=mask_obs
     )
 
-
+@logged
 def pca(
         data: AnnData | np.ndarray,
         n_comps: int | None = None,
