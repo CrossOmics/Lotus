@@ -1,37 +1,21 @@
-# Eagerly import every submodule and auto-wrap their public functions
-# with the lightweight ``tracked`` decorator so that lineage tracking
-# is active for *any* Lotus function the user calls.
-from lotus import (
-    annotation_analysis,
-    clustering,
-    core_analysis,
-    io,
-    preprocessing,
-    trajectory,
-    visualization,
-    lineagetracker
-)
-# from lotus.lineagetracker import track_module
-
-# for _mod in (
-#     annotation_analysis,
-#     clustering,
-#     core_analysis,
-#     io,
-#     preprocessing,
-#     visualization,
-# ):
-#     track_module(_mod)
-
-# del _mod  # clean up module-level namespace
+from importlib import import_module
+from typing import Any
 
 __all__ = [
-    'annotation_analysis',
-    'clustering',
-    'core_analysis',
-    'io',
-    'lineagetracker',
-    'preprocessing',
-    'trajectory',
-    'visualization',
+    "annotation_analysis",
+    "clustering",
+    "core_analysis",
+    "io",
+    "lineagetracker",
+    "preprocessing",
+    "trajectory",
+    "visualization",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in __all__:
+        module = import_module(f"lotus.{name}")
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module 'lotus' has no attribute {name!r}")

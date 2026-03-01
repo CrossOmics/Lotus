@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import json
 from anndata import AnnData
+from lotus.lineagetracker import logged
 from .cplearn.corespect import CorespectModel
 from .cplearn.corespect.config import CoreSpectConfig
 
@@ -249,4 +250,3 @@ def core_selection(
     }
 
     return adata, model
-

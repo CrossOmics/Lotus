@@ -1,112 +1,199 @@
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any
+
 import gseapy as gp
 import pandas as pd
-from typing import List, Dict, Optional, Any
+from anndata import AnnData
+from loguru import logger
 
-# Define databases to query
-# mapping user-friendly names to Enrichr library names
-GSEAPY_DATABASES = {
-    "cellmarker": ["CellMarker_Augmented_2021"],
-    "functional": ["GO_Biological_Process_2023", "KEGG_2021_Human"],
-    "msigdb": ["MSigDB_Hallmark_2020"],
-    "reactome": ["Reactome_2022"],
-    "wikipathway": ["WikiPathway_2021_Human"],
-    "tissue": ["Human_Gene_Atlas"],
-    "tf": ["Enrichr_Submissions_TF-Gene_Coocurrence"],
-}
+from lotus.lineagetracker import logged
+from ._storage import ANNOTATION_SCHEMA_VERSION, sanitize_storage_key
 
 
-def _extract_cell_type_from_term(term_name: str, p_value: float) -> Optional[str]:
-    """
-    Helper: Parses CellMarker terms (usually 'CellType:Tissue').
-    Returns the cell type if p-value is significant (< 0.05).
-    """
+_AVAILABLE_LIBRARIES: dict[str, list[str]] = {}
+
+
+def _normalize_gene_sets(gene_sets: str | Sequence[str] | Mapping[str, Sequence[str]]) -> list[str] | Mapping[str, Sequence[str]]:
+    if isinstance(gene_sets, Mapping):
+        return gene_sets
+    if isinstance(gene_sets, str):
+        return [gene_sets]
+    normalized = [gene_set for gene_set in gene_sets]
+    if not normalized:
+        raise ValueError("`gene_sets` must contain at least one library or custom gene set.")
+    return normalized
+
+
+def _extract_cell_type_from_term(term_name: str, p_value: float) -> str | None:
     if not term_name or pd.isna(term_name):
         return None
-    if not p_value or pd.isna(p_value) or float(p_value) > 0.05:
+    if pd.isna(p_value) or float(p_value) > 0.05:
         return None
-
     term = str(term_name).strip()
-    # If format is "CellType:Tissue", take the left part
     if ":" in term:
         return term.split(":", 1)[0].strip()
     return None
 
 
-def run_enrichr_analysis(gene_list: List[str], categories: List[str] = None, limit=None) -> Dict[str, Any]:
+def _list_enrichr_libraries(organism: str) -> list[str]:
+    organism_key = organism.lower()
+    if organism_key in _AVAILABLE_LIBRARIES:
+        return _AVAILABLE_LIBRARIES[organism_key]
+    try:
+        _AVAILABLE_LIBRARIES[organism_key] = gp.get_library_name(organism=organism)
+    except Exception as exc:
+        logger.warning("Unable to enumerate Enrichr libraries for {}: {}", organism, exc)
+        _AVAILABLE_LIBRARIES[organism_key] = []
+    return _AVAILABLE_LIBRARIES[organism_key]
+
+
+def _resolve_gene_sets(
+        gene_sets: list[str] | Mapping[str, Sequence[str]],
+        organism: str,
+) -> tuple[list[str], list[str], Mapping[str, Sequence[str]] | None]:
+    if isinstance(gene_sets, Mapping):
+        return [], [], gene_sets
+
+    available_libraries = set(_list_enrichr_libraries(organism))
+    missing_libraries: list[str] = []
+    enrichr_libraries: list[str] = []
+    for gene_set in gene_sets:
+        if Path(gene_set).exists():
+            enrichr_libraries.append(gene_set)
+            continue
+        if available_libraries and gene_set not in available_libraries:
+            missing_libraries.append(gene_set)
+            continue
+        enrichr_libraries.append(gene_set)
+    return enrichr_libraries, missing_libraries, None
+
+
+@logged
+def run_enrichr_analysis(
+        adata: AnnData,
+        gene_list: Sequence[str],
+        gene_sets: str | Sequence[str] | Mapping[str, Sequence[str]],
+        *,
+        organism: str = "human",
+        limit: int | None = None,
+        pval_cutoff: float = 0.05,
+        key_added: str = "gseapy",
+        analysis_label: str | None = None,
+        background: list[str] | int | str | None = None,
+        inplace: bool = True,
+) -> AnnData | dict[str, Any]:
     """
-    Core function to run GSEApy Enrichr on a list of genes.
+    Run Enrichr analysis and store enrichment results in `adata.uns`.
 
-    Args:
-        gene_list: List of gene symbols (e.g., top 100 markers).
-        categories: List of categories to query (e.g., ['cellmarker', 'functional']).
-                   If None, queries all defined databases.
-        limit: Keep top N results
-
-    Returns:
-        Dictionary containing results for each requested category.
+    GSEApy/Enrichr does not produce per-cell outputs, so all results are stored in `uns`.
     """
-    results = {}
+    if not isinstance(adata, AnnData):
+        raise TypeError("`adata` must be an AnnData object.")
+    normalized_gene_list = [gene for gene in gene_list if gene]
+    if not normalized_gene_list:
+        raise ValueError("`gene_list` must contain at least one non-empty gene symbol.")
 
-    # If no categories specified, use all
-    target_cats = categories if categories else GSEAPY_DATABASES.keys()
+    normalized_gene_sets = _normalize_gene_sets(gene_sets)
+    resolved_gene_sets, missing_libraries, custom_gene_sets = _resolve_gene_sets(
+        normalized_gene_sets,
+        organism=organism,
+    )
+    if missing_libraries:
+        raise ValueError(
+            "Enrichr libraries not available for the selected organism: "
+            f"{missing_libraries}. Call `gseapy.get_library_name()` to inspect valid libraries."
+        )
 
-    for category in target_cats:
-        if category not in GSEAPY_DATABASES:
+    result_adata = adata.copy() if not inplace else adata
+    uns_bucket: dict[str, Any] = result_adata.uns.setdefault(key_added, {})
+    metadata_keys = {"schema_version", "provider", "analysis_type"}
+    uns_bucket["schema_version"] = ANNOTATION_SCHEMA_VERSION
+    uns_bucket["provider"] = "gseapy"
+    uns_bucket["analysis_type"] = "enrichment"
+    result_key = sanitize_storage_key(analysis_label) if analysis_label else f"analysis_{len([k for k in uns_bucket if k not in metadata_keys]) + 1}"
+    libraries_to_run: list[str] | Mapping[str, Sequence[str]]
+    libraries_to_run = custom_gene_sets if custom_gene_sets is not None else resolved_gene_sets
+
+    enrichment = gp.enrichr(
+        gene_list=normalized_gene_list,
+        gene_sets=libraries_to_run,
+        organism=organism,
+        background=background,
+        outdir=None,
+        no_plot=True,
+        verbose=False,
+    )
+
+    results_by_library: dict[str, Any] = {}
+    if custom_gene_sets is not None:
+        library_names = list(custom_gene_sets)
+    else:
+        library_names = resolved_gene_sets
+
+    result_frame = enrichment.results.copy() if enrichment.results is not None else pd.DataFrame()
+    for library_name in library_names:
+        if "Gene_set" in result_frame.columns:
+            library_frame = result_frame[result_frame["Gene_set"] == library_name].copy()
+        else:
+            library_frame = result_frame.copy()
+        if (
+            custom_gene_sets is not None
+            and (library_frame is None or library_frame.empty)
+            and "Term" in result_frame.columns
+        ):
+            library_frame = result_frame[result_frame["Term"] == library_name].copy()
+        if library_frame is None or library_frame.empty:
+            results_by_library[library_name] = {
+                "top_terms": [],
+                "term_count": 0,
+                "inferred_cell_types": [],
+                "ranking_metric": None,
+            }
             continue
 
-        db_libraries = GSEAPY_DATABASES[category]
+        filtered_frame = library_frame.copy()
+        if "Adjusted P-value" in filtered_frame.columns:
+            filtered_frame = filtered_frame[filtered_frame["Adjusted P-value"] < pval_cutoff]
+        elif "P-value" in filtered_frame.columns:
+            filtered_frame = filtered_frame[filtered_frame["P-value"] < pval_cutoff]
 
-        try:
-            # Call GSEApy Enrichr API
-            enr = gp.enrichr(
-                gene_list=gene_list,
-                gene_sets=db_libraries,
-                organism="human",
-                outdir=None,  # Don't save to disk
-                verbose=False
+        top_frame = filtered_frame.head(limit) if limit is not None else filtered_frame
+        inferred_cell_types: list[str] = []
+        if "CellMarker" in library_name or "cellmarker" in library_name.lower():
+            pval_column = "Adjusted P-value" if "Adjusted P-value" in top_frame.columns else "P-value"
+            term_column = "Term" if "Term" in top_frame.columns else top_frame.columns[0]
+            inferred_cell_types = sorted(
+                {
+                    cell_type
+                    for _, row in top_frame.iterrows()
+                    if (cell_type := _extract_cell_type_from_term(row.get(term_column), row.get(pval_column)))
+                }
             )
 
-            # Extract results dataframe
-            if enr is None or not hasattr(enr, "res2d") or enr.res2d is None:
-                results[category] = None
-                continue
+        results_by_library[library_name] = {
+            "top_terms": top_frame.to_dict("records"),
+            "term_count": int(len(top_frame)),
+            "inferred_cell_types": inferred_cell_types,
+            "ranking_metric": (
+                "Combined Score"
+                if "Combined Score" in top_frame.columns
+                else "Odds Ratio" if "Odds Ratio" in top_frame.columns else None
+            ),
+        }
 
-            df = enr.res2d.copy()
-
-            # Filter by P-value < 0.05 for relevance
-            if "Adjusted P-value" in df.columns:
-                df = df[df["Adjusted P-value"] < 0.05]
-            elif "P-value" in df.columns:
-                df = df[df["P-value"] < 0.05]
-
-
-            # Keep top "limit" results to keep response light
-            if limit:
-                df_top = df.head(limit)
-            else:
-                df_top = df
-            # Convert to dictionary for JSON serialization
-            category_result = {
-                "top_terms": df_top.to_dict("records")
-            }
-
-            # Special logic for CellMarker: Infer cell types
-            if category == "cellmarker":
-                inferred_types = set()
-                term_col = "Term" if "Term" in df_top.columns else df_top.columns[0]
-                pval_col = "Adjusted P-value" if "Adjusted P-value" in df_top.columns else "P-value"
-
-                for _, row in df_top.iterrows():
-                    ct = _extract_cell_type_from_term(row.get(term_col), row.get(pval_col))
-                    if ct:
-                        inferred_types.add(ct)
-
-                category_result["inferred_cell_types"] = sorted(list(inferred_types))
-
-            results[category] = category_result
-
-        except Exception as e:
-            print(f"Error running Enrichr for {category}: {e}")
-            results[category] = {"error": str(e)}
-
-    return results
+    uns_bucket[result_key] = {
+        "provider": "gseapy",
+        "analysis_label": result_key,
+        "gene_list": normalized_gene_list,
+        "gene_list_size": len(normalized_gene_list),
+        "gene_sets": library_names,
+        "organism": organism,
+        "parameters": {
+            "limit": limit,
+            "pval_cutoff": pval_cutoff,
+            "background": background,
+        },
+        "results": results_by_library,
+    }
+    return result_adata if not inplace else uns_bucket[result_key]

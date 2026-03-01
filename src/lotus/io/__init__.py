@@ -1,33 +1,12 @@
-from ._io_core import (
-    # Generic Read/Write
-    read,
-    write,
-    # 10x Genomics & Spatial
-    read_10x_h5,
-    read_10x_mtx,
-    read_visium,
-
-    # Specific File Formats
-    read_h5ad,
-    read_csv,
-    read_excel,
-    read_hdf,
-    read_loom,
-    read_mtx,
-    read_text,
-    read_umi_tools,
-)
+from importlib import import_module
+from typing import Any
 
 __all__ = [
-    # Generic Read/Write
     "read",
     "write",
-    # 10x Genomics & Spatial
     "read_10x_h5",
     "read_10x_mtx",
     "read_visium",
-
-    # Specific File Formats
     "read_h5ad",
     "read_csv",
     "read_excel",
@@ -37,3 +16,14 @@ __all__ = [
     "read_text",
     "read_umi_tools",
 ]
+
+_CORE_EXPORTS = set(__all__)
+
+
+def __getattr__(name: str) -> Any:
+    if name in _CORE_EXPORTS:
+        module = import_module("lotus.io._io_core")
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module 'lotus.io' has no attribute {name!r}")

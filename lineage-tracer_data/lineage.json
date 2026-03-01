@@ -215,5 +215,465 @@
       10
     ],
     "operations": []
+  },
+  "d0e15e0c-9dc5-4863-a403-d96e6929771b": {
+    "lid": "d0e15e0c-9dc5-4863-a403-d96e6929771b",
+    "parents": [],
+    "created_at": "2026-03-01T15:03:06.604962",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:03:06.607454"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": [
+            "CellMarker_Augmented",
+            "KEGG_2021_Human"
+          ],
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "markers_cluster_0",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:03:06.624313"
+      }
+    ]
+  },
+  "17205c5f-8a82-4393-99a3-7ae2f4c5c49c": {
+    "lid": "17205c5f-8a82-4393-99a3-7ae2f4c5c49c",
+    "parents": [],
+    "created_at": "2026-03-01T15:08:47.108014",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:08:47.109730"
+      }
+    ]
+  },
+  "0109e439-88e9-4770-9636-9570eaa11963": {
+    "lid": "0109e439-88e9-4770-9636-9570eaa11963",
+    "parents": [],
+    "created_at": "2026-03-01T15:09:29.159479",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:09:29.161678"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": [
+            "CellMarker_Augmented",
+            "KEGG_2021_Human"
+          ],
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "markers_cluster_0",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:09:29.175711"
+      }
+    ]
+  },
+  "51315fa1-dd90-4460-8b93-6d2e9e59ec7f": {
+    "lid": "51315fa1-dd90-4460-8b93-6d2e9e59ec7f",
+    "parents": [],
+    "created_at": "2026-03-01T15:09:49.253455",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:09:49.255233"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": [
+            "CellMarker_Augmented",
+            "KEGG_2021_Human"
+          ],
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "markers_cluster_0",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:09:49.282117"
+      }
+    ]
+  },
+  "2701e883-282e-4b1f-8c0b-d8cd8312e1ce": {
+    "lid": "2701e883-282e-4b1f-8c0b-d8cd8312e1ce",
+    "parents": [],
+    "created_at": "2026-03-01T15:11:21.868159",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:11:21.870040"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": {
+            "T_cell_program": [
+              "CD3D",
+              "TRBC1",
+              "LTB"
+            ],
+            "B_cell_program": [
+              "MS4A1",
+              "CD79A",
+              "CD74"
+            ],
+            "NK_program": [
+              "NKG7",
+              "GNLY",
+              "PRF1"
+            ]
+          },
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "markers_cluster_0",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:11:21.898976"
+      }
+    ]
+  },
+  "cd5784c7-651e-4c83-b658-df2cb1bf450d": {
+    "lid": "cd5784c7-651e-4c83-b658-df2cb1bf450d",
+    "parents": [],
+    "created_at": "2026-03-01T15:15:41.633104",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl",
+            "Immune_All_High.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:15:41.635363"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": [
+            "CellMarker_Augmented",
+            "KEGG_2021_Human"
+          ],
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "markers_cluster_0",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:15:41.652199"
+      }
+    ]
+  },
+  "c2668b8d-4092-4248-97bc-71adb3a9636b": {
+    "lid": "c2668b8d-4092-4248-97bc-71adb3a9636b",
+    "parents": [],
+    "created_at": "2026-03-01T15:15:43.179579",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:15:43.181038"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": {
+            "T_cell_program": [
+              "CD3D",
+              "TRBC1",
+              "LTB"
+            ],
+            "B_cell_program": [
+              "MS4A1",
+              "CD79A",
+              "CD74"
+            ]
+          },
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.05,
+          "key_added": "gseapy",
+          "analysis_label": "offline_demo",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:15:43.201271"
+      }
+    ]
+  },
+  "9a1cf6f4-daf5-456f-8e80-4049d3a716b8": {
+    "lid": "9a1cf6f4-daf5-456f-8e80-4049d3a716b8",
+    "parents": [],
+    "created_at": "2026-03-01T15:16:29.926354",
+    "creation_op": null,
+    "description": "external",
+    "variable_name": "adata",
+    "display_name": "adata",
+    "shape": [
+      6,
+      4
+    ],
+    "operations": [
+      {
+        "method": "run_celltypist_annotation",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "model_names": [
+            "Immune_All_Low.pkl"
+          ],
+          "majority_voting": true,
+          "target_cluster_col": "cluster",
+          "mode": "best_match",
+          "p_thres": 0.5,
+          "key_added": "celltypist",
+          "store_probabilities": false,
+          "store_decision_scores": false,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:16:29.928741"
+      },
+      {
+        "method": "run_enrichr_analysis",
+        "args": {
+          "adata": "<AnnData:adata>",
+          "gene_list": [
+            "CD3D",
+            "TRBC1",
+            "LTB"
+          ],
+          "gene_sets": {
+            "T_cell_program": [
+              "CD3D",
+              "TRBC1",
+              "LTB"
+            ],
+            "B_cell_program": [
+              "MS4A1",
+              "CD79A",
+              "CD74"
+            ]
+          },
+          "organism": "human",
+          "limit": null,
+          "pval_cutoff": 0.2,
+          "key_added": "gseapy",
+          "analysis_label": "offline_demo",
+          "background": null,
+          "inplace": true
+        },
+        "timestamp": "2026-03-01T15:16:29.947980"
+      }
+    ]
   }
 }
