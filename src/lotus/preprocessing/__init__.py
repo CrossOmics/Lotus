@@ -37,9 +37,6 @@ from ._preprocess_core import (
 )
 
 __all__ = [
-    # Core Pipeline
-    "run_preprocessing",
-
     # Quality Control & Filtering
     "calculate_qc_metrics",
     "filter_cells",
