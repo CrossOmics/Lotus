@@ -11,7 +11,7 @@ Importing this package automatically:
 
 import atexit
 
-from .metadata import LoggingMeta, logged, track_module, tracked
+from .metadata import LoggingMeta, logged
 from .models import LineageNode, OperationRecord
 from .patch import install_patches
 from .tracker import LineageTracker, bind_variable_name

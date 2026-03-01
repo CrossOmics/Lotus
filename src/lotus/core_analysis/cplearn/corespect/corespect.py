@@ -15,8 +15,9 @@ from .propagate import propagate_from_core
 
 
 from ..utils.gen_utils import get_kNN
+from lotus.lineagetracker.metadata import LoggingMeta
 
-class CorespectModel:
+class CorespectModel(metaclass=LoggingMeta):
     """
     CoreSpect model orchestrator.
 

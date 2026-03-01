@@ -29,11 +29,11 @@ class LineageNode(BaseModel):
     """
 
     lid: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    parents: list[str] = []  # Lineage IDs of parent AnnData objects
+    parents: list[str] = []                         # Lineage IDs of parent AnnData objects
     created_at: datetime = Field(default_factory=datetime.now)
-    creation_op: str | None = None  # "slice", "copy", "concat", or func name
-    description: str = ""  # Human-readable origin summary
-    variable_name: str | None = None  # Latest observed Python variable name
-    display_name: str | None = None  # Preferred label for graph rendering
-    shape: tuple[int, int] = (0, 0)  # (n_obs, n_vars) at registration time
-    operations: list[OperationRecord] = []  # Chronological list of in-place ops
+    creation_op: str | None = None                  # "slice", "copy", "concat", or func name
+    description: str = ""                           # Human-readable origin summary
+    variable_name: str | None = None                # Latest observed Python variable name
+    display_name: str | None = None                 # Preferred label for graph rendering
+    shape: tuple[int, int] = (0, 0)                 # (n_obs, n_vars) at registration time
+    operations: list[OperationRecord] = []          # Chronological list of in-place ops

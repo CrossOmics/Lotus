@@ -1,54 +1,212 @@
-"""Build a networkx DAG from the lineage JSON and render it as a PNG."""
+"""Build a lineage DAG from the lineage JSON and render it as a flowchart PNG
+using the ``diagrams`` library (backed by Graphviz)."""
 
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
-import matplotlib
-matplotlib.use("Agg")  # Non-interactive backend — safe for headless servers
-import matplotlib.pyplot as plt  # noqa: E402
-import networkx as nx  # noqa: E402
+from diagrams import Diagram, Edge, Node
 
-from .models import LineageNode  # noqa: E402
+from .models import LineageNode
+
+_PREPROCESSING_OPS = {
+    "calculate_qc_metrics",
+    "filter_cells",
+    "filter_genes",
+    "normalize_total",
+    "log1p",
+    "scale",
+    "highly_variable_genes",
+    "regress_out",
+    "combat",
+    "neighbors",
+    "pca",
+}
+_IO_OPS = {
+    "read",
+    "write",
+    "standardize_load",
+    "read_h5ad",
+    "read_10x_h5",
+    "read_10x_mtx",
+    "read_visium",
+    "read_csv",
+    "read_text",
+    "read_excel",
+    "read_hdf",
+    "read_mtx",
+    "read_loom",
+    "read_umi_tools",
+}
+_CLUSTERING_OPS = {
+    "leiden",
+    "louvain",
+    "kmeans",
+    "cluster_core",
+}
+_CORE_ANALYSIS_OPS = {
+    "flowrank",
+    "stable_core",
+    "fine_grained_core",
+    "propagation_from_core",
+    "core_selection",
+}
+_OPERATION_COLOR_MAP = {
+    "preprocessing": "#93C5FD",
+    "io": "#86EFAC",
+    "clustering": "#FCD34D",
+    "visualization": "#C4B5FD",
+    "core_analysis": "#FCA5A5",
+    "other": "#D1D5DB",
+}
+_OPERATION_LEGEND_ITEMS = [
+    ("preprocessing", _OPERATION_COLOR_MAP["preprocessing"]),
+    ("io", _OPERATION_COLOR_MAP["io"]),
+    ("clustering", _OPERATION_COLOR_MAP["clustering"]),
+    ("visualization", _OPERATION_COLOR_MAP["visualization"]),
+    ("core_analysis", _OPERATION_COLOR_MAP["core_analysis"]),
+    ("other", _OPERATION_COLOR_MAP["other"]),
+]
 
 
-def _topological_layout(G: nx.DiGraph) -> dict:
-    """Assign (x, y) positions using a top-down layered layout.
+def _format_arg_value(value: Any, max_len: int = 28) -> str:
+    """Render a compact, bounded string for an operation argument value."""
+    if isinstance(value, str):
+        rendered = value
+    else:
+        rendered = repr(value)
+    if len(rendered) > max_len:
+        return rendered[: max_len - 3] + "..."
+    return rendered
 
-    Nodes are placed in rows by their topological depth (root = top).
-    Siblings within the same row are centred horizontally.
-    """
-    # Compute the depth (level) of every node
-    levels: dict[str, int] = {}
-    for node in nx.topological_sort(G):
-        parents = list(G.predecessors(node))
-        if not parents:
-            levels[node] = 0
-        else:
-            levels[node] = max(levels[p] for p in parents) + 1
 
-    # Group nodes by level
-    buckets: dict[int, list[str]] = defaultdict(list)
-    for node, lvl in levels.items():
-        buckets[lvl].append(node)
+def _format_operation_lines(
+    method: str,
+    args: dict[str, Any],
+    max_args: int = 3,
+) -> list[str]:
+    """Format one operation as a compact multi-line call-like block."""
+    short_name = method.split(".")[-1]
+    if not args:
+        return [f"- {short_name}()"]
 
-    # Assign coordinates — centre each row around x=0
-    pos = {}
-    for lvl, nodes in buckets.items():
-        for i, node in enumerate(nodes):
-            x = (i - (len(nodes) - 1) / 2) * 4
-            y = -lvl * 2.5
-            pos[node] = (x, y)
-    return pos
+    items = list(args.items())
+    lines = [f"- {short_name}("]
+    for key, value in items[:max_args]:
+        lines.append(f"  {key}={_format_arg_value(value)}")
+    if len(items) > max_args:
+        lines.append(f"  ...+{len(items) - max_args} args")
+    lines.append(")")
+    return lines
+
+
+def _data_node_label(node: LineageNode, lid: str) -> str:
+    """Build a compact label for an AnnData lineage node."""
+    display_name = node.display_name or node.description or lid[:8]
+    if not node.parents:
+        op_label = "root"
+    else:
+        op_label = (node.creation_op or "process").lower()
+    return "\n".join(
+        [
+            display_name,
+            f"{node.shape[0]} x {node.shape[1]}",
+            f"op: {op_label}",
+        ]
+    )
+
+
+def _operation_node_label(method: str, args: dict[str, Any], index: int) -> str:
+    """Build a compact label for a single operation node."""
+    short_name = method.split(".")[-1]
+    lines = [f"{index}. {short_name}"]
+    if args:
+        items = list(args.items())
+        for key, value in items[:3]:
+            lines.append(f"{key}={_format_arg_value(value)}")
+        # if len(items) > 3:
+        #     lines.append(f"...+{len(items) - 3} args")
+    else:
+        lines.append("no args")
+    return "\n".join(lines)
+
+
+def _operation_category(method: str) -> str:
+    """Return operation category key for a method string."""
+    short_name = method.split(".")[-1]
+
+    if method.startswith("preprocessing.") or short_name in _PREPROCESSING_OPS:
+        return "preprocessing"
+    if method.startswith("io.") or short_name in _IO_OPS:
+        return "io"
+    if method.startswith("clustering.") or short_name in _CLUSTERING_OPS:
+        return "clustering"
+    if method.startswith("visualization."):
+        return "visualization"
+    if (
+        method.startswith("core_analysis.")
+        or "CorespectModel." in method
+        or short_name in _CORE_ANALYSIS_OPS
+    ):
+        return "core_analysis"
+    return "other"
+
+
+def _operation_fillcolor(method: str) -> str:
+    """Return operation node fill color by operation category."""
+    return _OPERATION_COLOR_MAP[_operation_category(method)]
+
+
+def _make_node(node: LineageNode, label: str):
+    """Pick a Graphviz shape based on how the node was created."""
+    op = (node.creation_op or "").lower()
+    shape = "box"
+    if not node.parents:
+        shape = "cylinder"
+    elif op == "slice":
+        shape = "note"
+    elif op == "copy":
+        shape = "box3d"
+    elif op == "concat":
+        shape = "diamond"
+    return Node(label, shape=shape)
+
+
+def _make_operation_node(label: str, method: str):
+    """Create a visual node for one operation entry."""
+    return Node(
+        label,
+        shape="box",
+        style="rounded,filled",
+        fillcolor=_operation_fillcolor(method),
+    )
+
+
+def _add_operation_legend(anchor_node: object | None = None):
+    """Add a compact legend explaining operation-node colors."""
+    legend_nodes = [
+        Node(
+            f"legend: {label}",
+            shape="box",
+            style="rounded,filled",
+            fillcolor=color,
+        )
+        for label, color in _OPERATION_LEGEND_ITEMS
+    ]
+    if anchor_node is not None and legend_nodes:
+        anchor_node >> Edge(style="invis") >> legend_nodes[0]
+    for prev, curr in zip(legend_nodes, legend_nodes[1:]):
+        prev >> Edge(style="invis") >> curr
 
 
 def visualize(lineage_file: Path, output_file: Path):
-    """Read the lineage JSON file, build a DAG, and save as PNG.
+    """Read the lineage JSON file, build a DAG, and save as a flowchart PNG.
 
-    Each node box shows: display name, shape, and operation
-    history.  Directed arrows point from parent to child.
+    Each AnnData node shows: display name and shape.
+    Operation history is rendered as dedicated operation nodes.
+    Directed arrows point from parent to child.
     """
     if not lineage_file.exists():
         return
@@ -61,72 +219,62 @@ def visualize(lineage_file: Path, output_file: Path):
         lid: LineageNode.model_validate(data) for lid, data in raw.items()
     }
 
-    # Build the directed graph and human-readable labels
-    G = nx.DiGraph()
-    labels: dict[str, str] = {}
-
-    for lid, node in nodes.items():
-        display_name = node.display_name or node.description or lid[:8]
-        parts = [display_name]
-
-        if node.description and node.description != display_name:
-            parts.append(node.description)
-
-        parts.append(f"{node.shape[0]} x {node.shape[1]}")
-
-        if node.operations:
-            op_names = [op.method.split(".")[-1] for op in node.operations]
-            parts.append("ops: " + " -> ".join(op_names))
-
-        G.add_node(lid)
-        labels[lid] = "\n".join(parts)
-
-        for parent_lid in node.parents:
-            if parent_lid in nodes:
-                G.add_edge(parent_lid, lid)
-
-    if len(G.nodes) == 0:
+    if not nodes:
         return
 
-    pos = _topological_layout(G)
+    # Strip the extension — Diagram appends it automatically.
+    out_stem = str(output_file.with_suffix(""))
 
-    # Scale the figure to the number of nodes
-    width = max(10, len(G.nodes) * 2.5)
-    height = max(6, len(G.nodes) * 1.2)
-    fig, ax = plt.subplots(figsize=(width, height))
+    graph_attr = {
+        # "label": "Lotus Lineage DAG",
+        "labelloc": "t",
+        "labeljust": "c",
+        "fontsize": "14",
+        "bgcolor": "white",
+        "pad": "0.5",
+        "nodesep": "1.0",
+        "ranksep": "1.2",
+    }
+    node_attr = {
+        "fixedsize": "false",
+        "labelloc": "c",
+        "fontname": "Sans-Serif",
+        "fontsize": "11",
+    }
 
-    # Invisible nodes — their size controls how far edges shrink from
-    # node centres so that arrowheads sit outside the label boxes.
-    bbox_size = 3500
-    nx.draw_networkx_nodes(
-        G, pos, ax=ax, node_size=bbox_size, alpha=0,
-    )
+    with Diagram(
+        # "Lotus Lineage DAG",
+        filename=out_stem,
+        outformat="png",
+        show=False,
+        direction="TB",
+        graph_attr=graph_attr,
+        node_attr=node_attr,
+    ):
+        diagram_nodes: dict[str, object] = {}
+        operation_nodes: dict[str, list[object]] = {}
 
-    # Directed edges with arrowheads
-    nx.draw_networkx_edges(
-        G, pos, ax=ax,
-        arrows=True,
-        arrowstyle="-|>",
-        arrowsize=20,
-        edge_color="#666666",
-        width=2,
-        node_size=bbox_size,
-        connectionstyle="arc3,rad=0.0",
-    )
+        for lid, node in nodes.items():
+            label = _data_node_label(node, lid)
+            diagram_nodes[lid] = _make_node(node, label)
 
-    # Node labels rendered on top of edges
-    nx.draw_networkx_labels(
-        G, pos, labels, ax=ax, font_size=8, font_family="monospace",
-        bbox=dict(
-            boxstyle="round,pad=0.6",
-            facecolor="lightblue",
-            edgecolor="steelblue",
-            alpha=0.9,
-        ),
-    )
+            op_chain: list[object] = []
+            for idx, op in enumerate(node.operations, start=1):
+                op_label = _operation_node_label(op.method, op.args, idx)
+                op_chain.append(_make_operation_node(op_label, op.method))
+            operation_nodes[lid] = op_chain
 
-    ax.set_title("Lotus Lineage DAG", fontsize=14, fontweight="bold")
-    ax.axis("off")
-    fig.tight_layout()
-    fig.savefig(output_file, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+        # legend_anchor = next(iter(diagram_nodes.values()), None)
+        # _add_operation_legend(legend_anchor)
+
+        for lid, node in nodes.items():
+            for parent_lid in node.parents:
+                if parent_lid in diagram_nodes:
+                    diagram_nodes[parent_lid] >> Edge(color="#666666") >> diagram_nodes[lid]
+
+            # Render operation history as chained nodes from each data node.
+            chain = operation_nodes.get(lid, [])
+            if chain:
+                diagram_nodes[lid] >> Edge(color="#4B5563", style="dashed") >> chain[0]
+                for prev, curr in zip(chain, chain[1:]):
+                    prev >> Edge(color="#4B5563", style="dashed") >> curr

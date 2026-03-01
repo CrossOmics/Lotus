@@ -13,6 +13,14 @@ from anndata import AnnData
 from .tracker import LineageTracker
 
 
+def _parent_name(tracker: LineageTracker, lid: str) -> str:
+    """Resolve a parent lid to its display_name, falling back to the lid prefix."""
+    node = tracker._nodes.get(lid)
+    if node and node.display_name:
+        return node.display_name
+    return lid[:8]
+
+
 def install_patches():
     """Apply all AnnData monkey-patches.  Safe to call multiple times."""
     _patch_getitem()
@@ -35,7 +43,7 @@ def _patch_getitem():
                 result,
                 parents=[parent_lid],
                 creation_op="slice",
-                description=f"slice from {parent_lid[:8]}",
+                description=f"slice from {_parent_name(tracker, parent_lid)}",
             )
         return result
 
@@ -57,7 +65,7 @@ def _patch_copy():
                 result,
                 parents=[parent_lid],
                 creation_op="copy",
-                description=f"copy of {parent_lid[:8]}",
+                description=f"copy of {_parent_name(tracker, parent_lid)}",
             )
         return result
 
@@ -87,12 +95,12 @@ def _patch_concat():
                 parent_lids.append(lid)
 
         if parent_lids:
-            short = [l[:8] for l in parent_lids]
+            names = [_parent_name(tracker, l) for l in parent_lids]
             tracker.register(
                 result,
                 parents=parent_lids,
                 creation_op="concat",
-                description=f"concat of [{', '.join(short)}]",
+                description=f"concat of [{', '.join(names)}]",
             )
         return result
 

@@ -9,7 +9,10 @@ from anndata import AnnData
 from numba.cuda.cudadrv.nvvm import logger
 from scipy.sparse import csr_matrix, csc_matrix, issparse
 
+from lotus.lineagetracker import logged
 
+
+@logged
 def standardize_load(
         file_path: Union[str, Path],
         *,

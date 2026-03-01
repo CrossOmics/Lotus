@@ -39,7 +39,11 @@ def _serialize_value(v: Any, tracker: LineageTracker) -> Any:
     """
     if isinstance(v, AnnData):
         lid = tracker.get_lid(v)
-        return f"<AnnData:{lid[:8] if lid else 'untracked'}>"
+        if lid and lid in tracker._nodes:
+            name = tracker._nodes[lid].display_name or lid[:8]
+        else:
+            name = "untracked"
+        return f"<AnnData:{name}>"
     if isinstance(v, np.ndarray):
         return f"<ndarray shape={v.shape} dtype={v.dtype}>"
     if isinstance(v, np.generic):

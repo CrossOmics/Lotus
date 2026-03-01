@@ -17,8 +17,9 @@ project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root / "src"))
 
-from lotus.lineagetracker import LineageTracker, bind_variable_name  # noqa: E402
-from lotus.lineagetracker.visualizer import visualize  # noqa: E402
+from lotus.lineagetracker import LineageTracker, bind_variable_name
+from lotus.lineagetracker.visualizer import visualize
+from lotus.preprocessing import log1p, normalize_total, pca, scale
 
 
 def _make_adata(
@@ -84,6 +85,44 @@ def test_lineagetracker():
     assert node["display_name"] == "latest_alias"
     print("[OK] Operations recorded on root node")
 
+    # 2b. Regression: @logged functions should record exactly once (no double-wrap)
+    single_logged_adata = _make_adata(name="single_logged_adata")
+    single_logged_lid = tracker.register(
+        single_logged_adata,
+        parents=[],
+        creation_op="create",
+        description="single logged regression",
+    )
+    before_logged_count = len(
+        json.loads(tracker.lineage_file.read_text())[single_logged_lid]["operations"]
+    )
+    normalize_total(single_logged_adata, target_sum=1e4, inplace=True)
+    single_logged_node = json.loads(tracker.lineage_file.read_text())[single_logged_lid]
+    assert len(single_logged_node["operations"]) == before_logged_count + 1
+    assert single_logged_node["operations"][-1]["method"] == "normalize_total"
+    print("[OK] @logged function records exactly one operation")
+
+    # 2c. Multiple @logged preprocessing functions should each append one operation
+    logged_pipeline_adata = _make_adata(name="logged_pipeline_adata")
+    logged_pipeline_lid = tracker.register(
+        logged_pipeline_adata,
+        parents=[],
+        creation_op="create",
+        description="logged pipeline regression",
+    )
+    before_pipeline_count = len(
+        json.loads(tracker.lineage_file.read_text())[logged_pipeline_lid]["operations"]
+    )
+    normalize_total(logged_pipeline_adata, target_sum=1e4, inplace=True)
+    log1p(logged_pipeline_adata)
+    scale(logged_pipeline_adata, max_value=10)
+    pca(logged_pipeline_adata, n_comps=5)
+    logged_pipeline_node = json.loads(tracker.lineage_file.read_text())[logged_pipeline_lid]
+    pipeline_methods = [op["method"] for op in logged_pipeline_node["operations"]]
+    assert len(logged_pipeline_node["operations"]) == before_pipeline_count + 4
+    assert pipeline_methods[-4:] == ["normalize_total", "log1p", "scale", "pca"]
+    print("[OK] Multiple @logged preprocessing functions each record one operation")
+
     # 3. Slice (monkey-patched __getitem__)
     t_cells = root_adata[root_adata.obs["celltype"] == "T"]
     t_lid = tracker.get_lid(t_cells)
@@ -112,16 +151,16 @@ def test_lineagetracker():
     print(f"[OK] Copy tracked: {cp_lid[:8]}")
 
     # 5. Concat (monkey-patched anndata.concat)
-    merged = anndata.concat([t_cells, b_cells])
-    m_lid = tracker.get_lid(merged)
+    merged_cells = anndata.concat([t_cells, b_cells])
+    m_lid = tracker.get_lid(merged_cells)
     assert m_lid is not None
     m_node = json.loads(tracker.lineage_file.read_text())[m_lid]
     assert set(m_node["parents"]) == {t_lid, b_lid}
     assert m_node["creation_op"] == "concat"
-    assert m_node["variable_name"] == "merged"
-    print(f"[OK] Concat tracked: {m_lid[:8]}, shape={merged.shape}")
+    assert m_node["variable_name"] == "merged_cells"
+    print(f"[OK] Concat tracked: {m_lid[:8]}, shape={merged_cells.shape}")
 
-    # # 6. Fallback when no variable name is available but adata.uns["name"] exists
+    # 6. Fallback when no variable name is available but adata.uns["name"] exists
     uns_name_lid = tracker.register(
         _make_adata(n_obs=20, n_vars=10, name="from_uns_name"),
         parents=[],
@@ -132,25 +171,8 @@ def test_lineagetracker():
     assert uns_name_node["variable_name"] is None
     assert uns_name_node["display_name"] == "from_uns_name"
     print(f"[OK] Uns-name fallback used: {uns_name_lid[:8]}")
-    #
-    # # 7. Fallback to description when neither variable nor uns name exists
-    # unnamed_lid = tracker.register(
-    #     _make_adata(n_obs=18, n_vars=9),
-    #     parents=[],
-    #     creation_op="create",
-    #     description="unnamed external",
-    # )
-    # unnamed_node = json.loads(tracker.lineage_file.read_text())[unnamed_lid]
-    # assert unnamed_node["variable_name"] is None
-    # assert unnamed_node["display_name"] == "unnamed external"
-    # print(f"[OK] Description fallback used: {unnamed_lid[:8]}")
 
-    # # 8. DAG integrity
-    # all_nodes = json.loads(tracker.lineage_file.read_text())
-    # assert len(all_nodes) == 7  # root, t, b, copy, merged, uns, unnamed
-    # print(f"[OK] DAG has {len(all_nodes)} nodes")
-
-    # ── 9. Visualisation PNG ─────────────────────────────────────
+    # ── 7. Visualisation PNG ─────────────────────────────────────
     visualize(tracker.lineage_file, tracker.graph_file)
     assert tracker.graph_file.exists()
     assert tracker.graph_file.stat().st_size > 0

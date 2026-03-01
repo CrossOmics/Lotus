@@ -10,7 +10,7 @@ covid_cplearn.h5ad
 .idea/
 
 # Python
-__pycache__/
+**/__pycache__/
 *.pyc
 *.egg-info/
 dist/
@@ -19,3 +19,8 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# AI Summarizations
+.cursor
+.claude
+.github
