@@ -2,8 +2,9 @@ from typing import Literal, Sequence, Mapping, Union, Iterable, Any
 import scanpy as sc
 from anndata import AnnData
 from matplotlib.axes import Axes
+from lotus.lineagetracker import logged
 
-
+@logged
 def rank_genes_groups(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,
@@ -46,7 +47,7 @@ def rank_genes_groups(
         save=save, ax=ax, **kwds
     )
 
-
+@logged
 def rank_genes_groups_violin(
         adata: AnnData,
         groups: Sequence[str] | None = None,
@@ -93,7 +94,7 @@ def rank_genes_groups_violin(
         ax=ax, show=show, save=save, scale=scale
     )
 
-
+@logged
 def rank_genes_groups_stacked_violin(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,
@@ -135,7 +136,7 @@ def rank_genes_groups_stacked_violin(
         return_fig=return_fig, ax=ax, **kwds
     )
 
-
+@logged
 def rank_genes_groups_heatmap(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,
@@ -175,7 +176,7 @@ def rank_genes_groups_heatmap(
         ax=ax, **kwds
     )
 
-
+@logged
 def rank_genes_groups_dotplot(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,
@@ -219,7 +220,7 @@ def rank_genes_groups_dotplot(
         key=key, show=show, save=save, return_fig=return_fig, ax=ax, **kwds
     )
 
-
+@logged
 def rank_genes_groups_matrixplot(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,
@@ -262,7 +263,7 @@ def rank_genes_groups_matrixplot(
         key=key, show=show, save=save, return_fig=return_fig, ax=ax, **kwds
     )
 
-
+@logged
 def rank_genes_groups_tracksplot(
         adata: AnnData,
         groups: str | Sequence[str] | None = None,

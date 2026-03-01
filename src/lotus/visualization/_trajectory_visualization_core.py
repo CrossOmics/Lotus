@@ -4,7 +4,8 @@ from anndata import AnnData
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
 from pandas import DataFrame
-
+from lotus.lineagetracker import logged
+@logged
 def dpt_groups_pseudotime(
         adata: AnnData,
         *,
@@ -35,7 +36,7 @@ def dpt_groups_pseudotime(
         save=save, marker=marker
     )
 
-
+@logged
 def dpt_timeseries(
         adata: AnnData,
         *,
@@ -66,7 +67,7 @@ def dpt_timeseries(
         as_heatmap=as_heatmap, marker=marker
     )
 
-
+@logged
 def paga(
         adata: AnnData,
         *,
@@ -147,7 +148,7 @@ def paga(
         groups=groups, plot=plot, show=show, save=save, ax=ax
     )
 
-
+@logged
 def paga_path(
         adata: AnnData,
         nodes: Sequence[str | int],
@@ -207,7 +208,7 @@ def paga_path(
         return_data=return_data, show=show, save=save, ax=ax
     )
 
-
+@logged
 def paga_compare(
         adata: AnnData,
         basis: str | None = None,
@@ -264,7 +265,7 @@ def paga_compare(
         pos=pos, **paga_graph_params
     )
 
-
+@logged
 def correlation_matrix(
         adata: AnnData,
         groupby: str,

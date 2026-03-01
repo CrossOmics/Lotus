@@ -2,8 +2,8 @@ from typing import Literal, Sequence, Union, Iterable, Any, Optional
 import pandas as pd
 import scanpy as sc
 from anndata import AnnData
-
-
+from lotus.lineagetracker import logged
+@logged
 def rank_genes_groups(
         adata: AnnData,
         groupby: str,
@@ -64,7 +64,7 @@ def rank_genes_groups(
         **kwds
     )
 
-
+@logged
 def filter_rank_genes_groups(
         adata: AnnData,
         *,
@@ -107,7 +107,7 @@ def filter_rank_genes_groups(
         compare_abs=compare_abs
     )
 
-
+@logged
 def marker_gene_overlap(
         adata: AnnData,
         reference_markers: dict[str, set] | dict[str, list],
@@ -151,7 +151,7 @@ def marker_gene_overlap(
         inplace=inplace
     )
 
-
+@logged
 def score_genes(
         adata: AnnData,
         gene_list: Sequence[str],
@@ -201,7 +201,7 @@ def score_genes(
         layer=layer
     )
 
-
+@logged
 def score_genes_cell_cycle(
         adata: AnnData,
         *,
@@ -234,7 +234,7 @@ def score_genes_cell_cycle(
         **kwargs
     )
 
-
+@logged
 def rank_genes_groups_df(
         adata: AnnData,
         group: Union[str, Iterable[str], None] = None,

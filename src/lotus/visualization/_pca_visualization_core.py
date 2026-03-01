@@ -5,7 +5,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.colors import Colormap, Normalize
 
-
+from lotus.lineagetracker import logged
+@logged
 def pca(
         adata: AnnData,
         *,
@@ -101,7 +102,7 @@ def pca(
         annotate_var_explained=annotate_var_explained, **kwargs
     )
 
-
+@logged
 def pca_loadings(
         adata: AnnData,
         components: str | Sequence[int] | None = None,
@@ -132,7 +133,7 @@ def pca_loadings(
         n_points=n_points, show=show, save=save
     )
 
-
+@logged
 def pca_variance_ratio(
         adata: AnnData,
         n_pcs: int = 30,
@@ -160,7 +161,7 @@ def pca_variance_ratio(
         adata, n_pcs=n_pcs, log=log, show=show, save=save
     )
 
-
+@logged
 def pca_overview(
         adata: AnnData,
         *,

@@ -6,10 +6,8 @@ from typing import Dict, Any, Optional, List
 
 # Default model list
 AVAILABLE_MODELS = [
-    # Good for general immune sub-typing
     "Immune_All_Low.pkl",
     "Immune_All_High.pkl",
-    # Detailed immune sub-typing
     "Human_Lung_Atlas.pkl",
     "Healthy_COVID19_PBMC.pkl"
 ]

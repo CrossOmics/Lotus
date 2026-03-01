@@ -5,7 +5,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.colors import Colormap, Normalize
 
-
+from lotus.lineagetracker import logged
+@logged
 def tsne(
         adata: AnnData,
         *,
@@ -98,7 +99,7 @@ def tsne(
         return_fig=return_fig, marker=marker, **kwargs
     )
 
-
+@logged
 def umap(
         adata: AnnData,
         *,
@@ -191,7 +192,7 @@ def umap(
         return_fig=return_fig, marker=marker, **kwargs
     )
 
-
+@logged
 def diffmap(
         adata: AnnData,
         *,
@@ -284,7 +285,7 @@ def diffmap(
         return_fig=return_fig, marker=marker, **kwargs
     )
 
-
+@logged
 def draw_graph(
         adata: AnnData,
         *,
@@ -379,7 +380,7 @@ def draw_graph(
         return_fig=return_fig, marker=marker, layout=layout, **kwargs
     )
 
-
+@logged
 def spatial(
         adata: AnnData,
         *,
@@ -483,7 +484,7 @@ def spatial(
         alpha_img=alpha_img, bw=bw, spot_size=spot_size, **kwargs
     )
 
-
+@logged
 def embedding(
         adata: AnnData,
         basis: str,
@@ -578,7 +579,7 @@ def embedding(
         return_fig=return_fig, marker=marker, **kwargs
     )
 
-
+@logged
 def embedding_density(
         adata: AnnData,
         basis: str = 'umap',

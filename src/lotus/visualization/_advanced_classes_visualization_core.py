@@ -4,8 +4,8 @@ from anndata import AnnData
 from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 from pandas import DataFrame
-
-
+from lotus.lineagetracker import logged
+@logged
 def DotPlot(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],

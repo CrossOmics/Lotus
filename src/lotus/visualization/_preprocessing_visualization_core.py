@@ -3,8 +3,8 @@ import scanpy as sc
 from anndata import AnnData
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-
-
+from lotus.lineagetracker import logged
+@logged
 def scrublet_score_distribution(
         adata: AnnData,
         *,
@@ -37,7 +37,7 @@ def scrublet_score_distribution(
         figsize=figsize, return_fig=return_fig, show=show, save=save
     )
 
-
+@logged
 def highly_variable_genes(
         adata_or_result: AnnData,
         *,
@@ -65,7 +65,7 @@ def highly_variable_genes(
         highly_variable_genes=highly_variable_genes
     )
 
-
+@logged
 def highest_expr_genes(
         adata: AnnData,
         n_top: int = 30,

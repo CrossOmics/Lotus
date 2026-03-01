@@ -3,8 +3,9 @@ import scanpy as sc
 from anndata import AnnData
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
+from lotus.lineagetracker import logged
 
-
+@logged
 def scatter(
         adata: AnnData,
         x: str | None = None,
@@ -69,7 +70,7 @@ def scatter(
         frameon=frameon, size=size, title=title, show=show, save=save, ax=ax, **kwargs
     )
 
-
+@logged
 def heatmap(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -126,7 +127,7 @@ def heatmap(
         vmin=vmin, vmax=vmax, vcenter=vcenter, norm=norm, **kwds
     )
 
-
+@logged
 def dotplot(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -197,7 +198,7 @@ def dotplot(
         cmap=cmap, dot_max=dot_max, dot_min=dot_min, smallest_dot=smallest_dot, **kwds
     )
 
-
+@logged
 def tracksplot(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -240,7 +241,7 @@ def tracksplot(
         layer=layer, show=show, save=save, figsize=figsize, **kwds
     )
 
-
+@logged
 def violin(
         adata: AnnData,
         keys: str | Sequence[str],
@@ -289,7 +290,7 @@ def violin(
         save=save, ax=ax, **kwds
     )
 
-
+@logged
 def stacked_violin(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -355,7 +356,7 @@ def stacked_violin(
         size=size, row_palette=row_palette, yticklabels=yticklabels, **kwds
     )
 
-
+@logged
 def matrixplot(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -416,7 +417,7 @@ def matrixplot(
         vcenter=vcenter, norm=norm, **kwds
     )
 
-
+@logged
 def clustermap(
         adata: AnnData,
         obs_keys: str | None = None,
@@ -445,7 +446,7 @@ def clustermap(
         adata, obs_keys=obs_keys, use_raw=use_raw, show=show, save=save, **kwds
     )
 
-
+@logged
 def ranking(
         adata: AnnData,
         attr: Literal['var', 'obs', 'uns', 'varm', 'obsm'],
@@ -481,7 +482,7 @@ def ranking(
         show=show
     )
 
-
+@logged
 def dendrogram(
         adata: AnnData,
         groupby: str,
