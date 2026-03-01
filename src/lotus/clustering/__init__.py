@@ -2,7 +2,8 @@ from .clustering_core import (
     leiden,
     louvain,
     dendrogram,
-    umap
+    umap,
+    tsne,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "louvain",
     "dendrogram",
     "umap",
+    "tsne",
 ]

@@ -13,6 +13,12 @@ from .gseapy_core import (
 from .celltypist_core import (
     run_celltypist_annotation
 )
+from ._get_core import (
+    aggregate,
+    obs_df,
+    var_df,
+)
+from .ingest_core import ingest
 
 __all__ = [
     "rank_genes_groups",
@@ -21,6 +27,10 @@ __all__ = [
     "score_genes",
     "score_genes_cell_cycle",
     "rank_genes_groups_df",
+    "obs_df",
+    "var_df",
+    "aggregate",
     "run_enrichr_analysis",
-    "run_celltypist_annotation"
+    "run_celltypist_annotation",
+    "ingest",
 ]

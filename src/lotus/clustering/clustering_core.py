@@ -1,9 +1,46 @@
-from typing import Literal, Sequence, Mapping, Any, Tuple, Dict, Optional, Union
+from typing import Literal, Sequence, Mapping, Any, Tuple, Dict, Optional, Union, Iterable
 import numpy as np
 import scanpy as sc
 from anndata import AnnData
 from scipy.sparse import csr_matrix, csc_matrix
 from lotus.lineagetracker import logged
+
+
+@logged
+def tsne(
+        adata: AnnData,
+        n_pcs: int | None = None,
+        *,
+        use_rep: str | None = None,
+        perplexity: float = 30,
+        metric: str = 'euclidean',
+        early_exaggeration: float = 12,
+        learning_rate: float = 1000,
+        random_state: int | np.random.RandomState | None = 0,
+        use_fast_tsne: bool = False,
+        n_jobs: int | None = None,
+        key_added: str | None = None,
+        copy: bool = False,
+) -> AnnData | None:
+    """
+    Compute a t-SNE embedding.
+
+    Wraps scanpy.tl.tsne.
+    """
+    return sc.tl.tsne(
+        adata,
+        n_pcs=n_pcs,
+        use_rep=use_rep,
+        perplexity=perplexity,
+        metric=metric,
+        early_exaggeration=early_exaggeration,
+        learning_rate=learning_rate,
+        random_state=random_state,
+        use_fast_tsne=use_fast_tsne,
+        n_jobs=n_jobs,
+        key_added=key_added,
+        copy=copy,
+    )
 @logged
 def leiden(
         adata: AnnData,

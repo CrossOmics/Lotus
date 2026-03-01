@@ -2,7 +2,6 @@ from ._io_core import (
     # Generic Read/Write
     read,
     write,
-    standardize_load,
     # 10x Genomics & Spatial
     read_10x_h5,
     read_10x_mtx,
@@ -23,7 +22,6 @@ __all__ = [
     # Generic Read/Write
     "read",
     "write",
-    # "standardize_load",
     # 10x Genomics & Spatial
     "read_10x_h5",
     "read_10x_mtx",

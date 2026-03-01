@@ -10,6 +10,7 @@ from ._generic_visualization import (
     clustermap,
     ranking,
     dendrogram,
+    sim,
 )
 from ._embedding_visualization_core import (
     # Embedding Plots
@@ -74,6 +75,7 @@ __all__ = [
     "clustermap",
     "ranking",
     "dendrogram",
+    "sim",
     "coremap",
 
     # Embedding Plots

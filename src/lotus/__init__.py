@@ -7,6 +7,7 @@ from lotus import (
     core_analysis,
     io,
     preprocessing,
+    trajectory,
     visualization,
     lineagetracker
 )
@@ -31,5 +32,6 @@ __all__ = [
     'io',
     'lineagetracker',
     'preprocessing',
+    'trajectory',
     'visualization',
 ]

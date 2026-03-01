@@ -515,3 +515,29 @@ def dendrogram(
         adata, groupby, dendrogram_key=dendrogram_key, orientation=orientation,
         remove_labels=remove_labels, show=show, save=save, ax=ax
     )
+
+@logged
+def sim(
+        adata: AnnData,
+        *,
+        tmax_realization: int | None = None,
+        as_heatmap: bool = False,
+        shuffle: bool = False,
+        show: bool | None = None,
+        save: bool | str | None = None,
+        marker: str | Sequence[str] = '.',
+) -> None:
+    """
+    Plot simulation results.
+
+    Wraps scanpy.pl.sim.
+    """
+    sc.pl.sim(
+        adata,
+        tmax_realization=tmax_realization,
+        as_heatmap=as_heatmap,
+        shuffle=shuffle,
+        show=show,
+        save=save,
+        marker=marker,
+    )
