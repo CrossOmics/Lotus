@@ -6,160 +6,6 @@ from anndata import AnnData
 import scanpy.preprocessing as pp_module
 from lotus.lineagetracker import logged
 
-def run_preprocessing(
-        adata: AnnData,
-        *,
-        n_pcs: int | None = None,
-        target_sum: float = 1e4,
-        n_top_genes: int | None = None,
-        n_neighbors: int = 15,
-        use_rep: str = "X_pca",
-        save_raw: bool = True,
-        raw_layer: str = "raw_counts",
-        min_genes: int | None = None,
-        min_cells: int | None = None,
-        min_counts: int | None = None,
-        max_counts: int | None = None,
-        max_genes: int | None = None,
-        pct_mt_max: float | None = None,
-        hvg_flavor: str = "seurat_v3",
-        batch_key: str | None = None,
-        regress_out_keys: list[str] | None = None,
-        use_combat: bool = False,
-        qc_vars: Collection[str] = (),
-) -> None:
-    """
-    Run a full preprocessing pipeline on an AnnData object.
-
-    Steps included:
-        1. Restore raw counts if preprocessing was run before.
-        2. Save raw counts to a layer for reproducibility.
-        3. Compute QC metrics.
-        4. Filter low-quality cells/genes (counts, genes, MT%).
-        5. Normalize total counts and apply log1p.
-        6. Optionally regress out unwanted covariates.
-        7. Optionally apply ComBat batch correction.
-        8. Select highly variable genes and subset.
-        9. Scale features.
-       10. Run PCA.
-       11. Build the neighbor graph.
-
-    The function updates `adata` in place and populates:
-           - QC metrics in `adata.obs` and `adata.var`
-           - normalized/log1p data in `adata.X` and `adata.raw`
-           - HVGs in `adata.var['highly_variable']`
-           - PCA embeddings in `adata.obsm['X_pca']`
-           - neighbor graph in `adata.uns['neighbors']` and `adata.obsp`
-    """
-    # 1. Restore raw counts if preprocessing was run before
-    # This prevents errors when re-running preprocessing on already processed data
-    if adata.raw is not None or (save_raw and raw_layer and raw_layer in adata.layers):
-        if save_raw and raw_layer and raw_layer in adata.layers:
-            # Restore from raw_layer (original count matrix)
-            print("Restoring from raw counts layer for re-preprocessing...")
-            adata.X = adata.layers[raw_layer].copy()
-            # Clear preprocessing results that will be recomputed
-            keys_to_clear_obsm = ['X_pca', 'X_latent']
-            keys_to_clear_uns = ['neighbors', 'pca']
-            keys_to_clear_var = ['highly_variable', 'means', 'dispersions', 'dispersions_norm',
-                                 'highly_variable_nbatches', 'highly_variable_intersection']
-
-            for k in keys_to_clear_obsm: adata.obsm.pop(k, None)
-            for k in keys_to_clear_uns: adata.uns.pop(k, None)
-            for k in keys_to_clear_var: adata.var.pop(k, None)
-
-        elif adata.raw is not None:
-            # Restore from adata.raw (normalized+log1p data)
-            # We try to use this, but warn that it might not be raw counts
-            print("Restoring from adata.raw for re-preprocessing...")
-            print("Warning: Cannot fully restore from adata.raw. Using adata.raw.X as starting point.")
-            adata.X = adata.raw.X.copy()
-            # Clear preprocessing results
-            for k in ['X_pca', 'X_latent']: adata.obsm.pop(k, None)
-            for k in ['neighbors', 'pca']: adata.uns.pop(k, None)
-
-    # 2. Save raw counts to a layer for reproducibility
-    if save_raw and raw_layer:
-        if raw_layer not in adata.layers:
-            adata.layers[raw_layer] = adata.X.copy()
-
-    # 3. Compute QC metrics
-    calculate_qc_metrics(adata, qc_vars=qc_vars, inplace=True)
-
-    # 4. Filter low-quality cells/genes
-    # Filter cells based on counts and genes
-    if min_counts is not None:
-        filter_cells(adata, min_counts=min_counts, inplace=True)
-
-    if min_genes is not None:
-        filter_cells(adata, min_genes=min_genes, inplace=True)
-
-    if max_counts is not None:
-        filter_cells(adata, max_counts=max_counts, inplace=True)
-
-    if max_genes is not None:
-        filter_cells(adata, max_genes=max_genes, inplace=True)
-
-    # Filter genes based on cell appearance
-    if min_cells is not None:
-        filter_genes(adata, min_cells=min_cells, inplace=True)
-
-    # Filter based on mitochondrial percentage if requested
-    if pct_mt_max is not None:
-        pct_mt_key = None
-        if 'pct_counts_mt' in adata.obs.columns:
-            pct_mt_key = 'pct_counts_mt'
-        elif 'pct_mt' in adata.obs.columns:
-            pct_mt_key = 'pct_mt'
-
-        if pct_mt_key is not None:
-            n_before = adata.n_obs
-            # Standard Scanpy way to filter obs in-place
-            mask = adata.obs[pct_mt_key] < pct_mt_max
-            adata._inplace_subset_obs(mask)
-            if n_before != adata.n_obs:
-                print(f"Filtered {n_before - adata.n_obs} cells with {pct_mt_key} >= {pct_mt_max}")
-
-    # 5. Normalize total counts and apply log1p
-    normalize_total(adata, target_sum=target_sum, inplace=True)
-    log1p(adata)
-
-    # Save the normalized, log-transformed data to adata.raw (Standard Scanpy Workflow)
-    if save_raw:
-        adata.raw = adata
-
-    # 6. Optionally regress out unwanted covariates
-    if regress_out_keys is not None:
-        regress_out(adata, keys=regress_out_keys)
-
-    # 7. Optionally apply ComBat batch correction
-    if use_combat and batch_key is not None:
-        if batch_key in adata.obs.columns:
-            combat(adata, key=batch_key, inplace=True)
-        else:
-            print(f"Warning: batch_key '{batch_key}' not found in adata.obs. Skipping ComBat correction.")
-
-    # 8. Select highly variable genes and subset
-    # This reduces dimensionality before scaling and PCA
-    if n_top_genes is None:
-        n_top_genes = min(2000, adata.n_vars)
-
-    highly_variable_genes(
-        adata,
-        n_top_genes=n_top_genes,
-        flavor=hvg_flavor,
-        subset=True,
-        inplace=True
-    )
-
-    # 9. Scale features (Zero-center and unit variance)
-    scale(adata, zero_center=True, max_value=10)
-
-    # 10. Run PCA
-    pca(adata, n_comps=n_pcs)
-
-    # 11. Build the neighbor graph
-    neighbors(adata, n_neighbors=n_neighbors, use_rep=use_rep)
 
 @logged
 def calculate_qc_metrics(
@@ -590,7 +436,7 @@ def pca(
         copy=copy
     )
 
-
+@logged
 def sample(
         data: AnnData | np.ndarray,
         fraction: float | None = None,
@@ -633,7 +479,7 @@ def sample(
 
 from typing import Mapping, Any, Callable
 
-
+@logged
 def downsample_counts(
         adata: AnnData,
         counts_per_cell: int | Collection[int] | None = None,
@@ -673,7 +519,7 @@ def downsample_counts(
         copy=copy
     )
 
-
+@logged
 def recipe_zheng17(
         adata: AnnData,
         *,
@@ -706,7 +552,7 @@ def recipe_zheng17(
         copy=copy
     )
 
-
+@logged
 def recipe_weinreb17(
         adata: AnnData,
         *,
@@ -747,7 +593,7 @@ def recipe_weinreb17(
         copy=copy
     )
 
-
+@logged
 def recipe_seurat(
         adata: AnnData,
         *,
@@ -776,7 +622,7 @@ def recipe_seurat(
         copy=copy
     )
 
-
+@logged
 def combat(
         adata: AnnData,
         key: str = 'batch',
@@ -805,7 +651,7 @@ def combat(
         inplace=inplace
     )
 
-
+@logged
 def scrublet(
         adata: AnnData,
         adata_sim: AnnData | None = None,
@@ -882,7 +728,7 @@ def scrublet(
         random_state=random_state
     )
 
-
+@logged
 def scrublet_simulate_doublets(
         adata: AnnData,
         *,
@@ -914,7 +760,7 @@ def scrublet_simulate_doublets(
         random_seed=random_seed
     )
 
-
+@logged
 def neighbors(
         adata: AnnData,
         n_neighbors: int = 15,
