@@ -8,7 +8,7 @@ from anndata import AnnData
 from loguru import logger
 
 from lotus.lineagetracker import logged
-from ._storage import ANNOTATION_SCHEMA_VERSION, sanitize_storage_key
+from ._storage import ANNOTATION_SCHEMA_VERSION, _sanitize_storage_key
 
 
 _AVAILABLE_LIBRARIES: dict[str, list[str]] = {}
@@ -111,7 +111,7 @@ def run_enrichr_analysis(
     uns_bucket["schema_version"] = ANNOTATION_SCHEMA_VERSION
     uns_bucket["provider"] = "gseapy"
     uns_bucket["analysis_type"] = "enrichment"
-    result_key = sanitize_storage_key(analysis_label) if analysis_label else f"analysis_{len([k for k in uns_bucket if k not in metadata_keys]) + 1}"
+    result_key = _sanitize_storage_key(analysis_label) if analysis_label else f"analysis_{len([k for k in uns_bucket if k not in metadata_keys]) + 1}"
     libraries_to_run: list[str] | Mapping[str, Sequence[str]]
     libraries_to_run = custom_gene_sets if custom_gene_sets is not None else resolved_gene_sets
 

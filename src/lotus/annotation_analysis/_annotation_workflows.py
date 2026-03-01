@@ -3,10 +3,13 @@ from typing import Any
 
 from anndata import AnnData
 
+from lotus.lineagetracker import logged
+
 from .celltypist_core import run_celltypist_annotation
 from .gseapy_core import run_enrichr_analysis
 
 
+@logged
 def annotate_cell_types(
         adata: AnnData,
         model_names: str | Sequence[str] | None = None,
@@ -24,6 +27,7 @@ def annotate_cell_types(
     )
 
 
+@logged
 def run_enrichment(
         adata: AnnData,
         gene_list: Sequence[str],

@@ -11,8 +11,8 @@ from anndata import AnnData
 from lotus.lineagetracker import logged
 from ._storage import (
     ANNOTATION_SCHEMA_VERSION,
-    build_obs_column_name,
-    sanitize_storage_key,
+    _build_obs_column_name,
+    _sanitize_storage_key,
 )
 
 
@@ -31,7 +31,7 @@ def _normalize_model_names(model_names: str | Sequence[str] | None) -> list[str]
 
 
 def _sanitize_model_key(model_name: str) -> str:
-    return sanitize_storage_key(model_name)
+    return _sanitize_storage_key(model_name)
 
 
 def _list_celltypist_models() -> list[str]:
@@ -57,7 +57,7 @@ def _resolve_model_names(model_names: Sequence[str]) -> list[str]:
         raise ValueError(
             "CellTypist model(s) not available locally: "
             f"{missing}. Call `celltypist.models.models_description()` or "
-            "`download_models_to_cache()` first."
+            "`celltypist.models.download_model()` first."
         )
     return list(model_names)
 
@@ -152,9 +152,9 @@ def run_celltypist_annotation(
             prefix=f"{key_added}_{model_key}_",
         ).obs
 
-        predicted_label_col = build_obs_column_name(key_added, model_key, "predicted_labels")
-        majority_voting_col = build_obs_column_name(key_added, model_key, "majority_voting")
-        conf_score_col = build_obs_column_name(key_added, model_key, "conf_score")
+        predicted_label_col = _build_obs_column_name(key_added, model_key, "predicted_labels")
+        majority_voting_col = _build_obs_column_name(key_added, model_key, "majority_voting")
+        conf_score_col = _build_obs_column_name(key_added, model_key, "conf_score")
 
         result_adata.obs[predicted_label_col] = prediction_obs[f"{key_added}_{model_key}_predicted_labels"]
         if has_majority_voting and f"{key_added}_{model_key}_majority_voting" in prediction_obs:
@@ -227,7 +227,7 @@ def run_celltypist_annotation(
     return result_adata if not inplace else uns_bucket
 
 
-def download_models_to_cache(model_names: str | Iterable[str] | None = None) -> None:
+def _download_models_to_cache(model_names: str | Iterable[str] | None = None) -> None:
     """
     Pre-download CellTypist model(s) to the local cache.
     """
