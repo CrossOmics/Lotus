@@ -63,7 +63,7 @@ def DotPlot(
         vcenter=vcenter, norm=norm, **kwds
     )
 
-
+@logged
 def MatrixPlot(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
@@ -116,7 +116,7 @@ def MatrixPlot(
         vmin=vmin, vmax=vmax, vcenter=vcenter, norm=norm, **kwds
     )
 
-
+@logged
 def StackedViolin(
         adata: AnnData,
         var_names: str | Sequence[str] | Mapping[str, str | Sequence[str]],
