@@ -143,7 +143,7 @@ def _run_corespect(
     )
     return adata, model
 
-
+@logged
 def core_selection(
         adata: AnnData,
         percentage: float,

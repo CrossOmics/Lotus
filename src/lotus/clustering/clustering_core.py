@@ -3,7 +3,8 @@ import numpy as np
 import scanpy as sc
 from anndata import AnnData
 from scipy.sparse import csr_matrix, csc_matrix
-
+from lotus.lineagetracker import logged
+@logged
 def leiden(
         adata: AnnData,
         resolution: float = 1,
@@ -67,7 +68,7 @@ def leiden(
         **clustering_args
     )
 
-
+@logged
 def louvain(
         adata: AnnData,
         resolution: float | None = None,
@@ -127,7 +128,7 @@ def louvain(
         copy=copy
     )
 
-
+@logged
 def dendrogram(
         adata: AnnData,
         groupby: str,
@@ -182,7 +183,7 @@ def dendrogram(
         inplace=inplace
     )
 
-
+@logged
 def umap(
         adata: AnnData,
         *,
