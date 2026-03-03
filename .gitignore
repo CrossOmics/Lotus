@@ -15,6 +15,7 @@ covid_cplearn.h5ad
 *.egg-info/
 dist/
 build/
+*cache
 
 # OS
 .DS_Store

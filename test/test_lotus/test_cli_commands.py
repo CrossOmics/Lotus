@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 from click.testing import CliRunner
-from lotus.lineagetracker import logged
 
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path:
@@ -11,7 +10,6 @@ if str(project_root) not in sys.path:
 from lotus.cli import cli
 
 
-@logged
 def _run_inject(tmp_path, source_code: str, prefix: str = "") -> str:
     target = tmp_path / "target.py"
     target.write_text(source_code, encoding="utf-8")
@@ -24,7 +22,6 @@ def _run_inject(tmp_path, source_code: str, prefix: str = "") -> str:
     return target.read_text(encoding="utf-8")
 
 
-@logged
 def test_cli_inject_top_level_functions(tmp_path):
     source = (
         "def preprocess(adata):\n"
@@ -39,7 +36,6 @@ def test_cli_inject_top_level_functions(tmp_path):
     assert "@logged\ndef summarize" in updated
 
 
-@logged
 def test_cli_inject_nested_functions(tmp_path):
     source = (
         "def outer(adata):\n"
@@ -54,7 +50,6 @@ def test_cli_inject_nested_functions(tmp_path):
     assert "return inner(adata)" in updated
 
 
-@logged
 def test_cli_inject_class_fields_and_methods(tmp_path):
     source = (
         "class Processor:\n"
@@ -70,3 +65,21 @@ def test_cli_inject_class_fields_and_methods(tmp_path):
     assert "version = 1" in updated
     assert "    @logged\n    def __init__" in updated
     assert "    @logged\n    def run" in updated
+
+
+def test_cli_skips_virtual_env_directory(tmp_path):
+    # Mark directory as a virtual env by creating pyvenv.cfg
+    venv_dir = tmp_path / "myenv"
+    venv_dir.mkdir()
+    (venv_dir / "pyvenv.cfg").write_text("home = /usr/bin/python", encoding="utf-8")
+
+    target = venv_dir / "mod.py"
+    original = "def foo(adata):\n    return adata\n"
+    target.write_text(original, encoding="utf-8")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["inject", str(venv_dir)])
+
+    assert result.exit_code == 0, result.output
+    assert "Scanned 0 file(s), changed 0 file(s)." in result.output
+    assert target.read_text(encoding="utf-8") == original

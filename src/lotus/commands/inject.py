@@ -10,19 +10,17 @@ from typing import Iterable
 import libcst as cst
 import libcst.matchers as m
 
-_DEFAULT_EXCLUDED_DIRS = {
+_DEFAULT_EXCLUDED_NAME = {
     ".git",
     ".venv",
     "__pycache__",
     "build",
     "dist",
-}
-
-_DEFAULT_EXCLUDED_FILES = {
-    "__init__"
+    "__init__.py"
 }
 
 
+# ---- Helper Functions ----
 def _is_logged_decorator(decorator: cst.Decorator) -> bool:
     return m.matches(
         decorator.decorator,
@@ -32,31 +30,20 @@ def _is_logged_decorator(decorator: cst.Decorator) -> bool:
         ),
     )
 
-
-class LoggedDecoratorAdder(cst.CSTTransformer):
-    """Add ``@logged`` to matching functions that don't already have it."""
-
-    def __init__(self, target_prefix: str = ""):
-        self.target_prefix = target_prefix
-        self.changed = False
-
-    def leave_FunctionDef(
-        self,
-        original_node: cst.FunctionDef,
-        updated_node: cst.FunctionDef,
-    ) -> cst.FunctionDef:
-        if self.target_prefix and not original_node.name.value.startswith(
-            self.target_prefix
-        ):
-            return updated_node
-
-        if any(_is_logged_decorator(decorator) for decorator in original_node.decorators):
-            return updated_node
-
-        self.changed = True
-        new_decorator = cst.Decorator(decorator=cst.Name("logged"))
-        return updated_node.with_changes(decorators=(new_decorator, *updated_node.decorators))
-
+def is_virtual_env(path: Path) -> bool:
+    # A virtual environment must be a directory
+    if not path.is_dir():
+        return False
+        
+    # Fingerprint 1: pyvenv.cfg (Standard for Python 3.3+ venv and modern virtualenv)
+    if (path / "pyvenv.cfg").is_file():
+        return True
+        
+    # Fingerprint 2: bin/activate (macOS/Linux) or Scripts/activate (Windows)
+    if (path / "bin" / "activate").is_file() or (path / "Scripts" / "activate").is_file():
+        return True
+        
+    return False
 
 def _statement_has_logged_import(stmt: cst.CSTNode) -> bool:
     if not m.matches(stmt, m.SimpleStatementLine(body=[m.ImportFrom()])):
@@ -140,6 +127,32 @@ def _insert_logged_import(module: cst.Module) -> cst.Module:
     return module.with_changes(body=body)
 
 
+class LoggedDecoratorAdder(cst.CSTTransformer):
+    """Add ``@logged`` to matching functions that don't already have it."""
+
+    def __init__(self, target_prefix: str = ""):
+        self.target_prefix = target_prefix
+        self.changed = False
+
+    def leave_FunctionDef(
+        self,
+        original_node: cst.FunctionDef,
+        updated_node: cst.FunctionDef,
+    ) -> cst.FunctionDef:
+        # Exclude magic methods (e.g., __call__()) and methods don't start with target prefix (if there is)
+        if (original_node.name.value.startswith("__") and original_node.name.value.endswith("__")) or \
+            (self.target_prefix and not original_node.name.value.startswith(self.target_prefix)):
+            return updated_node
+
+        # If already contains @logged, skip the current function
+        if any(_is_logged_decorator(decorator) for decorator in original_node.decorators):
+            return updated_node
+
+        self.changed = True
+        new_decorator = cst.Decorator(decorator=cst.Name("logged"))
+        return updated_node.with_changes(decorators=(new_decorator, *updated_node.decorators))
+
+
 def format_code_string(source_code: str, target_prefix: str = "") -> str:
     """Return code with @logged injected, preserving formatting via LibCST."""
     module = cst.parse_module(source_code)
@@ -166,15 +179,32 @@ def format_file(file_path: str | Path, target_prefix: str = "") -> bool:
 
 
 def _iter_python_files(path: Path) -> Iterable[Path]:
+    venv_cache: dict[Path, bool] = {}
+
+    def _is_venv_cached(p: Path) -> bool:
+        resolved = p.resolve()
+        if resolved not in venv_cache:
+            venv_cache[resolved] = is_virtual_env(resolved)
+        return venv_cache[resolved]
+
     if path.is_file():
-        print(path.stem)
-        print(path.name)
-        if path.suffix == ".py" and path.stem not in _DEFAULT_EXCLUDED_FILES:
+        if (
+            path.suffix == ".py"
+            and path.name not in _DEFAULT_EXCLUDED_NAME
+            and not _is_venv_cached(path.parent)
+        ):
             yield path
+        return
+    
+    # Skip immediately when the target directory itself is a virtual env.
+    if _is_venv_cached(path):
         return
 
     for candidate in path.rglob("*.py"):
-        if any(part in _DEFAULT_EXCLUDED_DIRS for part in candidate.parts):
+        if any(part in _DEFAULT_EXCLUDED_NAME for part in candidate.parts):
+            continue
+        # Also skip any file nested under a detected virtual env directory.
+        if any(_is_venv_cached(parent) for parent in candidate.parents):
             continue
         yield candidate
 
