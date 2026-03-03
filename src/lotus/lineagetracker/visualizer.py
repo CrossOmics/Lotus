@@ -82,8 +82,8 @@ def _parent_anchor_index(parent: LineageNode, child: LineageNode) -> int:
 def visualize(lineage_file: Path, output_file: Path):
     """Read the lineage JSON file, build a DAG, and save as a flowchart PNG.
 
-    Each AnnData node shows: display name and shape.
-    Operation history is rendered as dedicated operation nodes.
+    All AnnData nodes are rendered as filled boxes in one color.
+    All operation nodes are rendered as filled boxes in another color.
     Directed arrows point from parent to child.
     """
     if not lineage_file.exists():
@@ -100,11 +100,11 @@ def visualize(lineage_file: Path, output_file: Path):
     if not nodes:
         return
 
+
     # Strip the extension — Diagram appends it automatically.
     out_stem = str(output_file.with_suffix(""))
 
     graph_attr = {
-        # "label": "Lotus Lineage DAG",
         "labelloc": "t",
         "labeljust": "c",
         "fontsize": "14",
@@ -121,7 +121,6 @@ def visualize(lineage_file: Path, output_file: Path):
     }
 
     with Diagram(
-        # "Lotus Lineage DAG",
         filename=out_stem,
         outformat="png",
         show=False,
@@ -134,21 +133,39 @@ def visualize(lineage_file: Path, output_file: Path):
 
         for lid, node in nodes.items():
             label = _data_node_label(node, lid)
-            diagram_nodes[lid] = _make_node(node, label)
+            diagram_nodes[lid] = Node(
+                label,
+                shape="box",
+                style="rounded,filled",
+                fillcolor=_ADATA_COLOR,
+            )
 
             op_chain: list[object] = []
             for idx, op in enumerate(node.operations, start=1):
                 op_label = _operation_node_label(op.method, op.args, idx)
-                op_chain.append(_make_operation_node(op_label, op.method))
+                op_chain.append(
+                    Node(
+                        op_label,
+                        shape="box",
+                        style="rounded,filled",
+                        fillcolor=_OP_COLOR,
+                    )
+                )
             operation_nodes[lid] = op_chain
-
-        # legend_anchor = next(iter(diagram_nodes.values()), None)
-        # _add_operation_legend(legend_anchor)
 
         for lid, node in nodes.items():
             for parent_lid in node.parents:
-                if parent_lid in diagram_nodes:
-                    diagram_nodes[parent_lid] >> Edge(color="#666666") >> diagram_nodes[lid]
+                parent_node = nodes.get(parent_lid)
+                if parent_node is None:
+                    continue
+                anchor_index = _parent_anchor_index(parent_node, node)
+                parent_chain = operation_nodes.get(parent_lid, [])
+                if 0 <= anchor_index < len(parent_chain):
+                    anchor = parent_chain[anchor_index]
+                else:
+                    anchor = diagram_nodes.get(parent_lid)
+                if anchor is not None:
+                    anchor >> Edge(color="#666666") >> diagram_nodes[lid]
 
             # Render operation history as chained nodes from each data node.
             chain = operation_nodes.get(lid, [])

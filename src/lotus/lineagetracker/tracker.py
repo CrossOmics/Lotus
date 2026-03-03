@@ -7,6 +7,8 @@ import inspect
 import json
 import textwrap
 import uuid
+from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -81,7 +83,10 @@ class LineageTracker:
     _instance: LineageTracker | None = None
 
     def __init__(self):
-        self._data_dir = Path.cwd() / "lineage-tracer_data"
+        self._root_dir = Path.cwd() / "lineage-tracer_data"
+        self._root_dir.mkdir(exist_ok=True)
+        self._session_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self._data_dir = self._root_dir / self._session_ts
         self._data_dir.mkdir(exist_ok=True)
         self._lineage_file = self._data_dir / "lineage.json"
         self._graph_file = self._data_dir / "lineage_graph.png"
@@ -91,6 +96,9 @@ class LineageTracker:
         # id(adata) → lid: session-local mapping that also covers AnnData views
         # (views share their parent's .uns, so we can't rely on uns alone)
         self._lid_map: dict[int, str] = {}
+        # Depth counter for nested tracked calls. Depth>0 means we are executing
+        # inside a top-level tracked operation and should suppress nested records.
+        self._operation_depth: int = 0
 
         self._load()
 
@@ -111,14 +119,8 @@ class LineageTracker:
     # ── persistence ──────────────────────────────────────────────
 
     def _load(self):
-        """Restore the DAG from the JSON file if it exists."""
-        if self._lineage_file.exists():
-            try:
-                raw = json.loads(self._lineage_file.read_text(encoding="utf-8"))
-                for lid, node_data in raw.items():
-                    self._nodes[lid] = LineageNode.model_validate(node_data)
-            except (json.JSONDecodeError, Exception):
-                pass  # Start fresh if the file is corrupted
+        """Each session starts with a fresh DAG (its own timestamped folder)."""
+        pass
 
     def save(self):
         """Write the full DAG to disk (overwrite)."""
@@ -132,12 +134,28 @@ class LineageTracker:
         )
 
     @property
+    def root_dir(self) -> Path:
+        return self._root_dir
+
+    @property
     def lineage_file(self) -> Path:
         return self._lineage_file
 
     @property
     def graph_file(self) -> Path:
         return self._graph_file
+
+    @property
+    def is_nested_operation(self) -> bool:
+        return self._operation_depth > 0
+
+    @contextmanager
+    def operation_scope(self):
+        self._operation_depth += 1
+        try:
+            yield
+        finally:
+            self._operation_depth -= 1
 
     # ── lid helpers ──────────────────────────────────────────────
 
