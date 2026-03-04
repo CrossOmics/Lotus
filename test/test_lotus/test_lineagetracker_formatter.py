@@ -4,8 +4,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 project_root = Path(__file__).resolve().parent.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root / "src"))
+src_path = str(project_root / "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 from lotus.cli import cli
 from lotus.commands.inject import format_code_string, format_file, format_paths

@@ -18,6 +18,8 @@ from anndata import AnnData
 from .models import LineageNode, OperationRecord
 
 _INTERNAL_DIR = Path(__file__).resolve().parent
+_WORKSPACE_DIR = Path.cwd().resolve()
+_GENERIC_LOCAL_NAMES = {"result"}
 
 
 def _is_internal_frame(filename: str) -> bool:
@@ -25,6 +27,21 @@ def _is_internal_frame(filename: str) -> bool:
         return Path(filename).resolve().is_relative_to(_INTERNAL_DIR)
     except (RuntimeError, OSError, ValueError):
         return False
+
+
+def _is_workspace_frame(filename: str) -> bool:
+    try:
+        return Path(filename).resolve().is_relative_to(_WORKSPACE_DIR)
+    except (RuntimeError, OSError, ValueError):
+        return False
+
+
+def _is_valid_inferred_name(name: str) -> bool:
+    if not name or name.startswith("_"):
+        return False
+    if name in _GENERIC_LOCAL_NAMES:
+        return False
+    return True
 
 
 # ── argument serialisation helpers ───────────────────────────────
@@ -85,7 +102,9 @@ class LineageTracker:
     def __init__(self):
         self._root_dir = Path.cwd() / "lineage-tracer_data"
         self._root_dir.mkdir(exist_ok=True)
-        self._session_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self._session_ts = (
+            datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex
+        )
         self._data_dir = self._root_dir / self._session_ts
         self._data_dir.mkdir(exist_ok=True)
         self._lineage_file = self._data_dir / "lineage.json"
@@ -246,12 +265,17 @@ class LineageTracker:
             if not isinstance(node, ast.Call):
                 continue
             for arg in node.args:
-                if isinstance(arg, ast.Name) and local_scope.get(arg.id) is adata:
+                if (
+                    isinstance(arg, ast.Name)
+                    and _is_valid_inferred_name(arg.id)
+                    and local_scope.get(arg.id) is adata
+                ):
                     return arg.id
             for kw in node.keywords:
                 if (
                     kw.arg
                     and isinstance(kw.value, ast.Name)
+                    and _is_valid_inferred_name(kw.value.id)
                     and local_scope.get(kw.value.id) is adata
                 ):
                     return kw.value.id
@@ -280,11 +304,15 @@ class LineageTracker:
                     continue
                 for target in stmt.targets:
                     for name in cls._iter_target_names(target):
+                        if not _is_valid_inferred_name(name):
+                            continue
                         return name
             if isinstance(stmt, ast.AnnAssign):
                 if isinstance(stmt.value, ast.Call) and cls._is_register_call(stmt.value):
                     continue
                 for name in cls._iter_target_names(stmt.target):
+                    if not _is_valid_inferred_name(name):
+                        continue
                     return name
         return None
 
@@ -294,7 +322,7 @@ class LineageTracker:
         adata: AnnData,
     ) -> str | None:
         for name, value in frameinfo.frame.f_locals.items():
-            if name.startswith("_"):
+            if not _is_valid_inferred_name(name):
                 continue
             if value is adata:
                 return name
@@ -306,6 +334,8 @@ class LineageTracker:
         try:
             for frameinfo in stack[2:]:
                 if _is_internal_frame(frameinfo.filename):
+                    continue
+                if not _is_workspace_frame(frameinfo.filename):
                     continue
 
                 from_call_args = self._extract_name_from_call_args(frameinfo, adata)

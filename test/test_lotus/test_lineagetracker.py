@@ -14,7 +14,7 @@ import anndata
 
 # Ensure the project src is on the path
 project_root = Path(__file__).resolve().parent.parent.parent
-if str(project_root) not in sys.path:
+if str(project_root / "src") not in sys.path:
     sys.path.insert(0, str(project_root / "src"))
 
 from lotus.lineagetracker import LineageTracker, bind_variable_name, logged
@@ -23,7 +23,7 @@ from lotus.preprocessing import log1p, normalize_total, pca, scale
 
 
 @logged
-def normal_and_log(adata: anndata):
+def normal_and_log(adata: anndata.AnnData):
     normalize_total(adata, target_sum=1e4, inplace=True)
     log1p(adata)
 
@@ -119,14 +119,18 @@ def test_lineagetracker():
     before_pipeline_count = len(
         json.loads(tracker.lineage_file.read_text())[logged_pipeline_lid]["operations"]
     )
-    # check suppresse innner functions
+    # check suppressed inner functions
     normal_and_log(logged_pipeline_adata)
     test_copy_pipeline_adata = logged_pipeline_adata.copy()
     scale(logged_pipeline_adata, max_value=10)
-    test_slicing_pipeline_adata = logged_pipeline_adata[root_adata.obs["celltype"] == "T"]
+    test_slicing_pipeline_adata = logged_pipeline_adata[
+        logged_pipeline_adata.obs["celltype"] == "T"
+    ]
     pca(logged_pipeline_adata, n_comps=5)
     logged_pipeline_node = json.loads(tracker.lineage_file.read_text())[logged_pipeline_lid]
     pipeline_methods = [op["method"] for op in logged_pipeline_node["operations"]]
+    assert len(logged_pipeline_node["operations"]) == before_pipeline_count + 3
+    assert pipeline_methods[-3:] == ["normal_and_log", "scale", "pca"]
     print("[OK] Multiple @logged preprocessing functions each record one operation")
 
     # 3. Slice (monkey-patched __getitem__)

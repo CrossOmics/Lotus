@@ -4,8 +4,9 @@ using the ``diagrams`` library (backed by Graphviz)."""
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 from loguru import logger
 
 from diagrams import Diagram, Edge, Node
@@ -61,14 +62,12 @@ def _parent_anchor_index(parent: LineageNode, child: LineageNode) -> int:
     """Return the index of the latest parent operation that happened before
     child creation time. Returns -1 when the edge should start from parent data."""
 
-    def find_less_equal_bound(nums: List[int], target: int) -> int:
-        '''
-        搜索最后一个 <= target 的数
-        '''
+    def find_less_equal_bound(nums: list[datetime], target: datetime) -> int:
+        """Find the index of the last value that is <= target."""
         l, r = 0, len(nums) - 1
         while l <= r:
             mid = (l + r) // 2
-            if nums[mid] <= target:  # 注意此时是 <=
+            if nums[mid] <= target:
                 l = mid + 1
             else:
                 r = mid - 1
@@ -194,5 +193,5 @@ def render_missing_pngs(root_dir: Path) -> None:
         if json_file.exists() and not png_file.exists():
             try:
                 visualize(json_file, png_file)
-            except Exception as e:
-                logger.error("error in visualizing png: {}", e)                
+            except Exception:
+                logger.exception("error visualizing png for {}", json_file)

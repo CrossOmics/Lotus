@@ -29,9 +29,4 @@ docs/LOTUS_VS_SCANPY.md
 docs/annotation_analysis_demo.py
 integration test/test_annotation_analysis_integration.py
 integration test/test_annotation_analysis_smoke.py
-lineage-tracer_data/lineage_graph
-lineage-tracer_data/lineage.json
-lineage-tracer_data/lineage.json
-lineage-tracer_data/lineage.json
-lineage-tracer_data/lineage.json
-lineage-tracer_data/lineage.json
+/lineage-tracer_data

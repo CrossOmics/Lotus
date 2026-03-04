@@ -54,6 +54,13 @@ def _run_with_tracking(
     """Shared tracking flow for both method and function wrappers."""
     tracker = LineageTracker.instance()
     is_nested = tracker.is_nested_operation
+    snapshot_key = f"before_{func.__name__}_copy"
+
+    if adata is not None and not is_nested:
+        try:
+            adata.layers[snapshot_key] = adata.X.copy()
+        except Exception as e:
+            logger.warning("Failed to snapshot adata.X to adata.layers['{}']: {}", snapshot_key, e)
 
     if adata is not None and not is_nested:
         all_args = _build_args_dict(func, args_for_record, kwargs_for_record)
@@ -63,6 +70,8 @@ def _run_with_tracking(
         logger.info(before_log)
     with tracker.operation_scope():
         result = invoke()
+    if before_log is not None:
+        logger.info("[Done] {}", call_name)
 
     if (
         not is_nested

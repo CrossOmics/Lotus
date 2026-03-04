@@ -12,6 +12,7 @@ import libcst.matchers as m
 
 _DEFAULT_EXCLUDED_NAME = {
     ".git",
+    ".venv",
     "__pycache__",
     "build",
     "dist",
@@ -47,15 +48,24 @@ def is_virtual_env(path: Path) -> bool:
     return False
 
 def _statement_has_logged_import(stmt: cst.CSTNode) -> bool:
+    # We only consider statements of the form:
+    #   from lotus.lineagetracker import logged
+    # (optionally with an "as" alias). Wildcard imports are not treated
+    # as sufficient to guarantee that `logged` is available.
     if not m.matches(stmt, m.SimpleStatementLine(body=[m.ImportFrom()])):
         return False
     line = stmt
     import_from = line.body[0]
     if not isinstance(import_from, cst.ImportFrom):
         return False
+    if not m.matches(
+        import_from.module,
+        m.Attribute(value=m.Name("lotus"), attr=m.Name("lineagetracker")),
+    ):
+        return False
     names = import_from.names
     if isinstance(names, cst.ImportStar):
-        return True
+        return False
     for alias in names:
         if isinstance(alias, cst.ImportAlias) and m.matches(alias.name, m.Name("logged")):
             return True
@@ -153,8 +163,11 @@ class LoggedDecoratorAdder(cst.CSTTransformer):
             return updated_node
 
         # Exclude magic methods (e.g., __call__()) and methods don't start with target prefix (if there is)
-        if (original_node.name.value.startswith("__") and original_node.name.value.endswith("__")) or \
-            (self.target_prefix and not original_node.name.value.startswith(self.target_prefix)):
+        name = original_node.name.value
+        is_dunder = name.startswith("__") and name.endswith("__")
+        if is_dunder or (
+            self.target_prefix and not name.startswith(self.target_prefix)
+        ):
             return updated_node
 
         # If already contains @logged, skip the current function

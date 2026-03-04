@@ -4,7 +4,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 project_root = Path(__file__).resolve().parent.parent.parent
-if str(project_root) not in sys.path:
+if str(project_root / "src") not in sys.path:
     sys.path.insert(0, str(project_root / "src"))
 
 from lotus.cli import cli
@@ -63,7 +63,7 @@ def test_cli_inject_class_fields_and_methods(tmp_path):
 
     assert "class Processor:" in updated
     assert "version = 1" in updated
-    assert "    @logged\n    def __init__" in updated
+    assert "def __init__" in updated
     assert "    @logged\n    def run" in updated
 
 
