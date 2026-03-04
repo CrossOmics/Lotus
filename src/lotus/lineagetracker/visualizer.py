@@ -4,71 +4,18 @@ using the ``diagrams`` library (backed by Graphviz)."""
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from loguru import logger
 
 from diagrams import Diagram, Edge, Node
 
 from .models import LineageNode
 
-_PREPROCESSING_OPS = {
-    "calculate_qc_metrics",
-    "filter_cells",
-    "filter_genes",
-    "normalize_total",
-    "log1p",
-    "scale",
-    "highly_variable_genes",
-    "regress_out",
-    "combat",
-    "neighbors",
-    "pca",
-}
-_IO_OPS = {
-    "read",
-    "write",
-    "standardize_load",
-    "read_h5ad",
-    "read_10x_h5",
-    "read_10x_mtx",
-    "read_visium",
-    "read_csv",
-    "read_text",
-    "read_excel",
-    "read_hdf",
-    "read_mtx",
-    "read_loom",
-    "read_umi_tools",
-}
-_CLUSTERING_OPS = {
-    "leiden",
-    "louvain",
-    "kmeans",
-    "cluster_core",
-}
-_CORE_ANALYSIS_OPS = {
-    "flowrank",
-    "stable_core",
-    "fine_grained_core",
-    "propagation_from_core",
-    "core_selection",
-}
-_OPERATION_COLOR_MAP = {
-    "preprocessing": "#93C5FD",
-    "io": "#86EFAC",
-    "clustering": "#FCD34D",
-    "visualization": "#C4B5FD",
-    "core_analysis": "#FCA5A5",
-    "other": "#D1D5DB",
-}
-_OPERATION_LEGEND_ITEMS = [
-    ("preprocessing", _OPERATION_COLOR_MAP["preprocessing"]),
-    ("io", _OPERATION_COLOR_MAP["io"]),
-    ("clustering", _OPERATION_COLOR_MAP["clustering"]),
-    ("visualization", _OPERATION_COLOR_MAP["visualization"]),
-    ("core_analysis", _OPERATION_COLOR_MAP["core_analysis"]),
-    ("other", _OPERATION_COLOR_MAP["other"]),
-]
+# ── colour constants ─────────────────────────────────────────────
+_ADATA_COLOR = "#BAE6FD"   # Light blue  — all AnnData data nodes
+_OP_COLOR    = "#FDE68A"   # Light amber — all operation nodes
 
 
 def _format_arg_value(value: Any, max_len: int = 28) -> str:
@@ -80,26 +27,6 @@ def _format_arg_value(value: Any, max_len: int = 28) -> str:
     if len(rendered) > max_len:
         return rendered[: max_len - 3] + "..."
     return rendered
-
-
-def _format_operation_lines(
-    method: str,
-    args: dict[str, Any],
-    max_args: int = 3,
-) -> list[str]:
-    """Format one operation as a compact multi-line call-like block."""
-    short_name = method.split(".")[-1]
-    if not args:
-        return [f"- {short_name}()"]
-
-    items = list(args.items())
-    lines = [f"- {short_name}("]
-    for key, value in items[:max_args]:
-        lines.append(f"  {key}={_format_arg_value(value)}")
-    if len(items) > max_args:
-        lines.append(f"  ...+{len(items) - max_args} args")
-    lines.append(")")
-    return lines
 
 
 def _data_node_label(node: LineageNode, lid: str) -> str:
@@ -126,86 +53,36 @@ def _operation_node_label(method: str, args: dict[str, Any], index: int) -> str:
         items = list(args.items())
         for key, value in items[:3]:
             lines.append(f"{key}={_format_arg_value(value)}")
-        # if len(items) > 3:
-        #     lines.append(f"...+{len(items) - 3} args")
     else:
         lines.append("no args")
     return "\n".join(lines)
 
 
-def _operation_category(method: str) -> str:
-    """Return operation category key for a method string."""
-    short_name = method.split(".")[-1]
+def _parent_anchor_index(parent: LineageNode, child: LineageNode) -> int:
+    """Return the index of the latest parent operation that happened before
+    child creation time. Returns -1 when the edge should start from parent data."""
 
-    if method.startswith("preprocessing.") or short_name in _PREPROCESSING_OPS:
-        return "preprocessing"
-    if method.startswith("io.") or short_name in _IO_OPS:
-        return "io"
-    if method.startswith("clustering.") or short_name in _CLUSTERING_OPS:
-        return "clustering"
-    if method.startswith("visualization."):
-        return "visualization"
-    if (
-        method.startswith("core_analysis.")
-        or "CorespectModel." in method
-        or short_name in _CORE_ANALYSIS_OPS
-    ):
-        return "core_analysis"
-    return "other"
+    def find_less_equal_bound(nums: list[datetime], target: datetime) -> int:
+        """Find the index of the last value that is <= target."""
+        l, r = 0, len(nums) - 1
+        while l <= r:
+            mid = (l + r) // 2
+            if nums[mid] <= target:
+                l = mid + 1
+            else:
+                r = mid - 1
+        return r
 
-
-def _operation_fillcolor(method: str) -> str:
-    """Return operation node fill color by operation category."""
-    return _OPERATION_COLOR_MAP[_operation_category(method)]
-
-
-def _make_node(node: LineageNode, label: str):
-    """Pick a Graphviz shape based on how the node was created."""
-    op = (node.creation_op or "").lower()
-    shape = "box"
-    if not node.parents:
-        shape = "cylinder"
-    elif op == "slice":
-        shape = "note"
-    elif op == "copy":
-        shape = "box3d"
-    elif op == "concat":
-        shape = "diamond"
-    return Node(label, shape=shape)
-
-
-def _make_operation_node(label: str, method: str):
-    """Create a visual node for one operation entry."""
-    return Node(
-        label,
-        shape="box",
-        style="rounded,filled",
-        fillcolor=_operation_fillcolor(method),
-    )
-
-
-def _add_operation_legend(anchor_node: object | None = None):
-    """Add a compact legend explaining operation-node colors."""
-    legend_nodes = [
-        Node(
-            f"legend: {label}",
-            shape="box",
-            style="rounded,filled",
-            fillcolor=color,
-        )
-        for label, color in _OPERATION_LEGEND_ITEMS
-    ]
-    if anchor_node is not None and legend_nodes:
-        anchor_node >> Edge(style="invis") >> legend_nodes[0]
-    for prev, curr in zip(legend_nodes, legend_nodes[1:]):
-        prev >> Edge(style="invis") >> curr
+    if not parent.operations:
+        return -1
+    return find_less_equal_bound([op.timestamp for op in parent.operations], child.created_at)
 
 
 def visualize(lineage_file: Path, output_file: Path):
     """Read the lineage JSON file, build a DAG, and save as a flowchart PNG.
 
-    Each AnnData node shows: display name and shape.
-    Operation history is rendered as dedicated operation nodes.
+    All AnnData nodes are rendered as filled boxes in one color.
+    All operation nodes are rendered as filled boxes in another color.
     Directed arrows point from parent to child.
     """
     if not lineage_file.exists():
@@ -222,11 +99,11 @@ def visualize(lineage_file: Path, output_file: Path):
     if not nodes:
         return
 
+
     # Strip the extension — Diagram appends it automatically.
     out_stem = str(output_file.with_suffix(""))
 
     graph_attr = {
-        # "label": "Lotus Lineage DAG",
         "labelloc": "t",
         "labeljust": "c",
         "fontsize": "14",
@@ -243,7 +120,6 @@ def visualize(lineage_file: Path, output_file: Path):
     }
 
     with Diagram(
-        # "Lotus Lineage DAG",
         filename=out_stem,
         outformat="png",
         show=False,
@@ -256,21 +132,39 @@ def visualize(lineage_file: Path, output_file: Path):
 
         for lid, node in nodes.items():
             label = _data_node_label(node, lid)
-            diagram_nodes[lid] = _make_node(node, label)
+            diagram_nodes[lid] = Node(
+                label,
+                shape="box",
+                style="rounded,filled",
+                fillcolor=_ADATA_COLOR,
+            )
 
             op_chain: list[object] = []
             for idx, op in enumerate(node.operations, start=1):
                 op_label = _operation_node_label(op.method, op.args, idx)
-                op_chain.append(_make_operation_node(op_label, op.method))
+                op_chain.append(
+                    Node(
+                        op_label,
+                        shape="box",
+                        style="rounded,filled",
+                        fillcolor=_OP_COLOR,
+                    )
+                )
             operation_nodes[lid] = op_chain
-
-        # legend_anchor = next(iter(diagram_nodes.values()), None)
-        # _add_operation_legend(legend_anchor)
 
         for lid, node in nodes.items():
             for parent_lid in node.parents:
-                if parent_lid in diagram_nodes:
-                    diagram_nodes[parent_lid] >> Edge(color="#666666") >> diagram_nodes[lid]
+                parent_node = nodes.get(parent_lid)
+                if parent_node is None:
+                    continue
+                anchor_index = _parent_anchor_index(parent_node, node)
+                parent_chain = operation_nodes.get(parent_lid, [])
+                if 0 <= anchor_index < len(parent_chain):
+                    anchor = parent_chain[anchor_index]
+                else:
+                    anchor = diagram_nodes.get(parent_lid)
+                if anchor is not None:
+                    anchor >> Edge(color="#666666") >> diagram_nodes[lid]
 
             # Render operation history as chained nodes from each data node.
             chain = operation_nodes.get(lid, [])
@@ -278,3 +172,26 @@ def visualize(lineage_file: Path, output_file: Path):
                 diagram_nodes[lid] >> Edge(color="#4B5563", style="dashed") >> chain[0]
                 for prev, curr in zip(chain, chain[1:]):
                     prev >> Edge(color="#4B5563", style="dashed") >> curr
+
+
+def render_missing_pngs(root_dir: Path) -> None:
+    """Scan all subfolders of *root_dir* and render a PNG for any that have a
+    ``lineage.json`` but no ``lineage_graph.png``.
+
+    Rules:
+    - Subfolder has ``lineage.json`` but **no** ``lineage_graph.png`` → render
+    - Subfolder is empty (neither file) → skip
+    - Subfolder already has both files → skip
+    """
+    if not root_dir.is_dir():
+        return
+    for subfolder in sorted(root_dir.iterdir()):
+        if not subfolder.is_dir():
+            continue
+        json_file = subfolder / "lineage.json"
+        png_file  = subfolder / "lineage_graph.png"
+        if json_file.exists() and not png_file.exists():
+            try:
+                visualize(json_file, png_file)
+            except Exception:
+                logger.exception("error visualizing png for {}", json_file)

@@ -7,6 +7,8 @@ import inspect
 import json
 import textwrap
 import uuid
+from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +18,8 @@ from anndata import AnnData
 from .models import LineageNode, OperationRecord
 
 _INTERNAL_DIR = Path(__file__).resolve().parent
+_WORKSPACE_DIR = Path.cwd().resolve()
+_GENERIC_LOCAL_NAMES = {"result"}
 
 
 def _is_internal_frame(filename: str) -> bool:
@@ -23,6 +27,21 @@ def _is_internal_frame(filename: str) -> bool:
         return Path(filename).resolve().is_relative_to(_INTERNAL_DIR)
     except (RuntimeError, OSError, ValueError):
         return False
+
+
+def _is_workspace_frame(filename: str) -> bool:
+    try:
+        return Path(filename).resolve().is_relative_to(_WORKSPACE_DIR)
+    except (RuntimeError, OSError, ValueError):
+        return False
+
+
+def _is_valid_inferred_name(name: str) -> bool:
+    if not name or name.startswith("_"):
+        return False
+    if name in _GENERIC_LOCAL_NAMES:
+        return False
+    return True
 
 
 # ── argument serialisation helpers ───────────────────────────────
@@ -81,7 +100,12 @@ class LineageTracker:
     _instance: LineageTracker | None = None
 
     def __init__(self):
-        self._data_dir = Path.cwd() / "lineage-tracer_data"
+        self._root_dir = Path.cwd() / "lineage-tracer_data"
+        self._root_dir.mkdir(exist_ok=True)
+        self._session_ts = (
+            datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex
+        )
+        self._data_dir = self._root_dir / self._session_ts
         self._data_dir.mkdir(exist_ok=True)
         self._lineage_file = self._data_dir / "lineage.json"
         self._graph_file = self._data_dir / "lineage_graph.png"
@@ -91,6 +115,9 @@ class LineageTracker:
         # id(adata) → lid: session-local mapping that also covers AnnData views
         # (views share their parent's .uns, so we can't rely on uns alone)
         self._lid_map: dict[int, str] = {}
+        # Depth counter for nested tracked calls. Depth>0 means we are executing
+        # inside a top-level tracked operation and should suppress nested records.
+        self._operation_depth: int = 0
 
         self._load()
 
@@ -111,14 +138,8 @@ class LineageTracker:
     # ── persistence ──────────────────────────────────────────────
 
     def _load(self):
-        """Restore the DAG from the JSON file if it exists."""
-        if self._lineage_file.exists():
-            try:
-                raw = json.loads(self._lineage_file.read_text(encoding="utf-8"))
-                for lid, node_data in raw.items():
-                    self._nodes[lid] = LineageNode.model_validate(node_data)
-            except (json.JSONDecodeError, Exception):
-                pass  # Start fresh if the file is corrupted
+        """Each session starts with a fresh DAG (its own timestamped folder)."""
+        pass
 
     def save(self):
         """Write the full DAG to disk (overwrite)."""
@@ -132,12 +153,28 @@ class LineageTracker:
         )
 
     @property
+    def root_dir(self) -> Path:
+        return self._root_dir
+
+    @property
     def lineage_file(self) -> Path:
         return self._lineage_file
 
     @property
     def graph_file(self) -> Path:
         return self._graph_file
+
+    @property
+    def is_nested_operation(self) -> bool:
+        return self._operation_depth > 0
+
+    @contextmanager
+    def operation_scope(self):
+        self._operation_depth += 1
+        try:
+            yield
+        finally:
+            self._operation_depth -= 1
 
     # ── lid helpers ──────────────────────────────────────────────
 
@@ -228,12 +265,17 @@ class LineageTracker:
             if not isinstance(node, ast.Call):
                 continue
             for arg in node.args:
-                if isinstance(arg, ast.Name) and local_scope.get(arg.id) is adata:
+                if (
+                    isinstance(arg, ast.Name)
+                    and _is_valid_inferred_name(arg.id)
+                    and local_scope.get(arg.id) is adata
+                ):
                     return arg.id
             for kw in node.keywords:
                 if (
                     kw.arg
                     and isinstance(kw.value, ast.Name)
+                    and _is_valid_inferred_name(kw.value.id)
                     and local_scope.get(kw.value.id) is adata
                 ):
                     return kw.value.id
@@ -262,11 +304,15 @@ class LineageTracker:
                     continue
                 for target in stmt.targets:
                     for name in cls._iter_target_names(target):
+                        if not _is_valid_inferred_name(name):
+                            continue
                         return name
             if isinstance(stmt, ast.AnnAssign):
                 if isinstance(stmt.value, ast.Call) and cls._is_register_call(stmt.value):
                     continue
                 for name in cls._iter_target_names(stmt.target):
+                    if not _is_valid_inferred_name(name):
+                        continue
                     return name
         return None
 
@@ -276,7 +322,7 @@ class LineageTracker:
         adata: AnnData,
     ) -> str | None:
         for name, value in frameinfo.frame.f_locals.items():
-            if name.startswith("_"):
+            if not _is_valid_inferred_name(name):
                 continue
             if value is adata:
                 return name
@@ -288,6 +334,8 @@ class LineageTracker:
         try:
             for frameinfo in stack[2:]:
                 if _is_internal_frame(frameinfo.filename):
+                    continue
+                if not _is_workspace_frame(frameinfo.filename):
                     continue
 
                 from_call_args = self._extract_name_from_call_args(frameinfo, adata)

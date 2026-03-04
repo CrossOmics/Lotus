@@ -37,6 +37,8 @@ def _patch_getitem():
         result = original(self, index)
 
         tracker = LineageTracker.instance()
+        if tracker.is_nested_operation:
+            return result
         parent_lid = tracker.get_lid(self)
         if parent_lid:
             tracker.register(
@@ -59,6 +61,8 @@ def _patch_copy():
         result = original(self)
 
         tracker = LineageTracker.instance()
+        if tracker.is_nested_operation:
+            return result
         parent_lid = tracker.get_lid(self)
         if parent_lid:
             tracker.register(
@@ -81,6 +85,8 @@ def _patch_concat():
         result = original_concat(*args, **kwargs)
 
         tracker = LineageTracker.instance()
+        if tracker.is_nested_operation:
+            return result
 
         # The first positional arg (or kwarg "adatas") is the list of inputs
         adatas = args[0] if args else kwargs.get("adatas", [])
