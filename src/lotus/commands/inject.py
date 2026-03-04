@@ -12,10 +12,11 @@ import libcst.matchers as m
 
 _DEFAULT_EXCLUDED_NAME = {
     ".git",
-    ".venv",
     "__pycache__",
     "build",
     "dist",
+    "test",
+    "tests",
     "__init__.py"
 }
 
@@ -133,12 +134,24 @@ class LoggedDecoratorAdder(cst.CSTTransformer):
     def __init__(self, target_prefix: str = ""):
         self.target_prefix = target_prefix
         self.changed = False
+        self._function_depth = 0
+
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> bool:
+        self._function_depth += 1
+        return True
 
     def leave_FunctionDef(
         self,
         original_node: cst.FunctionDef,
         updated_node: cst.FunctionDef,
     ) -> cst.FunctionDef:
+        # Depth>1 means this function is nested inside another function.
+        is_nested_function = self._function_depth > 1
+        self._function_depth -= 1
+
+        if is_nested_function:
+            return updated_node
+
         # Exclude magic methods (e.g., __call__()) and methods don't start with target prefix (if there is)
         if (original_node.name.value.startswith("__") and original_node.name.value.endswith("__")) or \
             (self.target_prefix and not original_node.name.value.startswith(self.target_prefix)):

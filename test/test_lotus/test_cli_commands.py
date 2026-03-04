@@ -46,7 +46,7 @@ def test_cli_inject_nested_functions(tmp_path):
     updated = _run_inject(tmp_path, source)
 
     assert "@logged\ndef outer" in updated
-    assert "    @logged\n    def inner" in updated
+    assert "    @logged\n    def inner" not in updated
     assert "return inner(adata)" in updated
 
 
