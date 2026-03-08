@@ -4,6 +4,7 @@ using the ``diagrams`` library (backed by Graphviz)."""
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,22 @@ from .models import LineageNode
 # ── colour constants ─────────────────────────────────────────────
 _ADATA_COLOR = "#BAE6FD"   # Light blue  — all AnnData data nodes
 _OP_COLOR    = "#FDE68A"   # Light amber — all operation nodes
+
+
+def _graphviz_available() -> bool:
+    """Return ``True`` when the Graphviz ``dot`` executable is available."""
+    return shutil.which("dot") is not None
+
+
+def _log_missing_graphviz(output_file: Path) -> None:
+    """Emit a clear warning when Graphviz is unavailable."""
+    logger.warning(
+        "Skipping lineage PNG render for {} because Graphviz 'dot' was not found on PATH. "
+        "Install Graphviz with your system package manager "
+        "(for example: 'brew install graphviz' on macOS, 'sudo apt-get install graphviz' on Ubuntu/Debian, "
+        "or 'winget install Graphviz.Graphviz' on Windows).",
+        output_file,
+    )
 
 
 def _format_arg_value(value: Any, max_len: int = 28) -> str:
@@ -86,6 +103,10 @@ def visualize(lineage_file: Path, output_file: Path):
     Directed arrows point from parent to child.
     """
     if not lineage_file.exists():
+        return
+
+    if not _graphviz_available():
+        _log_missing_graphviz(output_file)
         return
 
     raw = json.loads(lineage_file.read_text(encoding="utf-8"))
@@ -184,6 +205,9 @@ def render_missing_pngs(root_dir: Path) -> None:
     - Subfolder already has both files → skip
     """
     if not root_dir.is_dir():
+        return
+    if not _graphviz_available():
+        _log_missing_graphviz(root_dir / "lineage_graph.png")
         return
     for subfolder in sorted(root_dir.iterdir()):
         if not subfolder.is_dir():

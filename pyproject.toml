@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "lotus"       # Package name
 version = "0.1.0"
 description = "A biological analysis engine for single-cell data"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "click>=8.1",
