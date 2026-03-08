@@ -3,11 +3,12 @@ using the ``diagrams`` library (backed by Graphviz)."""
 
 from __future__ import annotations
 
+from html import escape
 import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from loguru import logger
 
 from diagrams import Diagram, Edge, Node
@@ -17,6 +18,15 @@ from .models import LineageNode
 # ── colour constants ─────────────────────────────────────────────
 _ADATA_COLOR = "#BAE6FD"   # Light blue  — all AnnData data nodes
 _OP_COLOR    = "#FDE68A"   # Light amber — all operation nodes
+_OUTPUT_EDGE_COLOR = "#111111"
+_PARENT_EDGE_COLOR = "#666666"
+_OP_EDGE_COLOR = "#4B5563"
+_DATA_TEXT_COLOR = "#0F172A"
+_DATA_META_COLOR = "#475569"
+_INPUT_COLOR = "#DCFCE7"
+_INPUT_BORDER_COLOR = "#166534"
+
+NodeRole = Literal["input", "intermediate", "output"]
 
 
 def _graphviz_available() -> bool:
@@ -46,33 +56,130 @@ def _format_arg_value(value: Any, max_len: int = 28) -> str:
     return rendered
 
 
-def _data_node_label(node: LineageNode, lid: str) -> str:
-    """Build a compact label for an AnnData lineage node."""
-    display_name = node.display_name or node.description or lid[:8]
+def _compact_text(value: str, max_len: int = 24) -> str:
+    """Render a bounded label-friendly string."""
+    if len(value) > max_len:
+        return value[: max_len - 3] + "..."
+    return value
+
+
+def _node_role(node: LineageNode, has_children: bool) -> NodeRole:
+    """Classify a lineage node for workflow-oriented styling."""
     if not node.parents:
-        op_label = "root"
-    else:
-        op_label = (node.creation_op or "process").lower()
-    return "\n".join(
-        [
-            display_name,
-            f"{node.shape[0]} x {node.shape[1]}",
-            f"op: {op_label}",
-        ]
+        return "input"
+    if not has_children:
+        return "output"
+    return "intermediate"
+
+
+def _data_op_label(node: LineageNode) -> str:
+    """Return the operation context line for an AnnData node."""
+    if not node.parents:
+        return "root"
+    return (node.creation_op or "process").lower()
+
+
+def _data_node_label(node: LineageNode, lid: str, role: NodeRole) -> str:
+    """Build a workflow-style HTML label for an AnnData lineage node."""
+    display_name = escape(_compact_text(node.display_name or node.description or lid[:8]))
+    role_title = {
+        "input": "input",
+        "intermediate": "anndata",
+        "output": "output",
+    }[role]
+    op_label = escape(_data_op_label(node))
+    return """<
+<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2">
+  <TR><TD ALIGN="CENTER"><FONT POINT-SIZE="9" COLOR="#1E3A5F">{role_title}</FONT></TD></TR>
+  <TR><TD ALIGN="CENTER"><B>{display_name}</B></TD></TR>
+  <TR><TD ALIGN="CENTER"><FONT POINT-SIZE="10" COLOR="{text_color}">AnnData  {n_obs} x {n_vars}</FONT></TD></TR>
+  <TR><TD ALIGN="CENTER"><FONT POINT-SIZE="8" COLOR="{meta_color}">op: {op_label}</FONT></TD></TR>
+</TABLE>
+>""".format(
+        role_title=role_title,
+        display_name=display_name,
+        n_obs=node.shape[0],
+        n_vars=node.shape[1],
+        op_label=op_label,
+        text_color=_DATA_TEXT_COLOR,
+        meta_color=_DATA_META_COLOR,
     )
 
 
+def _data_node_attrs(node: LineageNode, role: NodeRole) -> dict[str, str]:
+    """Return Graphviz attributes for data nodes."""
+    if role == "input":
+        return {
+            "shape": "box",
+            "style": "rounded,filled,bold",
+            "fillcolor": _INPUT_COLOR,
+            "color": _INPUT_BORDER_COLOR,
+            "penwidth": "2.4",
+            "margin": "0.12,0.09",
+        }
+    if role == "output":
+        return {
+            "shape": "box",
+            "style": "rounded,filled",
+            "fillcolor": _ADATA_COLOR,
+            "color": "#0F172A",
+            "penwidth": "2.0",
+            "margin": "0.12,0.08",
+        }
+    return {
+        "shape": "box",
+        "style": "rounded,filled",
+        "fillcolor": _ADATA_COLOR,
+        "color": "#2563EB",
+        "penwidth": "1.5",
+        "margin": "0.12,0.08",
+    }
+
+
 def _operation_node_label(method: str, args: dict[str, Any], index: int) -> str:
-    """Build a compact label for a single operation node."""
+    """Build an HTML label for a single operation node."""
     short_name = method.split(".")[-1]
-    lines = [f"{index}. {short_name}"]
+    arg_rows: list[str] = []
     if args:
         items = list(args.items())
-        for key, value in items[:3]:
-            lines.append(f"{key}={_format_arg_value(value)}")
+        for key, value in items[:2]:
+            arg_rows.append(
+                "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"9\" COLOR=\"#6B7280\">{}</FONT></TD></TR>".format(
+                    escape(f"{key}={_format_arg_value(value, max_len=20)}")
+                )
+            )
+        if len(items) > 2:
+            arg_rows.append(
+                "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"8\" COLOR=\"#94A3B8\">+{} more</FONT></TD></TR>".format(
+                    len(items) - 2
+                )
+            )
     else:
-        lines.append("no args")
-    return "\n".join(lines)
+        arg_rows.append(
+            "<TR><TD ALIGN=\"LEFT\"><FONT POINT-SIZE=\"9\" COLOR=\"#6B7280\">no args</FONT></TD></TR>"
+        )
+    return """<
+<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2">
+    <TR><TD ALIGN="CENTER"><B>{method}</B></TD></TR>
+  {arg_rows}
+</TABLE>
+>""".format(method=escape(short_name), arg_rows="".join(arg_rows))
+
+
+def _parent_edge_attrs(role: NodeRole) -> dict[str, str]:
+    """Return Graphviz edge styling for parent-child lineage edges."""
+    if role == "output":
+        return {"color": _OUTPUT_EDGE_COLOR, "style": "solid", "penwidth": "2.4"}
+    return {"color": _PARENT_EDGE_COLOR, "style": "solid", "penwidth": "1.4"}
+
+
+def _child_lookup(nodes: dict[str, LineageNode]) -> dict[str, set[str]]:
+    """Build a reverse index of lineage node children."""
+    children = {lid: set() for lid in nodes}
+    for child_lid, node in nodes.items():
+        for parent_lid in node.parents:
+            children.setdefault(parent_lid, set()).add(child_lid)
+    return children
 
 
 def _parent_anchor_index(parent: LineageNode, child: LineageNode) -> int:
@@ -120,6 +227,12 @@ def visualize(lineage_file: Path, output_file: Path):
     if not nodes:
         return
 
+    child_lookup = _child_lookup(nodes)
+    node_roles = {
+        lid: _node_role(node, has_children=bool(child_lookup.get(lid)))
+        for lid, node in nodes.items()
+    }
+
 
     # Strip the extension — Diagram appends it automatically.
     out_stem = str(output_file.with_suffix(""))
@@ -138,6 +251,7 @@ def visualize(lineage_file: Path, output_file: Path):
         "labelloc": "c",
         "fontname": "Sans-Serif",
         "fontsize": "11",
+        "margin": "0.12,0.08",
     }
 
     with Diagram(
@@ -152,12 +266,11 @@ def visualize(lineage_file: Path, output_file: Path):
         operation_nodes: dict[str, list[object]] = {}
 
         for lid, node in nodes.items():
-            label = _data_node_label(node, lid)
+            role = node_roles[lid]
+            label = _data_node_label(node, lid, role)
             diagram_nodes[lid] = Node(
                 label,
-                shape="box",
-                style="rounded,filled",
-                fillcolor=_ADATA_COLOR,
+                **_data_node_attrs(node, role),
             )
 
             op_chain: list[object] = []
@@ -169,6 +282,9 @@ def visualize(lineage_file: Path, output_file: Path):
                         shape="box",
                         style="rounded,filled",
                         fillcolor=_OP_COLOR,
+                        color="#7C5E10",
+                        penwidth="1.4",
+                        margin="0.18,0.12",
                     )
                 )
             operation_nodes[lid] = op_chain
@@ -185,14 +301,14 @@ def visualize(lineage_file: Path, output_file: Path):
                 else:
                     anchor = diagram_nodes.get(parent_lid)
                 if anchor is not None:
-                    anchor >> Edge(color="#666666") >> diagram_nodes[lid]
+                    anchor >> Edge(**_parent_edge_attrs(node_roles[lid])) >> diagram_nodes[lid]
 
             # Render operation history as chained nodes from each data node.
             chain = operation_nodes.get(lid, [])
             if chain:
-                diagram_nodes[lid] >> Edge(color="#4B5563", style="dashed") >> chain[0]
+                diagram_nodes[lid] >> Edge(color=_OP_EDGE_COLOR, style="dashed") >> chain[0]
                 for prev, curr in zip(chain, chain[1:]):
-                    prev >> Edge(color="#4B5563", style="dashed") >> curr
+                    prev >> Edge(color=_OP_EDGE_COLOR, style="dashed") >> curr
 
 
 def render_missing_pngs(root_dir: Path) -> None:
