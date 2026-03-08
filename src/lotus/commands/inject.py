@@ -162,10 +162,11 @@ class LoggedDecoratorAdder(cst.CSTTransformer):
         if is_nested_function:
             return updated_node
 
-        # Exclude magic methods (e.g., __call__()) and methods don't start with target prefix (if there is)
+        # Exclude main method, magic methods (e.g., __call__()) and methods don't start with target prefix (if there is)
         name = original_node.name.value
+        is_main = name == 'main'
         is_dunder = name.startswith("__") and name.endswith("__")
-        if is_dunder or (
+        if is_dunder or is_main or (
             self.target_prefix and not name.startswith(self.target_prefix)
         ):
             return updated_node
