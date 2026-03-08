@@ -47,20 +47,13 @@ def _run_with_tracking(
     adata: AnnData | None,
     args_for_record: tuple,
     kwargs_for_record: dict,
-    invoke,
+    method,
     description: str,
     before_log: str | None = None,
 ):
     """Shared tracking flow for both method and function wrappers."""
     tracker = LineageTracker.instance()
     is_nested = tracker.is_nested_operation
-    snapshot_key = f"before_{func.__name__}_copy"
-
-    if adata is not None and not is_nested:
-        try:
-            adata.layers[snapshot_key] = adata.X.copy()
-        except Exception as e:
-            logger.warning("Failed to snapshot adata.X to adata.layers['{}']: {}", snapshot_key, e)
 
     if adata is not None and not is_nested:
         all_args = _build_args_dict(func, args_for_record, kwargs_for_record)
@@ -68,10 +61,10 @@ def _run_with_tracking(
 
     if before_log is not None:
         logger.info(before_log)
+    
+    # invoke the original method
     with tracker.operation_scope():
-        result = invoke()
-    if before_log is not None:
-        logger.info("[Done] {}", call_name)
+        result = method()
 
     if (
         not is_nested
@@ -117,7 +110,7 @@ class LoggingMeta(type):
                 adata=adata,
                 args_for_record=(self, *args),
                 kwargs_for_record=kwargs,
-                invoke=lambda: method(self, *args, **kwargs),
+                method=lambda: method(self, *args, **kwargs),
                 description=call_name,
                 before_log=f"[Now in] {call_name}",
             )
@@ -149,7 +142,7 @@ def logged(func):
             adata=adata,
             args_for_record=args,
             kwargs_for_record=kwargs,
-            invoke=lambda: func(*args, **kwargs),
+            method=lambda: func(*args, **kwargs),
             description=description,
             before_log=f"[Now in] {func.__name__}"
         )
